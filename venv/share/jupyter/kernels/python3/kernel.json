@@ -1,6 +1,6 @@
 {
  "argv": [
-  "python",
+  "c:/python/matilda_edu/venv\\python.exe",
   "-m",
   "ipykernel_launcher",
   "-f",

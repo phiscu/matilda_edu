@@ -15,14 +15,14 @@ from numpy.testing import (
     )
 
 class TestMemmap:
-    def setup_method(self):
+    def setup(self):
         self.tmpfp = NamedTemporaryFile(prefix='mmap')
         self.shape = (3, 4)
         self.dtype = 'float32'
         self.data = arange(12, dtype=self.dtype)
         self.data.resize(self.shape)
 
-    def teardown_method(self):
+    def teardown(self):
         self.tmpfp.close()
         self.data = None
         if IS_PYPY:
