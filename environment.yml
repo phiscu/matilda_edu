@@ -1,8 +1,9 @@
 # environment.yml
+name: matilda_edu
 channels:
 - conda-forge
 dependencies:
-- python =3.8
-- pip
-- pip:
-  - py-entangle
+- python==3.8
+- geemap==0.19.6
+- pysheds==0.3.3
+- geopandas==0.12.2
