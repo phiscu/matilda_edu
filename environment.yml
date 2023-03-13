@@ -7,3 +7,4 @@ dependencies:
 - geemap==0.19.6
 - pysheds==0.3.3
 - geopandas==0.12.2
+- xarray==2023.2.0
