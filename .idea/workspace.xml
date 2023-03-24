@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="2e234685-736e-44ab-8535-dbd096687dd4" name="Changes" comment="venv" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="UPDATE_TYPE" value="REBASE" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectId" id="2Ls1AA6BUSL7Mb999Vj5xbzO7z5" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Python/matilda_edu/Catchment_delineation.py&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
+  }
+}</component>
+  <component name="RunManager">
+    <configuration name="Catchment_delineation" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+      <module name="matilda_edu" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Catchment_delineation.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="2e234685-736e-44ab-8535-dbd096687dd4" name="Changes" comment="" />
+      <created>1676644832535</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1676644832535</updated>
+      <workItem from="1676644838224" duration="117000" />
+      <workItem from="1676646309676" duration="1077000" />
+      <workItem from="1676647597982" duration="1093000" />
+      <workItem from="1676649344150" duration="212000" />
+      <workItem from="1676667906738" duration="2114000" />
+      <workItem from="1676670092891" duration="5179000" />
+      <workItem from="1676676790727" duration="59000" />
+      <workItem from="1676710221854" duration="5351000" />
+      <workItem from="1676922890338" duration="14000" />
+      <workItem from="1676922934439" duration="191000" />
+      <workItem from="1676935965849" duration="80000" />
+      <workItem from="1676936103267" duration="229000" />
+      <workItem from="1676936347600" duration="98000" />
+      <workItem from="1676998221015" duration="4520000" />
+      <workItem from="1677002816395" duration="518000" />
+      <workItem from="1677067071359" duration="3778000" />
+      <workItem from="1677078149741" duration="953000" />
+      <workItem from="1677099263161" duration="7978000" />
+      <workItem from="1677138491077" duration="2687000" />
+      <workItem from="1677165523099" duration="5144000" />
+      <workItem from="1677224308035" duration="2861000" />
+      <workItem from="1677358392956" duration="5066000" />
+      <workItem from="1677418650207" duration="31000" />
+      <workItem from="1677424313321" duration="5259000" />
+      <workItem from="1677454091222" duration="12000" />
+      <workItem from="1677655207317" duration="653000" />
+      <workItem from="1677666419503" duration="213000" />
+      <workItem from="1677704954425" duration="1890000" />
+      <workItem from="1677850093441" duration="4715000" />
+      <workItem from="1678003733972" duration="28000" />
+      <workItem from="1678122285549" duration="5719000" />
+      <workItem from="1678177241377" duration="2048000" />
+      <workItem from="1678183984430" duration="2974000" />
+      <workItem from="1678219800929" duration="3199000" />
+      <workItem from="1678227821321" duration="176000" />
+      <workItem from="1678229170002" duration="658000" />
+      <workItem from="1678271214659" duration="5769000" />
+      <workItem from="1678278557244" duration="11000" />
+      <workItem from="1678279831093" duration="569000" />
+      <workItem from="1678313868776" duration="474000" />
+      <workItem from="1678463489966" duration="164000" />
+      <workItem from="1678544661535" duration="1223000" />
+      <workItem from="1678611814257" duration="12000" />
+      <workItem from="1678708069695" duration="8143000" />
+      <workItem from="1678730457152" duration="1992000" />
+      <workItem from="1678785187508" duration="8000" />
+      <workItem from="1678866008321" duration="1555000" />
+      <workItem from="1678889031419" duration="683000" />
+      <workItem from="1679394434819" duration="318000" />
+      <workItem from="1679397309704" duration="73000" />
+      <workItem from="1679478541715" duration="83000" />
+      <workItem from="1679572805968" duration="3602000" />
+      <workItem from="1679659017772" duration="1146000" />
+      <workItem from="1679660221566" duration="953000" />
+      <workItem from="1679661723435" duration="2122000" />
+      <workItem from="1679664114142" duration="1350000" />
+    </task>
+    <task id="LOCAL-00001" summary="Conda venv&#10;Catchment delineation">
+      <created>1676675795589</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1676675795589</updated>
+    </task>
+    <task id="LOCAL-00002" summary="added python-3.8 runtime">
+      <created>1676676335450</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1676676335450</updated>
+    </task>
+    <task id="LOCAL-00003" summary="environment added">
+      <created>1676676501354</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1676676501354</updated>
+    </task>
+    <task id="LOCAL-00004" summary="yml updated">
+      <created>1676711657743</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1676711657743</updated>
+    </task>
+    <task id="LOCAL-00005" summary="yml updated">
+      <created>1676714684524</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1676714684524</updated>
+    </task>
+    <task id="LOCAL-00006" summary="auto box; MERIT support">
+      <created>1676922972183</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1676922972183</updated>
+    </task>
+    <task id="LOCAL-00007" summary="select of DEM in parameters; manual box selection">
+      <created>1676936014012</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1676936014012</updated>
+    </task>
+    <task id="LOCAL-00008" summary="restore lost code">
+      <created>1676936404188</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1676936404188</updated>
+    </task>
+    <task id="LOCAL-00009" summary="ALOS added; area calculation">
+      <created>1677002864671</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1677002864671</updated>
+    </task>
+    <task id="LOCAL-00010" summary="ALOS added; area calculation">
+      <created>1677002921028</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1677002921028</updated>
+    </task>
+    <task id="LOCAL-00011" summary="GLIMS data + RGI tif files">
+      <created>1677106713088</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1677106713088</updated>
+    </task>
+    <task id="LOCAL-00012" summary="spatial join from RGI zip file">
+      <created>1677139983763</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1677139983763</updated>
+    </task>
+    <task id="LOCAL-00013" summary="rename notebook">
+      <created>1677140056923</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1677140056923</updated>
+    </task>
+    <task id="LOCAL-00014" summary="add empty output folder">
+      <created>1677140161551</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1677140161551</updated>
+    </task>
+    <task id="LOCAL-00015" summary="filter intersecting RGI glacier by overlay percentage">
+      <created>1677171730303</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1677171730303</updated>
+    </task>
+    <task id="LOCAL-00016" summary="reduce catchment area by glaciers outside catchment; geopackage instead shp files">
+      <created>1677226891202</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1677226891202</updated>
+    </task>
+    <task id="LOCAL-00017" summary="Creation of glacier profile CSV from DEM/thickness tif files">
+      <created>1677858188064</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1677858188064</updated>
+    </task>
+    <task id="LOCAL-00018" summary="Creation of glacier profile CSV from DEM/thickness tif files">
+      <created>1677858481841</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1677858481841</updated>
+    </task>
+    <task id="LOCAL-00019" summary="Creation of glacier profile CSV from DEM/thickness tif files">
+      <created>1677858921352</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1677858921352</updated>
+    </task>
+    <task id="LOCAL-00020" summary="updated glacier profile: elevation zones of entire catchment">
+      <created>1678128318896</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1678128318896</updated>
+    </task>
+    <task id="LOCAL-00021" summary="config.ini added">
+      <created>1678179263269</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1678179263269</updated>
+    </task>
+    <task id="LOCAL-00022" summary="new notebook for forcing data (ERA5L)">
+      <created>1678724667662</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1678724667662</updated>
+    </task>
+    <task id="LOCAL-00023" summary="config.ini used in forcing data notebook&#10;updated environment.yml">
+      <created>1678731773258</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1678731773258</updated>
+    </task>
+    <task id="LOCAL-00024" summary="updated Forcing_data.ipynb: added CMIP6 data processing">
+      <created>1679397355523</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1679397355523</updated>
+    </task>
+    <task id="LOCAL-00025" summary="notebook for CMIP6 data acquisition">
+      <created>1679478608703</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1679478608703</updated>
+    </task>
+    <task id="LOCAL-00026" summary="venv">
+      <created>1679576814523</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1679576814523</updated>
+    </task>
+    <option name="localTasksCounter" value="27" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="origin/main" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="RECENT_FILTERS">
+      <map>
+        <entry key="Branch">
+          <value>
+            <list>
+              <RecentGroup>
+                <option name="FILTER_VALUES">
+                  <option value="main" />
+                </option>
+              </RecentGroup>
+            </list>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Conda venv&#10;Catchment delineation" />
+    <MESSAGE value="added python-3.8 runtime" />
+    <MESSAGE value="environment added" />
+    <MESSAGE value="yml updated" />
+    <MESSAGE value="auto box; MERIT support" />
+    <MESSAGE value="select of DEM in parameters; manual box selection" />
+    <MESSAGE value="restore lost code" />
+    <MESSAGE value="ALOS added; area calculation" />
+    <MESSAGE value="GLIMS data + RGI tif files" />
+    <MESSAGE value="spatial join from RGI zip file" />
+    <MESSAGE value="rename notebook" />
+    <MESSAGE value="add empty output folder" />
+    <MESSAGE value="filter intersecting RGI glacier by overlay percentage" />
+    <MESSAGE value="reduce catchment area by glaciers outside catchment; geopackage instead shp files" />
+    <MESSAGE value="Creation of glacier profile CSV from DEM/thickness tif files" />
+    <MESSAGE value="updated glacier profile: elevation zones of entire catchment" />
+    <MESSAGE value="config.ini added" />
+    <MESSAGE value="new notebook for forcing data (ERA5L)" />
+    <MESSAGE value="config.ini used in forcing data notebook&#10;updated environment.yml" />
+    <MESSAGE value="updated Forcing_data.ipynb: added CMIP6 data processing" />
+    <MESSAGE value="notebook for CMIP6 data acquisition" />
+    <MESSAGE value="venv" />
+    <option name="LAST_COMMIT_MESSAGE" value="venv" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="jupyter-line">
+          <url>notebook://C:/Python/matilda_edu/Catchment_deliniation.ipynb</url>
+          <line>361</line>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>
