@@ -1,5 +1,5 @@
 # environment.yml
-name: matilda_edu
+name: matilda_edu_mat
 channels:
 - conda-forge
 dependencies:
@@ -9,3 +9,6 @@ dependencies:
 - geopandas==0.12.2
 - xarray==2023.2.0
 - netcdf4==1.6.0
+- pip
+- pip:
+  - git+https://github.com/cryotools/matilda.git/#egg=matilda&subdirectory=matilda_v0.3
