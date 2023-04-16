@@ -10,6 +10,7 @@ dependencies:
 - xarray==2023.2.0
 - netcdf4==1.6.0
 - retry==0.9.2
+- utm==0.7.0
 - pip
 - pip:
   - git+https://github.com/cryotools/matilda.git
