@@ -11,4 +11,4 @@ dependencies:
 - netcdf4==1.6.0
 - pip
 - pip:
-  - git+https://github.com/cryotools/matilda.git/#egg=matilda&subdirectory=matilda_v0.3
+  - git+https://github.com/cryotools/matilda.git
