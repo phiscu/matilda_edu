@@ -4,11 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2e234685-736e-44ab-8535-dbd096687dd4" name="Changes" comment="delete venv; updated notebooks (ele_cat, area determination)">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/paired_scripts/Catchment_deliniation.py" beforeDir="false" afterPath="$PROJECT_DIR$/paired_scripts/Catchment_deliniation.py" afterDir="false" />
-    </list>
+    <list default="true" id="2e234685-736e-44ab-8535-dbd096687dd4" name="Changes" comment="delete venv; updated notebooks (ele_cat, area determination)" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
