@@ -12,13 +12,13 @@
 #     name: python3
 # ---
 
-# %% jupyter={"source_hidden": true}
+# %%
 # Google Earth Engine packages
 import ee
 import geemap
 import numpy as np
 
-# %% jupyter={"source_hidden": true}
+# %%
 # initialize GEE at the beginning of session
 try:
     ee.Initialize()
@@ -26,7 +26,7 @@ except Exception as e:
     ee.Authenticate()         # authenticate when using GEE for the first time
     ee.Initialize()
 
-# %% jupyter={"source_hidden": true}
+# %%
 import configparser
 import ast
 
@@ -41,7 +41,7 @@ output_gpkg = dir_output + config['FILE_SETTINGS']['GPKG_NAME']
 # get date range for forcing data
 #date_range = ast.literal_eval(config['CONFIG']['DATE_RANGE'])
 
-# %% jupyter={"source_hidden": true}
+# %%
 import geopandas as gpd
 
 catchment_new = gpd.read_file(output_gpkg, layer='catchment_new')
@@ -51,7 +51,7 @@ catchment = geemap.geopandas_to_ee(catchment_new)
 # %% [markdown]
 # ***
 
-# %% jupyter={"source_hidden": true}
+# %%
 def renameBandName(b):
     split = ee.String(b).split('_')   
     return ee.String(split.splice(split.length().subtract(2),1).join("_"))
@@ -99,7 +99,7 @@ def getTask(fileName):
 # %% [markdown]
 # To provide the best basis for bias adjustment a large overlap of reanalysis and scenario data is recommended. Per default the routine downloads scenario data starting with the earliest date available from ERA5-Land in 1979 and until 2100.
 
-# %% jupyter={"source_hidden": true}
+# %%
 start = '1979-01-01'
 end = '2100-12-31'                      # exclusive!
 
@@ -109,7 +109,7 @@ end = '2100-12-31'                      # exclusive!
 # %% [markdown]
 # CMIP6 scenario runs start in 2015.
 
-# %% jupyter={"source_hidden": true}
+# %%
 startDate = ee.Date('2015-01-01')
 endDate = ee.Date(end)
 n = endDate.difference(startDate,'day').subtract(1)
@@ -134,12 +134,12 @@ print('Tasks for scenarios started...')
 # %% [markdown]
 # The CMIP6 historical runs are available for the period of 1950 through 2014.
 
-# %% jupyter={"source_hidden": true}
+# %%
 startDate = ee.Date(start)
 endDate = ee.Date('2014-12-31')
 n = endDate.difference(startDate,'day').subtract(1)
 
-# %% jupyter={"source_hidden": true}
+# %%
 collection = getImageCollection('tas')
 task_tas_hist = getTask('CMIP6_tas_hist')
 task_tas_hist.start()
@@ -153,7 +153,7 @@ print('Tasks for historical data started...')
 # %% [markdown]
 # Start status animation
 
-# %% jupyter={"source_hidden": true}
+# %%
 import time
 
 while task_tas_ssp.active() or task_pr_ssp.active() or task_tas_hist.active() or task_pr_hist.active():
@@ -170,7 +170,7 @@ print('done.')
 # - direct download to new folder with ID name
 # - donload the whole folder using the gdown package
 
-# %% jupyter={"source_hidden": true}
+# %%
 #import gdown
 
 #url = 'https://drive.google.com/drive/folders/1PHEZMh-hJrOS305qHYBCICWap91ITBIE?usp=share_link'
@@ -179,7 +179,7 @@ print('done.')
 # %% [markdown]
 # # Test der neuen Download-Routine mit parallelen Download-Requests
 
-# %% jupyter={"source_hidden": true} tags=["hide-input"]
+# %% tags=["hide-input"]
 import multiprocessing
 import geopandas as gpd
 import concurrent.futures
@@ -293,7 +293,7 @@ class CMIPDownloader:
         print("All downloads complete.")
 
 
-# %% jupyter={"source_hidden": true}
+# %%
 cmip_dir = dir_output + 'cmip6/'
 downloader_t = CMIPDownloader('tas', 1979, 2100, catchment, processes=25, dir=cmip_dir)
 downloader_t.download()
@@ -303,7 +303,7 @@ downloader_p.download()
 # %% [markdown]
 # # Process the downloaded CSV files --> only works for full period (1979-2100) so far
 
-# %% jupyter={"source_hidden": true}
+# %%
 import pandas as pd
 
 class CMIPProcessor:

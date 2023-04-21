@@ -183,7 +183,7 @@ import pyproj
 from shapely.geometry import shape
 from shapely.ops import transform
 
-## Create shapefile and save it
+# Create shapefile and save it
 shapes = grid.polygonize()
 
 schema = {
@@ -245,12 +245,13 @@ import utm
 from pyproj import CRS
 
 # get UTM zone for catchment
-centroid = catchment.centroid
-utm = utm.from_latlon(centroid.y[0],centroid.x[0])
-print(f"UTM zone '{utm[2]}', band '{utm[3]}'")
+# centroid = catchment.centroid                           # .centroid throws CRS warning too. Use pouring point instead?
+# utm_zone = utm.from_latlon(centroid.y[0], centroid.x[0])  # error source for huge catchments or irrelevant?
+utm_zone = utm.from_latlon(y, x)
+print(f"UTM zone '{utm_zone[2]}', band '{utm_zone[3]}'")
 
 # get CRS based on UTM
-crs = CRS.from_dict({'proj':'utm', 'zone':utm[2], 'south':False})
+crs = CRS.from_dict({'proj':'utm', 'zone':utm_zone[2], 'south':False})
 
 catchment_area = catchment.to_crs(crs).area[0] / 1000 / 1000
 print(f"Catchment area (projected) is {catchment_area:.2f} km²")
@@ -279,6 +280,7 @@ if area != None:
     url = "https://www.glims.org/RGI/rgi60_files/"  # Replace with the URL of your web server
     html_page = urllib.request.urlopen(url)
     html_content = html_page.read().decode("utf-8")
+    print('Reading Randolph Glacier Inventory 6.0 in GLIMS database')
 
     # Use regular expressions to find links to files
     pattern = re.compile(r'href="([^"]+\.zip)"')
@@ -287,14 +289,15 @@ if area != None:
 
     for file in file_links:
         splits = file.split("_")
-        if splits[0] != str(area): 
+        if splits[0] != str(area):
             continue
 
         # starting scanning areas
         areaname = splits[0] + " (" + splits[2].split(".")[0] + ")"
-        print(f'scanning area {areaname}')
+        print(f'Locating glacier outlines in RGI Region {areaname}')
 
         # read zip into dataframe
+        print('Loading shapefiles')
         rgi = gpd.read_file(url+file)
         if rgi.crs != catchment.crs:
             print("CRS adjusted")
@@ -303,7 +306,7 @@ if area != None:
         # check whether catchment intersects with glaciers of area
         rgi_catchment = gpd.sjoin(rgi,catchment,how='inner',predicate='intersects')
         if len(rgi_catchment.index) > 0:
-            print(f'{len(rgi_catchment.index)} outlines found in area {areaname}\n')
+            print(f'{len(rgi_catchment.index)} outlines loaded from RGI Region {areaname}\n')
 
 # %% [markdown]
 # Some glaciers do not belong to catchment but are intersecting the derived catchment area. Therefore, the percentage of the glacier will be calculated to determine whether glacier will be part of catchment or not (>=50% of its area needs to be in catchment). Glaciers outside catchment with overlapping area will reduce catchment area.
@@ -313,24 +316,24 @@ if area != None:
 # intersects selects too many. calculate percentage of glacier area that is within catchment
 rgi_catchment['rgi_area'] = rgi_catchment.to_crs(crs).area    
     
-gdf_joined = gpd.overlay(catchment,rgi_catchment, how='union')
+gdf_joined = gpd.overlay(catchment, rgi_catchment, how='union')
 gdf_joined['area_joined'] = gdf_joined.to_crs(crs).area
 gdf_joined['share_of_area'] = (gdf_joined['area_joined'] / gdf_joined['rgi_area'] * 100)
 
 results = (gdf_joined
-           .groupby(['RGIId','LABEL_1'])
-           .agg({'share_of_area':'sum'}))
+           .groupby(['RGIId', 'LABEL_1'])
+           .agg({'share_of_area': 'sum'}))
 
 #print(results.sort_values(['share_of_area'],ascending=False))
 
 # %%
-rgi_catchment = pd.merge(rgi_catchment, results, on="RGIId")
-rgi_in_catchment = rgi_catchment.loc[rgi_catchment['share_of_area'] >= 50]
-rgi_out_catchment = rgi_catchment.loc[rgi_catchment['share_of_area'] < 50]
+rgi_catchment_merge = pd.merge(rgi_catchment, results, on="RGIId")
+rgi_in_catchment = rgi_catchment_merge.loc[rgi_catchment_merge['share_of_area'] >= 50]
+rgi_out_catchment = rgi_catchment_merge.loc[rgi_catchment_merge['share_of_area'] < 50]
 
 catchment_new = gpd.overlay(catchment, rgi_out_catchment, how='difference')
 catchment_new = gpd.overlay(catchment_new, rgi_in_catchment, how='union')
-catchment_new = catchment_new.dissolve()[['LABEL_1','geometry']]
+catchment_new = catchment_new.dissolve()[['LABEL_1', 'geometry']]
 
 # %%
 #catchment_new['area'] = catchment_new.to_crs("+proj=cea +lat_0=35.68250088833567 +lon_0=139.7671 +units=m")['geometry'].area
@@ -340,7 +343,11 @@ area_glac = rgi_in_catchment.to_crs(crs)['geometry'].area
 
 area_glac = area_glac.sum()/1000000
 area_cat = catchment_new.iloc[0]['area']/1000000
-lat = catchment_new.centroid.to_crs('EPSG:4326').y[0]
+# lat = catchment_new.centroid.to_crs('EPSG:4326').y[0]     # CRS warning --> reproject back and forth
+cat_cent = catchment_new.to_crs(crs).centroid
+lat = cat_cent.to_crs('EPSG:4326').y[0]
+
+
 print(f"New catchment area is {area_cat} km²")
 print(f"Glacierized catchment area is {area_glac} km²")
 
@@ -431,12 +438,12 @@ import io
 
 cnt_thickness = 0
 file_names_thickness = []
-for idx,row in refs_thickness.iterrows():   
+for idx, row in refs_thickness.iterrows():
     content = myrepository.get_resource_file(row['ref'])    
     with ZipFile(io.BytesIO(content), 'r') as zipObj:
         # Get a list of all archived file names from the zip
         listOfFileNames = zipObj.namelist()
-        for rgiid in df_rgiids.loc[df_rgiids['thickness']==row['field8']]['RGIId']:
+        for rgiid in df_rgiids.loc[df_rgiids['thickness'] == row['field8']]['RGIId']:
             filename = rgiid + '_thickness.tif'
             if filename in listOfFileNames:
                 cnt_thickness += 1
@@ -482,7 +489,7 @@ df_all = pd.DataFrame()
 if cnt_thickness != cnt_dem:
     print('Number of thickness raster files does not match number of DEM raster files!')
 else:
-    for idx,rgiid in enumerate(df_rgiids['RGIId']):
+    for idx, rgiid in enumerate(df_rgiids['RGIId']):
         if rgiid in file_names_thickness[idx] and rgiid in file_names_dem[idx]:
             file_list = [
                 output_folder + 'RGI/' + file_names_thickness[idx],
@@ -564,4 +571,3 @@ with open(output_folder + 'settings.yml', 'w') as f:
 # %reset -f
 
 # %%
-# Test edit
