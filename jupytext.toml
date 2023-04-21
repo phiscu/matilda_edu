@@ -1,2 +1,2 @@
 # Pair notebooks root dir to scripts in 'scripts'
-formats = "ipynb,paired_scripts//py:percent,mystMD//md:myst"
+formats = "ipynb,paired_scripts//py:percent"

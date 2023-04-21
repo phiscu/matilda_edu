@@ -114,7 +114,7 @@ startDate = ee.Date('2015-01-01')
 endDate = ee.Date(end)
 n = endDate.difference(startDate,'day').subtract(1)
 
-# %% jupyter={"source_hidden": true}
+# %%
 collection = getImageCollection('tas')
 task_tas_ssp = getTask('CMIP6_tas_ssp')
 task_tas_ssp.start()
@@ -293,7 +293,6 @@ class CMIPDownloader:
         print("All downloads complete.")
 
 
-
 # %% jupyter={"source_hidden": true}
 cmip_dir = dir_output + 'cmip6/'
 downloader_t = CMIPDownloader('tas', 1979, 2100, catchment, processes=25, dir=cmip_dir)
@@ -396,8 +395,7 @@ class CMIPProcessor:
         return ssp2_full, ssp5_full
 
 
-
-# %% jupyter={"source_hidden": true}
+# %%
 ## Usage example
 processor = CMIPProcessor(dir=cmip_dir, var='pr')
 ssp2_pr, ssp5_pr = processor.get_results()
@@ -405,3 +403,6 @@ processor = CMIPProcessor(dir=cmip_dir, var='tas')
 ssp2_tas, ssp5_tas = processor.get_results()
 
 print(ssp2_tas)
+
+# %%
+# Test edit
