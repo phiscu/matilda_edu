@@ -1,0 +1,2 @@
+# Pair notebooks root dir to scripts in 'scripts'
+formats = "ipynb,pure_python//py:percent"
