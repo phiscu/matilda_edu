@@ -41,147 +41,21 @@ output_gpkg = dir_output + config['FILE_SETTINGS']['GPKG_NAME']
 # get date range for forcing data
 #date_range = ast.literal_eval(config['CONFIG']['DATE_RANGE'])
 
+# %% [markdown]
+# Load the catchment outline as target polygon
+
 # %%
 import geopandas as gpd
 
 catchment_new = gpd.read_file(output_gpkg, layer='catchment_new')
 catchment = geemap.geopandas_to_ee(catchment_new)
 
-
-# %% [markdown]
-# ***
-
-# %%
-def renameBandName(b):
-    split = ee.String(b).split('_')   
-    return ee.String(split.splice(split.length().subtract(2),1).join("_"))
-
-
-def buildFeature(i):
-    t1 = startDate.advance(i,'day')
-    t2 = t1.advance(1,'day')
-    #feature = ee.Feature(point)
-    dailyColl = collection.filterDate(t1, t2)
-    dailyImg = dailyColl.toBands()
-    # renaming and handling names
-    bands = dailyImg.bandNames()
-    renamed = bands.map(renameBandName)
-    # Daily extraction and adding time information
-    dict = dailyImg.rename(renamed).reduceRegion(
-      reducer=ee.Reducer.mean(),
-      geometry=catchment,
-    ).combine(
-      ee.Dictionary({'system:time_start':t1.millis(),'isodate':t1.format('YYYY-MM-dd')})
-    )
-    return ee.Feature(None,dict)
-
-
-def getImageCollection(var):
-    collection = ee.ImageCollection('NASA/GDDP-CMIP6')\
-        .select(var)\
-        .filterDate(startDate, endDate)\
-        .filterBounds(catchment)
-    return collection
-
-
-def getTask(fileName):
-    task = ee.batch.Export.table.toDrive(**{
-      'collection': ee.FeatureCollection(ee.List.sequence(0,n).map(buildFeature)),
-      'description':fileName,
-      'fileFormat': 'CSV'
-    })
-    return task
-
-
-# %% [markdown]
-# # Set periods for climate scenarios
-
 # %% [markdown]
 # To provide the best basis for bias adjustment a large overlap of reanalysis and scenario data is recommended. Per default the routine downloads scenario data starting with the earliest date available from ERA5-Land in 1979 and until 2100.
 
+# %% [markdown]
+# # Download downscaled CMIP6 data from GEE using parallel requests
 # %%
-start = '1979-01-01'
-end = '2100-12-31'                      # exclusive!
-
-# %% [markdown]
-# # Launch download tasks for scenario data
-
-# %% [markdown]
-# CMIP6 scenario runs start in 2015.
-
-# %%
-startDate = ee.Date('2015-01-01')
-endDate = ee.Date(end)
-n = endDate.difference(startDate,'day').subtract(1)
-
-# %%
-collection = getImageCollection('tas')
-task_tas_ssp = getTask('CMIP6_tas_ssp')
-task_tas_ssp.start()
-
-collection = getImageCollection('pr')
-task_pr_ssp = getTask('CMIP6_pr_ssp')
-task_pr_ssp.start()
-
-print('Tasks for scenarios started...')
-
-# %% [markdown]
-# # Launch download tasks for historical data
-
-# %% [markdown]
-# **Caution** - Depending on the selected period, the number of models, Googles server utilization, and other mysterious factors this might take some time. The downloaded files will not exceed 100MB so the bandwidth should not be the problem. As a rough estimate you can plan with 45min for all 122 years and 34 models. In the meantime you can continue in the [next notebook](http://localhost:8888/lab/tree/Seafile/EBA-CA/Repositories/matilda_edu/MATILDA.ipynb) with calibrating MATILDA.
-
-# %% [markdown]
-# The CMIP6 historical runs are available for the period of 1950 through 2014.
-
-# %%
-startDate = ee.Date(start)
-endDate = ee.Date('2014-12-31')
-n = endDate.difference(startDate,'day').subtract(1)
-
-# %%
-collection = getImageCollection('tas')
-task_tas_hist = getTask('CMIP6_tas_hist')
-task_tas_hist.start()
-
-collection = getImageCollection('pr')
-task_pr_hist = getTask('CMIP6_pr_hist')
-task_pr_hist.start()
-
-print('Tasks for historical data started...')
-
-# %% [markdown]
-# Start status animation
-
-# %%
-import time
-
-while task_tas_ssp.active() or task_pr_ssp.active() or task_tas_hist.active() or task_pr_hist.active():
-    print(".", end = '')
-    time.sleep(2)
-    
-print('done.')
-
-# %% [markdown]
-# # Wie bekommen wir die Daten vom Drive in den Binder?
-
-# %% [markdown]
-# - create ID
-# - direct download to new folder with ID name
-# - donload the whole folder using the gdown package
-
-# %%
-#import gdown
-
-#url = 'https://drive.google.com/drive/folders/1PHEZMh-hJrOS305qHYBCICWap91ITBIE?usp=share_link'
-#gdown.download_folder(url, quiet=True, use_cookies=False)
-
-# %% [markdown]
-# # Test der neuen Download-Routine mit parallelen Download-Requests
-
-# %% tags=["hide-input"]
-import multiprocessing
-import geopandas as gpd
 import concurrent.futures
 import os
 import requests
