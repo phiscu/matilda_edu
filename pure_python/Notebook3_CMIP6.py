@@ -38,9 +38,6 @@ config.read('config.ini')
 dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
 output_gpkg = dir_output + config['FILE_SETTINGS']['GPKG_NAME']
 
-# get date range for forcing data
-#date_range = ast.literal_eval(config['CONFIG']['DATE_RANGE'])
-
 # %% [markdown]
 # Load the catchment outline as target polygon
 
@@ -182,11 +179,11 @@ import pandas as pd
 
 class CMIPProcessor:
     """Class to read and pre-process CSV files downloaded by the CMIPDownloader class."""
-    def __init__(self, var, dir='.'):
-        self.dir = dir
+    def __init__(self, var, file_dir='.'):
+        self.file_dir = file_dir
         self.var = var
-        self.df_hist = self.append_df(self.var, self.dir, hist=True)
-        self.df_ssp = self.append_df(self.var, self.dir, hist=False)
+        self.df_hist = self.append_df(self.var, self.file_dir, hist=True)
+        self.df_ssp = self.append_df(self.var, self.file_dir, hist=False)
         self.ssp2_common, self.ssp5_common, self.hist_common,\
             self.common_models, self.dropped_models = self.process_dataframes()
         self.ssp2, self.ssp5 = self.get_results()
@@ -198,10 +195,9 @@ class CMIPProcessor:
         df = df.drop(['system:index', '.geo', 'system:time_start'], axis=1)
         return df
 
-    def append_df(self, var, dir='.', hist=True):
+    def append_df(self, var, file_dir='.', hist=True):
         """Reads CMIP6 CSV files of individual years and concatenates them into dataframes for the full downloaded
-        period. Historical and scenario datasets are treated separately. Drops a model with data gaps.
-        Converts precipitation unit to mm."""
+        period. Historical and scenario datasets are treated separately. Converts precipitation unit to mm."""
 
         df_list = []
         if hist:
@@ -211,15 +207,15 @@ class CMIPProcessor:
             starty = 2015
             endy = 2100
         for i in range(starty, endy + 1):
-            filename = dir + 'cmip6_' + var + '_' + str(i) + '.csv'
+            filename = file_dir + 'cmip6_' + var + '_' + str(i) + '.csv'
             df_list.append(self.read_cmip(filename))
         if hist:
-            hist_df = pd.concat(df_list).drop('historical_GFDL-CM4_' + var, axis=1)
+            hist_df = pd.concat(df_list)
             if var == 'pr':
                 hist_df = hist_df * 86400       # from kg/(m^2*s) to mm/day
             return hist_df
         else:
-            ssp_df = pd.concat(df_list).drop(['ssp585_GFDL-CM4_' + var, 'ssp245_GFDL-CM4_' + var], axis=1)
+            ssp_df = pd.concat(df_list)
             if var == 'pr':
                 ssp_df = ssp_df * 86400       # from kg/(m^2*s) to mm/day
             return ssp_df
@@ -269,11 +265,10 @@ class CMIPProcessor:
         return ssp2_full, ssp5_full
 
 
-# %%
 ## Usage example
-processor = CMIPProcessor(dir=cmip_dir, var='pr')
+processor = CMIPProcessor(file_dir=wd + '/ee_download_test/', var='pr')
 ssp2_pr, ssp5_pr = processor.get_results()
-processor = CMIPProcessor(dir=cmip_dir, var='tas')
+processor = CMIPProcessor(file_dir=wd + '/ee_download_test/', var='tas')
 ssp2_tas, ssp5_tas = processor.get_results()
 
 print(ssp2_tas)
