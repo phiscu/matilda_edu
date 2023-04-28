@@ -93,7 +93,7 @@ if show_map:
 
 # %%
 if scenarios == True:
-    date_range = ['1979-01-01', '2022-01-01']
+    date_range = ['1979-01-01', '2023-01-01']
 else:
     date_range = ast.literal_eval(config['CONFIG']['DATE_RANGE'])
 
