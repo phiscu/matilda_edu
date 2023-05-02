@@ -12,46 +12,58 @@
 #     name: python3
 # ---
 
+# %% [markdown]
+# # Climate scenario data
+
+# %% [markdown]
+# In this notebook we will...
+# 1. ... aggregate and download climate scenario data from the Coupled Model Intercomparison Project Phase 6 ([CMIP6](https://wcrp-cmip.org/cmip-phase-6-cmip6/)) for our catchment,
+# 2. ... preprocess the data,
+# 3. ... compare the CMIP6 models with our reanalysis data and adjust them for bias,
+# 4. ... and visualize the data before and after bias adjustment.
+#
+# The [NEX-GDDP-CMIP6 dataset](https://www.nature.com/articles/s41597-022-01393-4) we are going to use has been downscaled to 27830 m resolution by the [NASA Climate Analytics Group](https://www.nature.com/articles/s41597-022-01393-4) and is available in two [Shared Socio-Economic Pathways](https://unfccc.int/sites/default/files/part1_iiasa_rogelj_ssp_poster.pdf) (SSP2 and SSP5). It is available via [Google Earth Engine](https://developers.google.com/earth-engine/datasets/catalog/NASA_GDDP-CMIP6#bands) which makes it subsettable on the server side and the download relatively light-weight.
+
+# %% [markdown]
+# We start by importing and initializing the Google Earth Engine packages again.
+
 # %%
-# Google Earth Engine packages
 import ee
 import geemap
 import numpy as np
 
-# %%
-# initialize GEE at the beginning of session
 try:
     ee.Initialize()
 except Exception as e:
-    ee.Authenticate()         # authenticate when using GEE for the first time
+    ee.Authenticate()
     ee.Initialize()
+
+# %% [markdown]
+# The next cell reads the output directory location and the catchment outline as target polygon.
 
 # %%
 import configparser
 import ast
+import geopandas as gpd
 
 # read local config.ini file
 config = configparser.ConfigParser()
 config.read('config.ini')
 
-# get file config from config.ini
+# get paths from config.ini
 dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
 output_gpkg = dir_output + config['FILE_SETTINGS']['GPKG_NAME']
 
-# %% [markdown]
-# Load the catchment outline as target polygon
-
-# %%
-import geopandas as gpd
-
+# load catchment outline as target polygon
 catchment_new = gpd.read_file(output_gpkg, layer='catchment_new')
 catchment = geemap.geopandas_to_ee(catchment_new)
 
 # %% [markdown]
-# To provide the best basis for bias adjustment a large overlap of reanalysis and scenario data is recommended. Per default the routine downloads scenario data starting with the earliest date available from ERA5-Land in 1979 and until 2100.
-
+# ## Select, aggregate, and download downscaled CMIP6 data
 # %% [markdown]
-# # Download downscaled CMIP6 data from GEE using parallel requests
+# We are going to create a class that does it all in one go. The `buildFeauture()` function requests daily catchment-wide averages of all available CMIP6 models for individual years. All years requested are stored in an `ee.ImageCollection` by `getResult()`. To provide the best basis for bias adjustment a large overlap of reanalysis and scenario data is recommended. By default, the `CMIPDownloader` class requests everything between the earliest available date from ERA5-Land (1979) and the latest available date from CMIP6 (2100). The `download()` function then starts a given number of parallel requests, each downloading a single year and storing them in CSV files.
+#
+
 # %%
 import concurrent.futures
 import os
@@ -78,6 +90,9 @@ class CMIPDownloader:
     def download(self):
         """Runs a subset routine for CMIP6 data on GEE servers to create ee.FeatureCollections for all years in
         the requested period. Downloads individual years in parallel processes to increase the download time."""
+        
+        print('Initiating download request for NEX-GDDP-CMIP6 data from ' +
+              str(self.starty) + ' to ' + str(self.endy) + '.')
 
         def getRequests(starty, endy):
             """Generates a list of years to be downloaded. [Client side]"""
@@ -164,15 +179,24 @@ class CMIPDownloader:
         print("All downloads complete.")
 
 
+# %% [markdown]
+# We can now define a target location and start the download for both desired variables individually. We choose a moderate number of requests to avoid kernel "hickups". The download time depends on the number of parallel processes, the traffic on GEE servers, and other mysterious factors. If you run this notebook in a Binder it usually doesn't take more than 5 min for both downloads to finish.
+
 # %%
 cmip_dir = dir_output + 'cmip6/'
-downloader_t = CMIPDownloader('tas', 1979, 2100, catchment, processes=25, dir=cmip_dir)
+downloader_t = CMIPDownloader(var='tas', starty=1979, endy=2100, shape=catchment, processes=30, dir=cmip_dir)
 downloader_t.download()
-downloader_p = CMIPDownloader('pr', 1979, 2100, catchment, processes=25, dir=cmip_dir)
+downloader_p = CMIPDownloader(var='pr', starty=1979, endy=2100, shape=catchment, processes=30, dir=cmip_dir)
 downloader_p.download()
 
 # %% [markdown]
-# # Process the downloaded CSV files --> only works for full period (1979-2100) so far
+# We have now downloaded individual files for each year and variable and stored them in `cmip_dir`. To use them as model forcing data, they need to be processed.
+
+# %% [markdown]
+# ## Process the downloaded CSV files
+
+# %% [markdown]
+# The following class will read all downloaded CSV files and concatenate them to a single file per scenario. It further checks for consistency and drops models not available for individual years or scenarios.
 
 # %%
 import pandas as pd
@@ -255,23 +279,177 @@ class CMIPProcessor:
         return ssp2_common, ssp5_common, hist_common, common_models, dropped_models
 
     def get_results(self):
-        """Concatenates historical and scenario data to combined dataframes of the full downloaded period."""
+        """Concatenates historical and scenario data to combined dataframes of the full downloaded period.
+        Arranges the models in alphabetical order."""
 
         ssp2_full = pd.concat([self.hist_common, self.ssp2_common])
         ssp2_full.index.names = ['TIMESTAMP']
         ssp5_full = pd.concat([self.hist_common, self.ssp5_common])
         ssp5_full.index.names = ['TIMESTAMP']
 
+        ssp2_full = ssp2_full.reindex(sorted(ssp2_full.columns), axis=1)
+        ssp5_full = ssp5_full.reindex(sorted(ssp5_full.columns), axis=1)
+
+
         return ssp2_full, ssp5_full
 
-
-## Usage example
-processor = CMIPProcessor(file_dir=wd + '/ee_download_test/', var='pr')
-ssp2_pr, ssp5_pr = processor.get_results()
-processor = CMIPProcessor(file_dir=wd + '/ee_download_test/', var='tas')
-ssp2_tas, ssp5_tas = processor.get_results()
-
-print(ssp2_tas)
+# %% [markdown]
+# The `CMIPProcessor` processes variables individually and returns a single dataframe for each of both scenarios from 1979 to 2100.
 
 # %%
-# Test edit
+processor_t = CMIPProcessor(file_dir=cmip_dir, var='tas')
+ssp2_tas_raw, ssp5_tas_raw = processor_t.get_results()
+
+processor_p = CMIPProcessor(file_dir=cmip_dir, var='pr')
+ssp2_pr_raw, ssp5_pr_raw = processor_p.get_results()
+
+# %% [markdown]
+# Let's have a look. We can see that our scenario dataset now contains 33 CMIP6 models in alphabetical order.
+
+# %%
+print(ssp2_tas_raw.info())
+
+# %% [markdown]
+# If we want to check which models failed the consistency check of the `CMIPProcessor` we can use its `dropped_models` attribute.
+
+# %%
+print(processor_t.dropped_models)
+
+# %% [markdown]
+# ## Bias adjustment using reananlysis data
+
+# %% [markdown]
+# Due to the coarse resolution of global climate models (GCMs) and the extensive correction of reanalysis data there is substantial bias between the two datasets. To force a glacio-hydrological model calibrated on reanalysis data with climate scenarios this bias needs to be adressed. We will use a method developed by [Switanek et.al. (2017)](https://doi.org/10.5194/hess-21-2649-2017) called Scaled Distribution Mapping (SDM) to correct for bias while preserving trends and the likelihood of meteorological events in the raw GCM data. The method has been implemented in the [`bias_correction`](https://github.com/pankajkarman/bias_correction) Python library by [Pankaj Kumar](https://pankajkarman.github.io/).
+# We will first create a function to read our reanalysis CSV. The `adjust_bias()` function will then loop over all models and adjust them to the reanalysis data in the overlap period (1979 to 2022).
+
+# %%
+from bias_correction import BiasCorrection
+
+def read_era5l(file):
+    """Reads ERA5-Land data, drops redundant columns, and adds DatetimeIndex.
+    Resamples the dataframe to reduce the DatetimeIndex to daily resolution."""
+    
+    return pd.read_csv(file, **{
+        'usecols':      ['temp', 'prec', 'dt'],
+        'index_col':    'dt',
+        'parse_dates':  ['dt']}).resample('D').agg({'temp': 'mean', 'prec': 'sum'})
+
+def adjust_bias(predictand, predictor, method='normal_mapping'):
+    """Applies scaled distribution mapping to all passed climate projections (predictand)
+     based on a predictor timeseries."""
+    
+    predictor = read_era5l(predictor)
+    if predictand.mean().mean() > 100:
+        var = 'temp'
+    else:
+        var = 'prec'
+    training_period = slice('1979-01-01', '2022-12-31')
+    prediction_period = slice('1979-01-01', '2100-12-31')
+    corr = pd.DataFrame()
+    for m in predictand.columns:
+        x_train = predictand[m][training_period].squeeze()
+        y_train = predictor[training_period][var].squeeze()
+        x_predict = predictand[m][prediction_period].squeeze()
+        bc_corr = BiasCorrection(y_train, x_train, x_predict)
+        corr[m] = pd.DataFrame(bc_corr.correct(method=method))
+
+    return corr
+
+
+# %% [markdown]
+# The function is applied to every variable and scenario separately.
+
+# %%
+era5_file = dir_output + 'ERA5L.csv'
+
+ssp2_tas = adjust_bias(predictand=ssp2_tas_raw, predictor=era5_file)
+ssp5_tas = adjust_bias(predictand=ssp5_tas_raw, predictor=era5_file)
+ssp2_pr = adjust_bias(predictand=ssp2_pr_raw, predictor=era5_file)
+ssp5_pr = adjust_bias(predictand=ssp5_pr_raw, predictor=era5_file)
+
+# %% [markdown]
+# The result is a comprehensive dataset of 33 models over 122 years in two versions (pre- and post-adjustment) for every variable. To see what's in the data and what happened during bias adjustment we need an overview.
+
+# %% [markdown]
+# ## 	Visualization
+
+# %% [markdown]
+# First, we store our raw and adjusted data in dictionaries.
+
+# %%
+ssp_tas_dict = {'SSP2_raw': ssp2_tas_raw, 'SSP2_adjusted': ssp2_tas, 'SSP5_raw': ssp5_tas_raw, 'SSP5_adjusted': ssp5_tas}
+ssp_pr_dict = {'SSP2_raw': ssp2_pr_raw, 'SSP2_adjusted': ssp2_pr, 'SSP5_raw': ssp5_pr_raw, 'SSP5_adjusted': ssp5_pr}
+
+# %% [markdown]
+# The first plot will contain simple timeseries. The first function `cmip_plot()` resamples the data so a given frequency and creates a single plot. `cmip_plot_combined()` arranges multiple plots for both scenarios before and after bias adjustment.
+
+# %%
+import matplotlib.pyplot as plt
+
+def cmip_plot(ax, df, title, target, precip=False, intv_sum='M', intv_mean='10Y',
+              target_label='Target', show_target_label=False):
+    """Resamples and plots climate model and target data."""
+    
+    if not precip:
+        ax.plot(df.resample(intv_mean).mean().iloc[:, :-1], linewidth=0.6)
+        ax.plot(df.resample(intv_mean).mean().iloc[:, -1], linewidth=1, c='black')
+        era_plot, = ax.plot(target['temp'].resample(intv_mean).mean(), linewidth=1.5, c='red', label=target_label,
+                            linestyle='dashed')
+    else:
+        ax.plot(df.resample(intv_sum).sum().resample(intv_mean).mean().iloc[:, :-1],
+                linewidth=0.6)
+        ax.plot(df.resample(intv_sum).sum().resample(intv_mean).mean().iloc[:, -1],
+                linewidth=1, c='black')
+        era_plot, = ax.plot(target['prec'].resample(intv_sum).sum().resample(intv_mean).mean(), linewidth=1.5,
+                            c='red', label=target_label, linestyle='dashed')
+    if show_target_label:
+        ax.legend(handles=[era_plot], loc='upper left')
+    ax.set_title(title)
+    ax.grid(True)
+    
+
+def cmip_plot_combined(data, target, title, precip=False, intv_sum='M', intv_mean='10Y',
+                       target_label='Target', show=False):
+    """Combines multiple subplots of climate data in different scenarios before and after bias adjustment.
+    Shows target data for comparison"""
+
+    figure, axis = plt.subplots(2, 2, figsize=(12, 12), sharex="col", sharey="all")
+    
+    t_kwargs = {'target': target, 'intv_mean': intv_mean, 'target_label': target_label}
+    p_kwargs = {'target': target, 'intv_mean': intv_mean, 'target_label': target_label,
+                'intv_sum': intv_sum, 'precip': True}
+
+    if not precip:
+        cmip_plot(axis[0, 0], data['SSP2_raw'], show_target_label=True, title='SSP2 raw', **t_kwargs)
+        cmip_plot(axis[0, 1], data['SSP2_adjusted'], title='SSP2 adjusted', **t_kwargs)
+        cmip_plot(axis[1, 0], data['SSP5_raw'], title='SSP5 raw', **t_kwargs)
+        cmip_plot(axis[1, 1], data['SSP5_adjusted'], title='SSP5 adjusted', **t_kwargs)
+        figure.legend(data['SSP5_adjusted'].columns, loc='lower right', ncol=6, mode="expand")
+        figure.tight_layout()
+        figure.subplots_adjust(bottom=0.15, top=0.92)
+        figure.suptitle(title, fontweight='bold')
+        if show:
+            plt.show()
+    else:
+        cmip_plot(axis[0, 0], data['SSP2_raw'], show_target_label=True, title='SSP2 raw', **p_kwargs)
+        cmip_plot(axis[0, 1], data['SSP2_adjusted'], title='SSP2 adjusted', **p_kwargs)
+        cmip_plot(axis[1, 0], data['SSP5_raw'], title='SSP5 raw', **p_kwargs)
+        cmip_plot(axis[1, 1], data['SSP5_adjusted'], title='SSP5 adjusted', **p_kwargs)
+        figure.legend(data['SSP5_adjusted'].columns, loc='lower right', ncol=6, mode="expand")
+        figure.tight_layout()
+        figure.subplots_adjust(bottom=0.15, top=0.92)
+        figure.suptitle(title, fontweight='bold')
+        if show:
+            plt.show()
+
+
+# %% [markdown]
+# By default temperature data is resampled to 10y means, precipitation data is shown in 10y means of monthly sums.
+
+# %%
+era5 = read_era5l(era5_file)
+
+cmip_plot_combined(data=ssp_tas_dict, target=era5, title='10y Mean of Air Temperature', target_label='ERA5-Land', show=True)
+cmip_plot_combined(data=ssp_pr_dict, target=era5, title='Mean of Monthly Precipitation', precip=True, target_label='ERA5-Land', show=True)
+
+# %%
