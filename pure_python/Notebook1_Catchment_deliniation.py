@@ -327,13 +327,21 @@ results = (gdf_joined
 #print(results.sort_values(['share_of_area'],ascending=False))
 
 # %%
+import pandas as pd
 rgi_catchment_merge = pd.merge(rgi_catchment, results, on="RGIId")
 rgi_in_catchment = rgi_catchment_merge.loc[rgi_catchment_merge['share_of_area'] >= 50]
 rgi_out_catchment = rgi_catchment_merge.loc[rgi_catchment_merge['share_of_area'] < 50]
-
 catchment_new = gpd.overlay(catchment, rgi_out_catchment, how='difference')
 catchment_new = gpd.overlay(catchment_new, rgi_in_catchment, how='union')
 catchment_new = catchment_new.dissolve()[['LABEL_1', 'geometry']]
+
+# %% [markdown]
+# Write IDs of glaciers in the catchment to a CSV file.
+
+# %%
+glacier_ids = pd.DataFrame(rgi_in_catchment)
+glacier_ids['RGIId'] = glacier_ids['RGIId'].map(lambda x: str(x).lstrip('RGI60-'))
+glacier_ids.to_csv(output_folder + 'RGI/' + 'Glaciers_in_catchment.csv', columns=['RGIId', 'GLIMSId'], index=False)
 
 # %%
 #catchment_new['area'] = catchment_new.to_crs("+proj=cea +lat_0=35.68250088833567 +lon_0=139.7671 +units=m")['geometry'].area

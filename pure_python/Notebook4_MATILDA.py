@@ -110,6 +110,7 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 
 # get output dir and date range from config.ini
+dir_input = config['FILE_SETTINGS']['DIR_INPUT']
 dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
 date_range = ast.literal_eval(config['CONFIG']['DATE_RANGE'])
 
@@ -230,6 +231,25 @@ lim_dict = {'lr_temp_lo': lr_temp_lo, 'lr_temp_up': lr_temp_up, 'PCORR_lo': PCOR
                                      #target_mb=-156,
                                      parallel=False, dbformat=None, algorithm='lhs', #cores=20,
                                      dbname='era5_matilda_edu_test')
+
+# %% [markdown]
+# In addition to runoff we will use glacier mass balance as second calibration variable. [Shean et. al. 2020 ](https://doi.org/10.3389/feart.2019.00363) calculated robust geodetic mass balances for all glaciers in High Mountain Asia so will use their data set so derive a target mass balance for our catchment.
+#
+# We pick all individual mass balances that match the glacier IDs in our catchment and calculate the mean. In addition, we use the uncertainty measures listed in the dataset to derive an uncertainty range.
+
+# %%
+import pandas as pd
+
+mass_balances = pd.read_csv(dir_input + '/hma_mb_20190215_0815_rmse.csv', usecols=['RGIId', 'mb_mwea', 'mb_mwea_sigma'])
+ids = pd.read_csv(dir_output + '/RGI/Glaciers_in_catchment.csv')
+
+merged = pd.merge(mass_balances, ids, on='RGIId')
+mean_mb = round(merged['mb_mwea'].mean() * 1000, 3)   # Mean catchment MB in mm w.e.
+mean_sigma = round(merged['mb_mwea_sigma'].mean() * mean_mb, 3)  # Mean uncertainty of catchment MB in mm w.e.
+
+target_mb = [mean_mb - mean_sigma, mean_mb + mean_sigma]
+
+print('Target glacier mass balance for calibration: ' + str(mean_mb) + ' +-' + str(mean_sigma) + )
 
 # %% [markdown]
 # # Run MATILDA with calibrated parameters
