@@ -16,92 +16,19 @@
 # # Running MATILDA for the training period
 
 # %% [markdown]
-# - create settings.yaml (here or in the other Notebooks)
-# - run MATILDA with default parameters
-# - (split in calibration and validation samples)
-# - run mspot with few iterations
-# - write best parameter set to yaml
-# - run matilda with best parameter set
+# In this notebook we will...
+# 1. ... set-up a glacio-hydrological model with all the data we gathered,
+# 2. ... run the model for the calibration period with default parameters and check the results,
+# 3. ... use a statistical parameter optimization routine to calibrate the model,
+# 4. ... and store the calibrated parameter set for the scenario runs in the next notebook.
+#
+# We will use the glacio-hydrological modeling library [MATILDA](https://github.com/cryotools/matilda) which was developed for application in this workflow. It is based on the widely applied [HBV hydrological model](https://www.cabdirect.org/cabdirect/abstract/19961904773) extended by simple temperature-index melt model roughly based on code by [Seguinot (2019)](https://zenodo.org/record/3467639). Glacier evolution over time is modeled using the &Delta;*h* approach following [Seibert et. al. (2018)](https://doi.org/10.5194/hess-22-2211-2018).
 
 # %% [markdown]
-# Some helper functions to work with `yaml` and `pickle` files.
+# Let's start by importing some helper functions to work with `yaml` and `pickle` files and read required data from the config file.
 
 # %%
-import yaml
-import pickle
-
-def read_yaml(file_path):
-    """
-    Read a YAML file and return the contents as a dictionary.
-    Parameters
-    ----------
-    file_path : str
-        The path of the YAML file to read.
-    Returns
-    -------
-    dict
-        The contents of the YAML file as a dictionary.
-    """
-    with open(file_path, 'r') as f:
-        data = yaml.safe_load(f)
-        return data
-
-
-def write_yaml(data, file_path):
-    """
-    Write a dictionary to a YAML file.
-    Parameters
-    ----------
-    data : dict
-        The dictionary to write to a YAML file.
-    file_path : str
-        The path of the file where the YAML data shall be stored.
-    Returns
-    -------
-    None
-    """
-    with open(file_path, 'w') as f:
-        yaml.safe_dump(data, f)
-
-
-def update_yaml(file_path, new_items):
-    """
-    Update a YAML file with the contents of a dictionary.
-    Parameters
-    ----------
-    file_path : str
-        The path of the YAML file to update.
-    new_items : dict
-        The dictionary of new key-value pairs to add to the existing YAML file.
-    Returns
-    -------
-    None
-    """
-    data = read_yaml(file_path)
-    data.update(new_items)
-    write_yaml(data, file_path)
-    
-def pickle_to_dict(file_path):
-    """
-    Loads a dictionary from a pickle file at a specified file path.
-    Parameters
-    ----------
-    file_path : str
-        The path of the pickle file to load.
-    Returns
-    -------
-    dict
-        The dictionary loaded from the pickle file.
-    """
-    with open(file_path, 'rb') as f:
-        dic = pickle.load(f)
-    return dic
-
-
-# %% [markdown]
-# Read data required for MATILDA from the config file
-
-# %%
+from tools import helpers
 import configparser
 import ast
 
@@ -245,11 +172,11 @@ ids = pd.read_csv(dir_output + '/RGI/Glaciers_in_catchment.csv')
 
 merged = pd.merge(mass_balances, ids, on='RGIId')
 mean_mb = round(merged['mb_mwea'].mean() * 1000, 3)   # Mean catchment MB in mm w.e.
-mean_sigma = round(merged['mb_mwea_sigma'].mean() * mean_mb, 3)  # Mean uncertainty of catchment MB in mm w.e.
+mean_sigma = round(merged['mb_mwea_sigma'].mean() * abs(mean_mb), 3)  # Mean uncertainty of catchment MB in mm w.e.
 
 target_mb = [mean_mb - mean_sigma, mean_mb + mean_sigma]
 
-print('Target glacier mass balance for calibration: ' + str(mean_mb) + ' +-' + str(mean_sigma) + )
+print('Target glacier mass balance for calibration: ' + str(mean_mb) + ' +-' + str(mean_sigma) + 'mm w.e.')
 
 # %% [markdown]
 # # Run MATILDA with calibrated parameters
