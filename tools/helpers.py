@@ -52,6 +52,7 @@ def update_yaml(file_path, new_items):
     data = read_yaml(file_path)
     data.update(new_items)
     write_yaml(data, file_path)
+   
     
 def pickle_to_dict(file_path):
     """
@@ -68,3 +69,26 @@ def pickle_to_dict(file_path):
     with open(file_path, 'rb') as f:
         dic = pickle.load(f)
     return dic
+    
+
+def drop_keys(dic, keys_to_drop):
+    """Removes specified keys from a dictionary.
+    Parameters
+    ----------
+    dict : dict
+        The dictionary to remove keys from.
+    keys_to_drop : list
+        A list of keys to remove from the dictionary.
+    Returns
+    -------
+    dict
+        A modified dictionary with the specified keys removed.
+    """
+    # Create a set of keys to be dropped
+    keys_to_drop_set = set(keys_to_drop)
+    # Create a new dictionary with all elements from dict except for the ones in keys_to_drop
+    new_dict = {key: dic[key] for key in dic.keys() if key not in keys_to_drop_set}
+    return new_dict
+ 
+
+

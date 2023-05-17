@@ -257,7 +257,7 @@ catchment_area = catchment.to_crs(crs).area[0] / 1000 / 1000
 print(f"Catchment area (projected) is {catchment_area:.2f} km²")
 
 # %%
-df_areas = df_areas.set_crs('EPSG:4326',allow_override=True)
+df_areas = df_areas.set_crs('EPSG:4326', allow_override=True)
 catchment = catchment.to_crs('EPSG:4326')
 df_areas_catchment = gpd.sjoin(df_areas, catchment, how="inner", predicate="intersects")
 
