@@ -161,7 +161,7 @@ from tools.helpers import drop_keys
 
 psample_settings = drop_keys(settings, ['warn', 'plots', 'plot_type'])
 
-additional_settings = {'rep': 100,                            # Number of model runs. For advice check the documentation of the algorithms.
+additional_settings = {'rep': 10,                            # Number of model runs. For advice check the documentation of the algorithms.
                        'glacier_only': False,                 # True when calibrating a entirely glacierized catchment
                        'obj_dir': 'maximize',                 # should your objective funtion be maximized (e.g. NSE) or minimized (e.g. RMSE)
                        'target_mb': -156,                     # Average annual glacier mass balance to target at
@@ -194,7 +194,7 @@ best_summary = psample(df=era5, obs=obs, **psample_settings, **lim_dict)
 # %% [markdown]
 # The following parameter set was computed using an updated version of the Differential Evolution Markov Chain (DE-MCz) algorithm with 55k iterations on an HPC cluster. The parameters were optimized for runoff using the [Kling-Gupta model efficiency coefficient](https://doi.org/10.1016/j.jhydrol.2012.01.011) and the results were filtered to match the target mass balance range.
 
-# %%
+# %% jupyter={"outputs_hidden": true}
 param = {'lr_temp': -0.006472598,
          'lr_prec': 0.00010296448,
          'BETA': 4.625306,
@@ -235,10 +235,217 @@ output_matilda[9].show()
 # %%
 output_matilda[10].show()
 
-# %% [markdown]
-# ## Sensitivity analysis with FAST
 
 # %% [markdown]
-# Pass best parameter set from calibration runs as dictionary.
+# ## Reducing the parameter space - Sensitivity analysis with FAST
+
+# %% [markdown]
+# To reduce the computation time of the calibration procedure, we need to reduce the number of parameters to be optimized. Therefore, we will perform a global sensitivity analysis to identify the most important parameters and set the others to default values. The algorithm of choice will be the [Fourier Amplitude Sensitivity Test (FAST)](https://www.tandfonline.com/doi/abs/10.1080/00401706.1999.10485594) available through the [SPOTPY](https://github.com/thouska/spotpy/blob/master/src/spotpy/algorithms/fast.py) library. As before, we will show the general procedure with a few iterations, but display results from extensive runs on a HPC. You can use the results as a guide for your parameter choices, but keep in mind that they are highly correlated with your catchment properties, such as elevation range and glacier coverage.
+
+# %% [markdown]
+# First, we calculate the required number of iterations using a formula from [Henkel et. al. 2012](https://www.informs-sim.org/wsc12papers/includes/files/con308.pdf). We choose the SPOTPY default frequency step of 2 and set the interference factor to a maximum of 4, since we assume a high intercorrelation of the model parameters. The total number of parameters in MATILDA is 21.
+
+# %%
+def fast_iter(param, interf=4, freqst=2):
+    """
+    Calculates the number of parameter iterations needed for parameterization and sensitivity analysis using FAST.
+    Parameters
+    ----------
+    param : int
+        The number of input parameters being analyzed.
+    interf : int
+        The interference factor, which determines the degree of correlation between the input parameters.
+    freqst : int
+        The frequency step, which specifies the size of the intervals between each frequency at which the Fourier transform is calculated.
+    Returns
+    -------
+    int
+        The total number of parameter iterations needed for FAST.
+    """
+    return (1 + 4 * interf ** 2 * (1 + (param - 2) * freqst)) * param
+
+print('Needed number of iterations for FAST: ' + str(fast_iter(21)))
+
+# %% [markdown]
+# That is a lot of iterations! Running this routine on a single core would take about two days, but can be sped up significantly with each additional core. The setup would look exactly like the parameter optimization before.
+#
+# **Note:** No matter what number of iterations you define, SPOTPY will run $N*k$ times, where $k$ is the number of model parameters. So even if we set `rep=10`, the algorithm will run at least 21 times.
+
+# %%
+from matilda.mspot_glacier import psample
+
+fast_settings = {'rep': 52437,                              # Choose wisely before running
+                 'target_mb': None,
+                 'algorithm': 'fast',
+                 'dbname': 'fast_matilda_example',
+                 'dbname': dir_output + 'fast_example',
+                 'dbformat': 'csv'
+                      }
+psample_settings.update(fast_settings)
+
+print('Settings for FAST:\n\n')
+for key in psample_settings.keys(): print(key + ': ' + str(psample_settings[key]))
+
+# fast_results = psample(df=era5, obs=obs, **psample_settings)
+
+# %% [markdown]
+# We ran *FAST*s for the example catchment with the full number of iterations required. The results are saved in *CSV* files. We can use the `spotpy.analyser` library to create easy-to-read data frames from the databases. The summary shows the first (`S1`) and the total order sensitivity index (`ST`) for each parameter. `S1` refers to the variance of the model output explained by the parameter, holding all other parameters constant. The `ST` takes into account the interaction of the parameters and is therefore a good measure of the impact of individual parameters on the model output.
+
+# %%
+import spotpy
+import os
+import contextlib
+
+def get_si(fast_results: str, to_csv: bool = False) -> pd.DataFrame:
+    """
+    Computes the sensitivity indices of a given FAST simulation results file.
+    Parameters
+    ----------
+    fast_results : str
+        The path of the FAST simulation results file.
+    to_csv : bool, optional
+        If True, the sensitivity indices are saved to a CSV file with the same
+        name as fast_results, but with '_sensitivity_indices.csv' appended to
+        the end (default is False).
+    Returns
+    -------
+    pd.DataFrame
+        A pandas DataFrame containing the sensitivity indices and parameter
+        names.
+    """
+    if fast_results.endswith(".csv"):
+        fast_results = fast_results[:-4]  # strip .csv
+    results = spotpy.analyser.load_csv_results(fast_results)
+    # Suppress prints
+    with contextlib.redirect_stdout(open(os.devnull, 'w')):
+        SI = spotpy.analyser.get_sensitivity_of_fast(results, print_to_console=False)
+    parnames = spotpy.analyser.get_parameternames(results)
+    sens = pd.DataFrame(SI)
+    sens['param'] = parnames
+    sens.set_index('param', inplace=True)
+    if to_csv:
+        sens.to_csv(os.path.basename(fast_results) + '_sensitivity_indices.csv', index=False)
+    return sens
+
+print(get_si(dir_input + 'FAST/' + 'example_fast_nolim.csv'))
+
+# %% [markdown]
+# If you have additional information on certain parameters, limiting their bounds can have a large impact on sensitivity. For our example catchment, field observations showed that the temperature lapse rate and precipitation correction were unlikely to exceed a certain range, so we limited the parameter space for both and ran a *FAST* again.
+
+# %%
+lim_dict = {'lr_temp_lo': -0.007, 'lr_temp_up': -0.005, 'PCORR_lo': 0.5, 'PCORR_up': 1.5}
+# fast_results = psample(df=era5, obs=obs, **psample_settings, **lim_dict)
+
+# %% [markdown]
+# To see the effect of parameter restrictions on sensitivity, we can plot the indices of both runs. Feel free to explore further by adding more *FAST* outputs to the plot function.
+
+# %%
+import plotly.graph_objs as go
+import pandas as pd
+import plotly.io as pio
+
+def plot_sensitivity_bars(*dfs, labels=None, show=False, bar_width=0.3, bar_gap=0.6):
+    """
+    Plots a horizontal bar chart showing the total sensitivity index for each parameter in a MATILDA model.
+
+    Parameters
+    ----------
+    *dfs : pandas.DataFrame
+        Multiple dataframes containing the sensitivity indices for each parameter.
+    labels : list of str, optional
+        Labels to use for the different steps in the sensitivity analysis. If not provided, the default
+        labels will be 'No Limits', 'Step 1', 'Step 2', etc.
+    bar_width : float, optional
+        Width of each bar in the chart.
+    bar_gap : float, optional
+        Space between bars.
+    """
+    traces = []
+    colors = ['darkblue', 'orange', 'purple', 'cyan']   # add more colors if needed
+    for i, df in enumerate(dfs):
+        df = get_si(df)
+        if i > 0:
+            if labels is None:
+                label = 'Step ' + str(i)
+            else:
+                label = labels[i]
+        else:
+            label = 'No Limits'
+        trace = go.Bar(y=df.index,
+                       x=df['ST'],
+                       name=label,
+                       orientation='h',
+                       marker=dict(color=colors[i]),
+                       width=bar_width)
+        traces.append(trace)
+    layout = go.Layout(title=dict(text='<b>' +'Total Sensitivity Index for MATILDA Parameters' + '<b>', font=dict(size=24)),
+                   xaxis_title='Total Sensitivity Index',
+                   yaxis_title='Parameter',
+                   yaxis=dict(automargin=True),
+                   bargap=bar_gap,
+                   height=700)
+    fig = go.Figure(data=traces, layout=layout)
+    if show:
+        fig.show()
+        
+step1 = dir_input + 'FAST/' + 'example_fast_nolim.csv'
+step2 = dir_input + 'FAST/' + 'era5_ipynb_fast_step1.csv'
+
+plot_sensitivity_bars(step1, step2, labels=['No Limits', 'lr_temp and PCORR limited'], show=True)
+
+# %% [markdown]
+# From this figure, we can easily identify the most important parameters. Depending on your desired accuracy and computational resources, you can choose a sensitivity threshold. Let's say we want to fix all parameters with a sensitivity index below 0.1. For our example, this will reduce the calibration parameters to 7.
+
+# %%
+si_df = get_si(step2)
+sensitive = si_df.index[si_df['ST'] > 0.10].values
+
+print('Parameters with a sensitivity index > 0.1:')
+for i in sensitive: print(i)
+
+# %% [markdown]
+# To give you an idea how much this procedure can reduce calibration time, we run the `fast_iter()` function again.
+
+# %%
+print('Needed number of iterations for FAST with all parameters: ' + str(fast_iter(21)))
+print('Needed number of iterations for FAST with the 7 most sensitive parameters: ' + str(fast_iter(7)))
+
+# %% [markdown]
+# For a single core this would roughly translate into a reduction from 44h to 4h.
+
+# %% [markdown]
+# To run the calibration with the reduced parameter space, we simply need to define values for the fixed parameters and use a helper function to translate them into boundary arguments. Here we simply use the values from our last *SPOTPY* run (`param`).
+
+# %%
+from matilda.mspot_glacier import dict2bounds
+
+fixed_param = {key: val for key, val in param.items() if key not in sensitive}
+fixed_param_bounds = dict2bounds(fixed_param)
+       
+print('Fixed bounds:\n')
+for key in fixed_param_bounds.keys(): print(key + ': ' + str(fixed_param_bounds[key]))
+
+# %% [markdown]
+# The `psample()` setup is then as simple as before.
+
+# %%
+new_settings = {'rep': 10,                             # Number of model runs. For advice check the documentation of the algorithms.
+                'glacier_only': False,                 # True when calibrating a entirely glacierized catchment
+                'obj_dir': 'maximize',                 # should your objective funtion be maximized (e.g. NSE) or minimized (e.g. RMSE)
+                'target_mb': -156,                     # Average annual glacier mass balance to target at
+                'dbformat': None,                      # Write the results to a file ('csv', 'hdf5', 'ram', 'sql')
+                'output': None,                        # Choose where to store the files
+                'algorithm': 'lhs',                    # Choose algorithm (for parallelization: mc, lhs, fast, rope, sceua or demcz)
+                'dbname': 'era5_matilda_example',      # Choose name
+                       
+                'parallel': False,                     # Distribute the calculation on multiple cores or not
+                # 'cores': 20                           # Set number of cores when running parallel
+                      }
+psample_settings.update(new_settings)
+
+best_summary = psample(df=era5, obs=obs, **psample_settings, **fixed_param_bounds)
+
+# %% [markdown]
+# **Note:** The number of iterations required depends on the selected algorithm and the number of free parameters. To choose the correct setting, consult the [SPOTPY documentation](https://spotpy.readthedocs.io/en/latest/Algorithm_guide/) and the original literature for each algorithm.
 
 # %%
