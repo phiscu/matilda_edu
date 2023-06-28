@@ -4,8 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2e234685-736e-44ab-8535-dbd096687dd4" name="Changes" comment="delete venv; updated notebooks (ele_cat, area determination)">
-      <change beforePath="$PROJECT_DIR$/pure_python/Notebook3_CMIP6.py" beforeDir="false" afterPath="$PROJECT_DIR$/pure_python/Notebook3_CMIP6.py" afterDir="false" />
+    <list default="true" id="2e234685-736e-44ab-8535-dbd096687dd4" name="Changes" comment="adding UTM to environment.yml">
+      <change afterPath="$PROJECT_DIR$/output/RGI/.gitkeep" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/matilda_edu.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/matilda_edu.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Notebook1_Catchment_deliniation.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/Notebook1_Catchment_deliniation.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config.ini" beforeDir="false" afterPath="$PROJECT_DIR$/config.ini" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/output/.gitkeep" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pure_python/Notebook1_Catchment_deliniation.py" beforeDir="false" afterPath="$PROJECT_DIR$/pure_python/Notebook1_Catchment_deliniation.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -20,6 +27,11 @@
     </option>
   </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="main" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="MarkdownSettingsMigration">
@@ -36,7 +48,7 @@
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/home/phillip/Seafile/EBA-CA/Repositories/matilda_edu&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Python/_envs/matilda_edu_mat&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -48,6 +60,9 @@
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/.." />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Python\matilda_edu\output\RGI" />
     </key>
   </component>
   <component name="RunManager">
@@ -140,6 +155,8 @@
       <workItem from="1679664114142" duration="1889000" />
       <workItem from="1679755838401" duration="719000" />
       <workItem from="1680778509202" duration="704000" />
+      <workItem from="1687849333629" duration="128000" />
+      <workItem from="1687850999009" duration="256000" />
     </task>
     <task id="LOCAL-00001" summary="Conda venv&#10;Catchment delineation">
       <created>1676675795589</created>
@@ -344,6 +361,15 @@
     <option name="version" value="3" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
     <option name="RECENT_FILTERS">
       <map>
         <entry key="Branch">
@@ -355,15 +381,6 @@
                 </option>
               </RecentGroup>
             </list>
-          </value>
-        </entry>
-      </map>
-    </option>
-    <option name="TAB_STATES">
-      <map>
-        <entry key="MAIN">
-          <value>
-            <State />
           </value>
         </entry>
       </map>
