@@ -4,15 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2e234685-736e-44ab-8535-dbd096687dd4" name="Changes" comment="adding UTM to environment.yml">
-      <change afterPath="$PROJECT_DIR$/output/RGI/.gitkeep" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/matilda_edu.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/matilda_edu.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="2e234685-736e-44ab-8535-dbd096687dd4" name="Changes" comment="Revision of Notebook1:&#10;- minor bugfixes&#10;- refactoring of variables&#10;- adding markdown&#10;- adding prints">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Notebook1_Catchment_deliniation.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/Notebook1_Catchment_deliniation.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Notebook1_Catchment_deliniation.ipynb" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/config.ini" beforeDir="false" afterPath="$PROJECT_DIR$/config.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/output/.gitkeep" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pure_python/Notebook1_Catchment_deliniation.py" beforeDir="false" afterPath="$PROJECT_DIR$/pure_python/Notebook1_Catchment_deliniation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pure_python/Notebook1_Catchment_deliniation.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -157,6 +153,8 @@
       <workItem from="1680778509202" duration="704000" />
       <workItem from="1687849333629" duration="128000" />
       <workItem from="1687850999009" duration="256000" />
+      <workItem from="1687959576116" duration="463000" />
+      <workItem from="1688116281598" duration="71000" />
     </task>
     <task id="LOCAL-00001" summary="Conda venv&#10;Catchment delineation">
       <created>1676675795589</created>
@@ -354,7 +352,14 @@
       <option name="project" value="LOCAL" />
       <updated>1679755946407</updated>
     </task>
-    <option name="localTasksCounter" value="29" />
+    <task id="LOCAL-00029" summary="Revision of Notebook1:&#10;- minor bugfixes&#10;- refactoring of variables&#10;- adding markdown&#10;- adding prints">
+      <created>1687959731777</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1687959731777</updated>
+    </task>
+    <option name="localTasksCounter" value="30" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -411,7 +416,8 @@
     <MESSAGE value="venv" />
     <MESSAGE value=".idea files for whatever reason" />
     <MESSAGE value="delete venv; updated notebooks (ele_cat, area determination)" />
-    <option name="LAST_COMMIT_MESSAGE" value="delete venv; updated notebooks (ele_cat, area determination)" />
+    <MESSAGE value="Revision of Notebook1:&#10;- minor bugfixes&#10;- refactoring of variables&#10;- adding markdown&#10;- adding prints" />
+    <option name="LAST_COMMIT_MESSAGE" value="Revision of Notebook1:&#10;- minor bugfixes&#10;- refactoring of variables&#10;- adding markdown&#10;- adding prints" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

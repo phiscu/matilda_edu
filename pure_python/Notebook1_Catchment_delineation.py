@@ -13,10 +13,19 @@
 # ---
 
 # %% [markdown]
-# # Initialization
+# # Catchment delineation
 
 # %% [markdown]
-# Import of packages and function definitions
+# In this notebook we will
+#
+# 1. ... determine the catchment area from a given pouring point based on a digital elevation model (DEM) 
+# 2. ... determine all glaciers within that catchment area and download the glacier characteristics
+# 3. ... create a glacier profile based on the ice thickness and DEM of each glacier
+#
+# We will use Google Earth Engine (GEE) to retrieve the DEM and to perform spatial calculations. Use can use different DEMs as long as they are available in the *Google Earth Engine Data Catalog* (https://developers.google.com/earth-engine/datasets/catalog). The information of the used DEM must be specified in the `config.ini` file.
+
+# %% [markdown]
+# Let's start by importing required packages and defining functions/constants.
 
 # %%
 # Google Earth Engine packages
@@ -42,7 +51,7 @@ ee_img = 'Image'
 ee_ico = 'ImageCollection'
 
 # %% [markdown]
-# Initializtion of Google Earth Engine (GEE). When using it for the first time on this machine, you need to authenticate first. When using <code>mybinder.org</code> you need to authenticate everytime a new session has been launched. **Copy the generated token and paste it into the input field to proceed**.
+# First of all, the Google Earth Engine (GEE) access must be initialized. When using it for the first time on this machine, you need to authenticate first. When using <code>mybinder.org</code> you need to authenticate everytime a new session has been launched. **Copy the generated token and paste it into the input field to proceed**.
 #
 # Official Google Help Guide for <code>ee.Authenticate()</code>:
 #
@@ -65,13 +74,13 @@ except Exception as e:
     ee.Initialize()
 
 # %% [markdown]
-# Read from `config.ini` file:
+# New read from the `config.ini` file which is used throughout the different notebooks:
 #
-# - input/output folders
-# - filename (DEM, GeoPackage)
-# - coordinated of discharge point
-# - used DEM
-# - show/hide GEE map
+# - input/output folders for data imports and downloads
+# - filenames (DEM, GeoPackage)
+# - coordinates of the defined discharge point (Lat/Long)
+# - used DEM from GEE data catalog
+# - show/hide GEE map in notebooks
 
 # %%
 import configparser
@@ -96,10 +105,10 @@ print(f'Used DEM: {dem_config[3]}')
 print(f'Coordinates of discharge point: Lat {y}, Long {x}')
 
 # %% [markdown]
-# # Start GEE and download DEM
+# ## Start GEE and download DEM
 
 # %% [markdown]
-# Start with base map if enabled in `config.ini`
+# Now we are ready to go. Let's start with the base map if enabled in `config.ini`. The individual steps can be traced using the map since more and more layers will be added through the course of the notebook. <a id="map"></a>
 
 # %%
 if show_map:
@@ -109,11 +118,11 @@ else:
     print("Map view disabled in config.ini")
 
 # %% [markdown]
-# Load selected DEM from GEE catalog and add as layer to map
+# Load the defined DEM from GEE catalog and add is as a new layer to map.
 
 # %%
 if dem_config[0] == ee_img:
-    image = ee.Image(dem_config[1])
+    image = ee.Image(dem_config[1]).select(dem_config[2])
 elif dem_config[0] == ee_ico:
     image = ee.ImageCollection(dem_config[1]).select(dem_config[2]).mosaic()
 
@@ -127,13 +136,13 @@ if show_map:
     Map.addLayer(image, srtm_vis, dem_config[3], True, 0.7)
 
 # %% [markdown]
-# Add configured discharge point to map and automatically draw box with **50km** in all directions. 
+# Add configured discharge point to map and automatically draw box with **40km** in all directions. 
 #
 # **<font color="red">Attention!</font>** Please check whether automatically added box seems reasonable. Alternatively, a manual box can be drawn which will be considered in the next step for the catchment deliniation. **The catchment area will be cropped if the selected box is too small.**
 
 # %%
 point = ee.Geometry.Point(x,y)
-box = point.buffer(50000).bounds()
+box = point.buffer(40000).bounds()
 
 if show_map:
     Map.addLayer(point,{'color': 'blue'},'Discharge Point')
@@ -141,7 +150,9 @@ if show_map:
     Map.centerObject(box, zoom=9)
 
 # %% [markdown]
-# Discharge point (marker) and box (polygon/rectangle) can be added manually to the map above. If features have been drawn, they will overrule the configured discharge point and automatically created box.
+# The discharge point (marker) and box (polygon/rectangle) can be added manually to the map above. If features have been drawn, they will overrule the configured discharge point and automatically created box.
+#
+# <a id="rp01">**Restart Point #1**</a>
 
 # %%
 if show_map:
@@ -155,16 +166,18 @@ if show_map:
             print("Manually drawn box will be considered")
 
 # %% [markdown]
-# Export DEM as .tif file to output folder.
+# New we can export the DEM as `.tif` file for the selected extent to output folder. Unfortunately, there is a file size limitation for GEE downloads. In case your selected box is too big, please adjust the extent and try again.
 
 # %%
 geemap.ee_export_image(image, filename=filename, scale=30, region=box, file_per_band=False)
 
 # %% [markdown]
-# # Catchment deliniation
+# ## Catchment deliniation
 
 # %% [markdown]
-# Use <code>pysheds</code> module to determine catchment area for discharge point. The result will be a raster.
+# Based on the downloaded DEM file, we can use the <code>pysheds</code> module to determine the catchment area for our defined discharge point. The result will be a raster and displayed at the end of this section.
+#
+# The full documentation of the <code>pysheds</code> module can be found here: https://mattbartos.com/pysheds/
 
 # %%
 # %%time
@@ -177,30 +190,41 @@ import fiona
 DEM_file = filename
 grid = Grid.from_raster(DEM_file)
 dem = grid.read_raster(DEM_file)
+print("DEM loaded.")
 
 # %%
 # %%time
 
 # Fill depressions in DEM
+print("Fill depressions in DEM...")
 flooded_dem = grid.fill_depressions(dem)
 # Resolve flats in DEM
+print("Resolve flats in DEM...")
 inflated_dem = grid.resolve_flats(flooded_dem)
 
 # Specify directional mapping
 #N    NE    E    SE    S    SW    W    NW
 dirmap = (64, 128, 1, 2, 4, 8, 16, 32)
 # Compute flow directions
+print("Compute flow directions...")
 fdir = grid.flowdir(inflated_dem, dirmap=dirmap)
 #catch = grid.catchment(x=x, y=y, fdir=fdir, dirmap=dirmap, xytype='coordinate')
 # Compute accumulation
+print("Compute accumulation...")
 acc = grid.accumulation(fdir)
 # Snap pour point to high accumulation cell
 x_snap, y_snap = grid.snap_to_mask(acc > 1000, (x, y))
 # Delineate the catchment
+print("Delineate the catchment...")
 catch = grid.catchment(x=x_snap, y=y_snap, fdir=fdir, xytype='coordinate')
 # Clip the DEM to the catchment
+print("Clip the DEM to the catchment...")
 grid.clip_to(catch)
 clipped_catch = grid.view(catch)
+print("Processing completed.")
+
+# %% [markdown]
+# Now let's have a look at the catchment area.
 
 # %%
 demView = grid.view(dem, nodata=np.nan)
@@ -208,7 +232,7 @@ plotFigure(demView,'Elevation in Meters',cmap='terrain')
 plt.show()
 
 # %% [markdown]
-# Convert catchment raster to polygon and save to output folder as geopackage. 
+# We also need the catchment area as polygon to support spatial operations. Therefore convert the catchment raster to a polygon and save the result as geopackage to the output folder. Furthermore, some catchment statistics will be printed at the end of the cell. 
 
 # %%
 from shapely.geometry import Polygon
@@ -250,7 +274,7 @@ print(f"Catchment elevation is between {catchment_bounds[0]} m and {catchment_bo
 print(f"Mean catchment elevation is {ele_cat:.2f} m")
 
 # %% [markdown]
-# Add catchment area to interactive map and calculate area with GEE. Please scroll up to see the results on the map.
+# Add the polygon of the catchment area to the interactive map and calculate its area with GEE. Please scroll up to see the results on the map.
 
 # %%
 catchment = ee.Geometry.Polygon(catchment_shape['coordinates'])
@@ -261,10 +285,19 @@ catchment_area = catchment.area().divide(1000*1000).getInfo()
 print(f"Catchment area is {catchment_area:.2f} km²")
 
 # %% [markdown]
-# **<font color="red">Attention!</font>** Please check that there is some buffer between the catchment area and the used box. If the catchment area is close to the box outline, please extent the box and repeat the DEM download and catchment deliniation.
+# **<font color="red">Attention!</font>** Please check that there is some buffer between the catchment area and the used box. If the catchment area is close to the box outline, please extent the box and repeat the DEM download and catchment delineation (&rarr; use [Restart Point #1](#rp01)).
+#
+# Example:
+#
+# 1. automatically created box for pouring point (in grey) is not sufficient to capture the entire catchment &rarr; cropped at the Eastern end
+# 2. manually drawn box (in blue) has been added to make sure that the catchment is not cropped &rarr; space remains on all edges
+#
+# ![Example for Cropped Catchment](images/gee_catchment_extent.png)
+#
+# ___
 
 # %% [markdown]
-# # Determine glaciers in catchment area
+# ## Determine glaciers in catchment area
 
 # %% [markdown]
 # The RGI 6.0 glacier outline inventory will be used to determine all glaciers that belong to the catchment area.
@@ -278,12 +311,14 @@ print(f"Catchment area is {catchment_area:.2f} km²")
 #
 # > RGI regions were developed under only three constraints: that theyshould resemble commonly recognized glacier domains,that together they should contain all of the world’s glaciers,and that their boundaries should be simple and readilyrecognizable on a map of the world. 
 # >
-# > Source (PDF): The Randolph Glacier Inventory: a globally complete inventory of glaciers. Available from: https://www.researchgate.net/publication/264125572_The_Randolph_Glacier_Inventory_a_globally_complete_inventory_of_glaciers 
+# > Source (PDF): Pfeffer, W. Tad, Anthony A. Arendt, Andrew Bliss, Tobias Bolch, J. Graham Cogley, Alex S. Gardner, Jon-Ove Hagen, et al. 2014. “The Randolph Glacier Inventory: A Globally Complete Inventory of Glaciers.” Journal of Glaciology. International Glaciological Society. https://doi.org/10.3189/2014jog13j176.
 #
 # ![Map of the RGI regions; the red dots indicate the glacier locations and the blue circles the location of the 254 reference WGMS glaciers used by the OGGM calibration](https://docs.oggm.org/en/v1.2.0/_images/wgms_rgi_map.png)
 
 # %% [markdown]
 # In the first step, the RGI region of the catchment area must be determined to collect the right glacier outlines in a later step. Therefore, the RGI region outlines will be downloaded from the official website and spatially joined with the catchment area outline.
+#
+# > Source: RGI Consortium, 2017. Randolph Glacier Inventory - A Dataset of Global Glacier Outlines, Version 6. [RGI Regions, RGI Glacier Outlines]. Boulder, Colorado USA. NSIDC: National Snow and Ice Data Center. doi: https://doi.org/10.7265/4m1f-gd79
 
 # %%
 import geopandas as gpd
@@ -291,6 +326,7 @@ import geopandas as gpd
 # load catcment and RGI regions as DF
 catchment = gpd.read_file(output_gpkg, layer='catchment_orig')
 df_regions = gpd.read_file('https://www.glims.org/RGI/rgi60_files/00_rgi60_regions.zip')
+display(df_regions)
 
 # %% [markdown]
 # For spatial operations and calculations it is crucial to use the correct projection. Otherwise, they could produce unexpected outputs. The relevant UTM zone and band for the catchment area can be automatically determined from the coordinates of the pouring point.
@@ -309,7 +345,7 @@ catchment_area = catchment.to_crs(crs).area[0] / 1000 / 1000
 print(f"Catchment area (projected) is {catchment_area:.2f} km²")
 
 # %% [markdown]
-# Do spatial join between catchment area and RGI regions by using the determined projection. If the catchment area contains any glaciers, the corresponding RGI region should be determined in this step. 
+# Now do spatial join between catchment area and RGI regions by using the determined projection. If the catchment area contains any glaciers, the corresponding RGI region should be determined in this step. 
 
 # %%
 df_regions = df_regions.set_crs('EPSG:4326', allow_override=True)
@@ -342,7 +378,7 @@ if rgi_region != None:
     url = "https://www.glims.org/RGI/rgi60_files/"  # Replace with the URL of your web server
     html_page = urllib.request.urlopen(url)
     html_content = html_page.read().decode("utf-8")
-    print('Reading Randolph Glacier Inventory 6.0 in GLIMS database')
+    print('Reading Randolph Glacier Inventory 6.0 in GLIMS database...')
 
     # Use regular expressions to find links to files
     pattern = re.compile(r'href="([^"]+\.zip)"')
@@ -356,16 +392,17 @@ if rgi_region != None:
 
         # starting scanning regions
         regionname = splits[0] + " (" + splits[2].split(".")[0] + ")"
-        print(f'Locating glacier outlines in RGI Region {regionname}')
+        print(f'Locating glacier outlines in RGI Region {regionname}...')
 
         # read zip into dataframe
-        print('Loading shapefiles')
+        print('Loading shapefiles...')
         rgi = gpd.read_file(url+file)
         if rgi.crs != catchment.crs:
             print("CRS adjusted")
             catchment = catchment.to_crs(rgi.crs)
 
         # check whether catchment intersects with glaciers of region
+        print('Do spatial join...')
         rgi_catchment = gpd.sjoin(rgi,catchment,how='inner',predicate='intersects')
         if len(rgi_catchment.index) > 0:
             print(f'{len(rgi_catchment.index)} outlines loaded from RGI Region {regionname}\n')
@@ -388,10 +425,10 @@ results = (gdf_joined
 display(results.sort_values(['share_of_area'],ascending=False))
 
 # %% [markdown]
-# The next step filters on the glaciers (incl./excl.) and adjusts the catchment area outline:
+# The next step, we need to filter on the glaciers and decide whether they belong to the catchment or not. This is done based on the percentage area of the shared area. After the filtering, the catchment area will be adjusted as follows:
 #
-# - include glaciers where >=50% of the area is part of the catchment -> extend catchment area by glacier outlines (if needed)
-# - exclude glaciers where <50% of the area is part of the catchment -> reduce catchment area by glaicer outlines (if needed)
+# - include glaciers where &#8805;50% of the area is part of the catchment &rarr; extend catchment area by glacier outlines (if needed)
+# - exclude glaciers where <50% of the area is part of the catchment &rarr; reduce catchment area by glaicer outlines (if needed)
 
 # %%
 import pandas as pd
@@ -407,7 +444,7 @@ print(f'Number of included glacier outlines (overlap >= 50%): {len(rgi_in_catchm
 print(f'Number of excluded glacier outlines (overlap < 50%): {len(rgi_out_catchment)}')
 
 # %% [markdown]
-# Write RGI-IDs of glaciers that belong to the catchment to CSV file `Glaciers_in_catchment.csv`.
+# Now write RGI-IDs of glaciers that belong to the catchment to CSV file `Glaciers_in_catchment.csv`.
 
 # %%
 from pathlib import Path
@@ -419,7 +456,7 @@ glacier_ids.to_csv(output_folder + 'RGI/' + 'Glaciers_in_catchment.csv', columns
 display(glacier_ids.head())
 
 # %% [markdown]
-# Do spatial calculations and determine final size of catchment area and glacierized area within catchment.
+# Now let's do spatial calculations and determine the final size of catchment area and glacierized area within catchment.
 
 # %%
 catchment_new['area'] = catchment_new.to_crs(crs)['geometry'].area
@@ -434,7 +471,7 @@ print(f"New catchment area is {area_cat:.2f} km²")
 print(f"Glacierized catchment area is {area_glac:.2f} km²")
 
 # %% [markdown]
-# Export data to existing geopackage:
+# Export geo data to the existing geopackage:
 # <ul>
 #     <li>RGI glaciers within catchment</li>
 #     <li>RGI glaciers outside catchment</li>
@@ -452,7 +489,7 @@ catchment_new.to_file(output_gpkg, layer='catchment_new', driver='GPKG')
 print(f"Layer 'catchment_new' added to GeoPackage '{output_gpkg}'")
 
 # %% [markdown]
-# Add determined glacier outlines (in catchment) and new catchment area to map.
+# The determined glacier outlines (within catchment) as well as the new catchment area can now be added to the interactive map.
 
 # %%
 c_new = geemap.geopandas_to_ee(catchment_new)
@@ -463,7 +500,10 @@ if show_map:
     Map.addLayer(rgi, {'color': 'white'}, "RGI60")
 
 # %% [markdown]
-# Calculate mean catchment elevation in meters above sea level.
+# &rarr; [Jump to map](#map) to see results.
+
+# %% [markdown]
+# After adding the new catchment area to GEE, we can easily calculate the mean catchment elevation in meters above sea level.
 
 # %%
 ele_cat = image.reduceRegion(ee.Reducer.mean(),
@@ -472,13 +512,33 @@ print(f"Mean catchment elevation (adjusted) is {ele_cat:.2f} m.a.s.l.")
 
 
 # %% [markdown]
-# # Retrieve raster files for ice thickness and corresponding DEM raster files
+# **Interim result**: we have determined the catchment area and we know which glaciers belong to the catchment. The next step, we need to create a glacier profile, i.e. how much ice is stored at what altitude.
+#
+# ___
 
 # %% [markdown]
-# The ice thickness of each glacier must be determined from raster files. Depending on the RGI IDs that are within the catchment area, the corresponding raster files will be downloaded from the server and stored in the output folder.
-# The thinkness raster files will be supported by DEM raster files for easier processing. 
+# ## Retrieve raster files for ice thickness and corresponding DEM raster files
+
+# %% [markdown]
+# > Knowledge of the ice thickness distribution of the world’s glaciers is a fundamental prerequisite for a range of studies. Projections of future glacier change, estimates of the available freshwater resources or assessments of potential sea-level rise all need glacier ice thickness to be accurately constrained.
+# >
+# > Source: Farinotti, D., Huss, M., Fürst, J.J. et al. A consensus estimate for the ice thickness distribution of all glaciers on Earth. Nat. Geosci. 12, 168–173 (2019). https://doi.org/10.1038/s41561-019-0300-3
 #
-# In a first step, the relevant archives for DEM/thickness will be determined.
+# The authors of the article also published a repository providing
+#
+# > (a) the ice thickness distribution of individual glaciers,<br/>
+# > (b) global grids at various resolutions with summary-information about glacier number, area, and volume, and<br/> 
+# > (c) the digital elevation models of the glacier surfaces used to produce the estimates.
+# > 
+# > Nomenclature for glaciers and regions follows the Randolph Glacier Inventory (RGI) version 6.0.
+# >
+# > Source: https://www.research-collection.ethz.ch/bitstream/handle/20.500.11850/315707/README.txt
+#
+# The ice thickness (a) and the DEM of the glacier surface (c) are input data for out glacier profile. Both information have to be  determined from raster files. The raster files will be downloaded from the server for each glacier (using RGI-ID) and stored in the output folder. The thinkness raster files will be supported by DEM raster files for easier processing.
+#
+# Since the original file archives are very big, the dataset is cut into smaller slices to increase performance and reuploaded to a media server. The original files are published by ETH Zürich and can be found here: https://www.research-collection.ethz.ch/handle/20.500.11850/315707
+#
+# In a first step, the relevant archives for DEM/thickness need to be determined.
 
 # %%
 def getArchiveNames(row):
@@ -497,7 +557,7 @@ print(f'Thickness archives:\t{zips_thickness.tolist()}')
 print(f'DEM archives:\t\t{zips_dem.tolist()}')
 
 # %% [markdown]
-# The archives are stored on a media server with specific references. Find the right resource references for the previously determined archives in the next step.
+# The archives are stored on a media server with specific references. Find the right resource references for the previously determined archives in the next step. 
 
 # %%
 from resourcespace import ResourceSpace
@@ -517,14 +577,15 @@ refs_dem = pd.DataFrame(myrepository.get_collection_resources(21))[['ref', 'file
 refs_thickness = pd.merge(zips_thickness, refs_thickness, left_on='thickness', right_on='field8')
 refs_dem = pd.merge(zips_dem, refs_dem, left_on='dem', right_on='field8')
 
-# %%
 print(f'Thickness archive references:')
 display(refs_thickness)
 print(f'DEM archive references:')
 display(refs_dem)
 
 # %% [markdown]
-# **Ice thickness**: download relevant archives from server and extract `.tif` files
+# **Ice thickness**: download relevant archives from server and extract `.tif` files to output folder.
+#
+# > Contains the ice thickness distribution of all glaciers of the RGI as estimated by the ensemble of considered models. Ice thicknesses are given in meters.
 
 # %%
 # %%time
@@ -552,7 +613,9 @@ for idx, row in refs_thickness.iterrows():
 print(f'{cnt_thickness} files have been extracted (ice thickness)')
 
 # %% [markdown]
-# **DEM**: download relevant archives from server and extract `.tif` files
+# **DEM**: download relevant archives from server and extract `.tif` files to output folder.
+#
+# > Contains the digital elevation models (DEMs) of the glacier surfaces, as used during the calculations. The DEMs have the same extent and resolution as the corresponding ice thickness data, thus allowing for a subglacial topography to be computed (subtract the thickness from the surface DEM). Surface elevations are given in meters above sea level. 
 
 # %%
 # %%time
@@ -576,18 +639,28 @@ for idx,row in refs_dem.iterrows():
 print(f'{cnt_dem} files have been extracted (DEM)')
 
 # %% [markdown]
-# **<font color="red">Attention!</font>** Check that all files have been extracted to the output folder (i.e. no error message) and that the number of files matches the number of glaciers within the catchment area.
+# **<font color="red">Attention!</font>** Check that all files have been extracted to the output folder (i.e. no error message printed) and that the number of files matches the number of glaciers within the catchment area.
+
+# %%
+if len(rgi_in_catchment) == cnt_thickness == cnt_dem:
+    print(f"Number of files matches the number of glaciers within catchment: {len(rgi_in_catchment)}")
+else:
+    print("There is a mismatch of extracted files. Please check previous steps for error messages!")
+    print(f'Number of included glaciers:\t{len(rgi_in_catchment)}')
+    print(f'Ice thickness files:\t\t{cnt_thickness}')
+    print(f'DEM files:\t\t\t{cnt_dem}')
 
 # %% [markdown]
-# # Glacier profile creation
-# Overlay ice thickness and DEM tif for each glacier to create tuples
+# ## Glacier profile creation
+#
+# Overlay ice thickness and DEM raster for each glacier to create tuples. By this, we now know the ice thickness of a given glacier at a particular altitude.
 
 # %%
 from osgeo import gdal
 
 df_all = pd.DataFrame()
 if cnt_thickness != cnt_dem:
-    print('Number of thickness raster files does not match number of DEM raster files!')
+    print('Number of ice thickness raster files does not match number of DEM raster files!')
 else:
     for idx, rgiid in enumerate(df_rgiids['RGIId']):
         if rgiid in file_names_thickness[idx] and rgiid in file_names_dem[idx]:
@@ -615,9 +688,9 @@ else:
             print(f'Raster files do not match for {rgiid}')
 
 # %% [markdown]
-# Remove all points with zero ice thickness and aggregate all points to 10m elevation zones.
+# Now, remove all data points with zero ice thickness (note relevant for glaicer profile) and aggregate all data points to 10m elevation zones. In the next step, the **water equivalent** (WE) can be calculated from the average ice thickness of a data point.
 #
-# Export result as CSV file `glacier_profile.csv`
+# The result is exported to the output folder as CSV file `glacier_profile.csv`.
 
 # %%
 if len(df_all) > 0:
@@ -660,7 +733,13 @@ print(f'Average glacier elevation in the catchment: {ele_glac:.2f} m.a.s.l.')
 # # Store calculated values for other notebooks
 
 # %% [markdown]
-# Create a settings.yaml and store the relevant catchment information.
+# Create a `settings.yaml` and store the relevant catchment information. Those information will be used in later notebooks:
+#
+# - **area_cat**: area of catchment in km²
+# - **ele_cat**: average elevation of catchment in m.a.s.l.
+# - **area_glac**: area of glacier in km²
+# - **ele_glac**: average elevation of glaciers in m.a.s.l.
+# - **lat**: latitude of catchment centroid
 
 # %%
 import yaml
@@ -674,7 +753,7 @@ settings = {'area_cat': float(area_cat),
 with open(output_folder + 'settings.yml', 'w') as f:
     yaml.safe_dump(settings, f)
 
-# %%
+print('Settings saved to file.')
 display(pd.DataFrame(settings.items(),columns=['Parameter','Value']).set_index('Parameter'))
 
 # %%
