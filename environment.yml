@@ -2,6 +2,7 @@
 name: matilda_edu_mat
 channels:
 - conda-forge
+- plotly
 dependencies:
 - python==3.10.9
 - geemap==0.19.6
@@ -14,6 +15,7 @@ dependencies:
 - bias_correction==0.4
 - fastparquet==2023.4.0
 - dash==2.9.3
+- jupyter-dash==0.4.2 
 - pip
 - pip:
   - git+https://github.com/cryotools/matilda.git

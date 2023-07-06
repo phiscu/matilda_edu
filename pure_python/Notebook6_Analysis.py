@@ -12,73 +12,80 @@
 #     name: python3
 # ---
 
+# %% [markdown]
+# # Model Output Analysis
+
+# %% [markdown]
+# Now that we have run MATILDA so many times we finally want to have a look at the **results**. In this notebook we will
+#
+# 1. ...create custom data frames containing individual output variables from all ensemble members,
+#
+# 2. ...plot the ensemble mean of these variables with a 90% confidence interval,
+#
+# 3. ...and create an interactive application to explore the results.
+
+# %% [markdown]
+# ## Custom dataframes
+
+# %% [markdown]
+# First, we again use some helper functions to convert our stored MATILDA output back into a dictionary.
+#
+# **Note:** We provide two storage options: `pickle` files are fast to read and write, but take up more disk space. You can use them on your local machine. `parquet` files are half the size but take longer to read and write. They should be your choice in the Binder.
+
 # %%
-import pickle
-import os
+from tools.helpers import pickle_to_dict, parquet_to_dict
+import configparser
+
+# read output directory from config.ini file
+config = configparser.ConfigParser()
+config.read('config.ini')
+dir_output = config['FILE_SETTINGS']['DIR_OUTPUT'] + 'cmip6/'        # ADJUST TO NOTEBOOK5 PATHS!
+
+# For size:
+matilda_scenarios = parquet_to_dict(dir_output + 'adjusted/parquet')  # ADJUST TO NOTEBOOK5 PATHS!
+
+# For speed:
+# matilda_scenarios = pickle_to_dict(test_dir + 'adjusted/matilda_scenarios.pickle')
+
+# %% [markdown]
+# At the moment, the structure of the ensemble output is as follows:
+
+# %% [raw]
+# matilda_scenarios
+# |–– SSP2
+# |    |–– CMIP6 Model 1
+# |    |     |–– Output Dataframe 1
+# |    |     |       |–– Output Variable 1_1
+# |    |     |       |–– Output Variable 1_2
+# |    |     |       |–– ...
+# |    |     |–– Output Dataframe 2
+# |    |             |–– Output Variable 2_1
+# |    |             |–– Output Variable 2_2
+# |    |             |–– ...
+# |    |–– CMIP6 Model 2
+# |    |     |–– ...
+# |    |–– CMIP6 Model 3
+# |    |     |–– ...
+# |    |–– ...
+# |    |–– CMIP6 Model 31
+# |          |–– ...
+# |–– SSP5
+#      |–– CMIP6 Model 1
+#      |    |     |–– ...
+#      |    |–– ...
+#      ...
+
+# %% [markdown]
+# To analyze all projections of a single variable, we need a function to rearrange the data. The `custom_df_matilda()` function returns a dataframe with all ensemble members for a given variable and scenario resampled to a desired frequency, e.g. **the total annual runoff under SSP 2**.
+
+# %%
 import pandas as pd
-from fastparquet import write
-from tqdm import tqdm
-import sys
-from pathlib import Path
-from matilda.core import matilda_simulation
 
-
-test_dir = '/home/phillip/Seafile/EBA-CA/Repositories/matilda_edu/output/cmip6/'
-
-
-def pickle_to_dict(file_path):
+def custom_df_matilda(dic, scenario, var, resample_freq=None):
     """
-    Loads a dictionary from a pickle file at a specified file path.
-    Parameters
-    ----------
-    file_path : str
-        The path of the pickle file to load.
-    Returns
-    -------
-    dict
-        The dictionary loaded from the pickle file.
-    """
-    with open(file_path, 'rb') as f:
-        dic = pickle.load(f)
-    return dic
-
-
-def parquet_to_dict(directory_path: str, pbar: bool = True) -> dict:
-    """
-    Recursively loads the dataframes from the parquet files in the specified directory and returns a dictionary.
-    Nested directories are supported.
-    Parameters
-    ----------
-    directory_path : str
-        The directory path containing the parquet files.
-    pbar : bool, optional
-        A flag indicating whether to display a progress bar. Default is True.
-    Returns
-    -------
-    dict
-        A dictionary containing the loaded pandas dataframes.
-    """
-    dictionary = {}
-    if pbar:
-        bar_iter = tqdm(sorted(os.listdir(directory_path)), desc='Reading parquet files: ')
-    else:
-        bar_iter = sorted(os.listdir(directory_path))
-    for file_name in bar_iter:
-        file_path = os.path.join(directory_path, file_name)
-        if os.path.isdir(file_path):
-            dictionary[file_name] = parquet_to_dict(file_path, pbar=False)
-        elif file_name.endswith(".parquet"):
-            k = file_name[:-len(".parquet")]
-            dictionary[k] = pd.read_parquet(file_path)
-    return dictionary
-
-
-# %%
-def custom_df(dic, scenario, var, resample_freq=None):
-    """
-    Takes a dictionary of model outputs and returns a combined dataframe of a specific variable for a given scenario.
+    Takes a dictionary of MATILDA outputs and returns a combined dataframe of a specific variable for a given scenario.
     Parameters:
-        dic (dict): A nested dictionary of model outputs.
+        dic (dict): A nested dictionary of MATILDA outputs.
                     The outer keys are scenario names and the inner keys are model names.
                     The corresponding values are dictionaries containing two keys:
                         'model_output' (DataFrame): containing model outputs for a given scenario and model
@@ -150,69 +157,23 @@ def custom_df(dic, scenario, var, resample_freq=None):
 
     return combined_df
 
-# matilda_scenarios = parquet_to_dict(test_dir + 'adjusted/parquet')
-matilda_scenarios = pickle_to_dict(test_dir + 'adjusted/matilda_scenarios.pickle')   # pickle for speed/parquet for size
+
+# Application example:
+print('Total Annual Runoff Projections across Ensemble Members:\n')
+print(custom_df_matilda(matilda_scenarios, 'SSP2', 'total_runoff', 'Y'))
+
+
+# %% [markdown]
+# ## Plot ensemble mean with confidence interval
+
+# %% [markdown]
+# Showing 31 curves in one figure becomes confusing. A standard way to visualize ensemble data is to plot **the mean** (or median) **across all ensemble members with a confidence interval**. We choose a 95% confidence interval, meaning that based on this sample of 31 climate models, there is a 95% probability that the "true" mean lies within this interval.
+#
+# [<img src="https://miro.medium.com/max/3840/1*qSCzTfliGMCcPfIQcGIAJw.jpeg" width="70%"/>](https://miro.medium.com/max/3840/1*qSCzTfliGMCcPfIQcGIAJw.jpeg)
+#
+# &copy; *[Stefanie Owens @ Medium.com](https://medium.com/design-ibm/who-needs-backup-dancers-when-you-can-have-confidence-intervals-485f9464c06f)*
 
 # %%
-## Create dictionary with variable names, long names, and units
-
-var_name = ['avg_temp_catchment', 'avg_temp_glaciers',
-                    'evap_off_glaciers', 'prec_off_glaciers', 'prec_on_glaciers', 'rain_off_glaciers', 'snow_off_glaciers',
-                    'rain_on_glaciers', 'snow_on_glaciers', 'snowpack_off_glaciers', 'soil_moisture', 'upper_groundwater',
-                    'lower_groundwater', 'melt_off_glaciers', 'melt_on_glaciers', 'ice_melt_on_glaciers', 'snow_melt_on_glaciers',
-                    'refreezing_ice', 'refreezing_snow', 'total_refreezing', 'SMB', 'actual_evaporation', 'total_precipitation',
-                    'total_melt', 'runoff_without_glaciers', 'runoff_from_glaciers', 'total_runoff', 'glacier_area',
-                    'glacier_elev', 'smb_water_year', 'smb_scaled', 'smb_scaled_capped', 'smb_scaled_capped_cum', 'surplus']
-
-title = ['Mean Catchment Temperature',
-         'Mean Temperature of Glacierized Area',
-         'Off-glacier Evaporation',
-         'Off-glacier Precipitation',
-         'On-glacier Precipitation',
-         'Off-glacier Rain',
-         'Off-glacier Snow',
-         'On-glacier Rain',
-         'On-glacier Snow',
-         'Off-glacier Snowpack',
-         'Soil Moisture',
-         'Upper Groundwater',
-         'Lower Groundwater',
-         'Off-glacier Melt',
-         'On-glacier Melt',
-         'On-glacier Ice Melt',
-         'On-glacier Snow Melt',
-         'Refreezing Ice',
-         'Refreezing Snow',
-         'Total Refreezing',
-         'Glacier Surface Mass Balance',
-         'Mean Actual Evaporation',
-         'Mean Total Precipitation',
-         'Total Melt',
-         'Runoff without Glaciers',
-         'Runoff from Glaciers',
-         'Total Runoff',
-         'Glacier Area',
-         'Mean Glacier Elevation',
-         'Surface Mass Balance of the Hydrological Year',
-         'Area-scaled Surface Mass Balance',
-         'Surface Mass Balance Capped at 0',
-         'Cumulative Surface Mass Balance Capped at 0',
-         'Cumulative Surface Mass Balance > 0']
-
-unit = ['°C', '°C', 'mm w.e.', 'mm w.e.', 'mm w.e.', 'mm w.e.', 'mm w.e.', 'mm w.e.', 'mm w.e.', 'mm w.e.', 'mm w.e.',
-        'mm w.e.', 'mm w.e.', 'mm w.e.', 'mm w.e.', 'mm w.e.', 'mm w.e.', 'mm w.e.', 'mm w.e.', 'mm w.e.', 'mm w.e.',
-        'mm w.e.', 'mm w.e.', 'mm w.e.', 'mm w.e.', 'mm w.e.', 'mm w.e.', 'km²', 'm.a.s.l.', 'mm w.e.', 'mm w.e.',
-        'mm w.e.', 'mm w.e.']
-
-output_vars = {key: (val1, val2) for key, val1, val2 in zip(var_name, title, unit)}
-
-# %%
-## Plot functions for mean with CIs
-
-import plotly.graph_objects as go
-import numpy as np
-
-
 def confidence_interval(df):
     """
     Calculate the mean and 95% confidence interval for each row in a dataframe.
@@ -233,7 +194,16 @@ def confidence_interval(df):
     return df_ci
 
 
-def plot_wit_ci(var, dic=matilda_scenarios, resample_freq='Y', show=False):
+
+# %% [markdown]
+# We are going to use the `plotly` library again to create interactive plots. For now, let's plot *total discharge* over all ensemble members. You can change the variables and resampling frequency in the example at will.
+
+# %%
+import plotly.graph_objects as go
+import numpy as np
+from tools.helpers import matilda_vars
+
+def plot_ci_matilda(var, dic=matilda_scenarios, resample_freq='Y', show=False):
     """
     A function to plot multi-model mean and confidence intervals of a given variable for two different scenarios.
     Parameters:
@@ -256,10 +226,10 @@ def plot_wit_ci(var, dic=matilda_scenarios, resample_freq='Y', show=False):
         var = 'total_runoff'       # Default if nothing selected
 
     # SSP2
-    df1 = custom_df(dic, scenario='SSP2', var=var, resample_freq=resample_freq)
+    df1 = custom_df_matilda(dic, scenario='SSP2', var=var, resample_freq=resample_freq)
     df1_ci = confidence_interval(df1)
     # SSP5
-    df2 = custom_df(dic, scenario='SSP5', var=var, resample_freq=resample_freq)
+    df2 = custom_df_matilda(dic, scenario='SSP5', var=var, resample_freq=resample_freq)
     df2_ci = confidence_interval(df2)
 
     fig = go.Figure([
@@ -323,8 +293,8 @@ def plot_wit_ci(var, dic=matilda_scenarios, resample_freq='Y', show=False):
     ])
     fig.update_layout(
         xaxis_title='Year',
-        yaxis_title=output_vars[var][0] + ' [' + output_vars[var][1] + ']',
-        title={'text': '<b>' + output_vars[var][0] + '</b>', 'font': {'size': 28, 'color': 'darkblue', 'family': 'Arial'}},
+        yaxis_title=matilda_vars[var][0] + ' [' + matilda_vars[var][1] + ']',
+        title={'text': '<b>' + matilda_vars[var][0] + '</b>', 'font': {'size': 28, 'color': 'darkblue', 'family': 'Arial'}},
         legend={'font': {'size': 18, 'family': 'Arial'}},
         hovermode='x',
         plot_bgcolor='rgba(255, 255, 255, 1)',  # Set the background color to white
@@ -337,63 +307,102 @@ def plot_wit_ci(var, dic=matilda_scenarios, resample_freq='Y', show=False):
     # show figure
     if show:
         fig.show()
+    else:
+        return fig
 
-    return fig
 
+
+# Application example
+
+plot_ci_matilda('total_runoff', resample_freq='Y', show=True)
+
+# %% [markdown]
+# ## Interactive plotting application 
+
+# %% [markdown]
+# To make the full dataset more accessible, we can integrate these figures into an **interactive application** using [`ploty.Dash`](https://dash.plotly.com/). This launches a `Dash` server that updates the figures as you select variables and frequencies in the **dropdown menus**. To compare time series, you can align multiple figures in the same application. The demo application aligns three figures showing *total runoff, total precipitation* and *runoff_from_glaciers* by default directly in the output cell. If you want to display the complete application in a separate Jupyter tab, set `display_mode='tab'`.
 
 # %%
 import dash
-from dash import dcc
-from dash import html
-from dash.dependencies import Input, Output
+from jupyter_dash import JupyterDash
 import plotly.io as pio
-
 pio.renderers.default = "browser"
-app = dash.Dash()
+JupyterDash.infer_jupyter_proxy_config()
+#app = dash.Dash()
+app = JupyterDash(__name__)
+server = app.server
 
-# Create the initial line plot
-fig = plot_wit_ci('total_runoff', resample_freq='D')
 
-# Create the callback function
-@app.callback(
-    Output('line-plot', 'figure'),
-    Input('arg-dropdown', 'value'),
-    Input('freq-dropdown', 'value'))
-def update_figure(selected_arg, selected_freq):
-    return plot_wit_ci(selected_arg, resample_freq=selected_freq)
+def matilda_dash(fig_count=4,
+                 default_vars=['total_runoff', 'total_precipitation', 'runoff_from_glaciers', 'glacier_area'],
+                 display_mode='inLine'):
+    
+    # If number of default variables does not match the number of figures use variables in default order
+    if fig_count != len(default_vars):
+        default_vars = list(matilda_vars.keys())
 
-# Define the dropdown menu for variable
-arg_dropdown = dcc.Dropdown(
-    id='arg-dropdown',
-    options=[{'label': output_vars[var][0], 'value': var} for var in output_vars.keys()],
-    value='total_runoff',
-    clearable=False,
-    style={'width': '250px'})
+    
+    # Create separate callback functions for each dropdown menu and graph combination
+    for i in range(fig_count):
+        @app.callback(
+            dash.dependencies.Output(f'line-plot-{i}', 'figure'),
+            dash.dependencies.Input(f'arg-dropdown-{i}', 'value'),
+            dash.dependencies.Input(f'freq-dropdown-{i}', 'value')
+        )
+        def update_figure(selected_arg, selected_freq, i=i):
+            fig = plot_ci_matilda(selected_arg, resample_freq=selected_freq)
+            return fig
 
-# Define the dropdown menu for resampling frequency
-freq_dropdown = dcc.Dropdown(
-    id='freq-dropdown',
-    options=[{'label': freq, 'value': freq} for freq in ['M', 'Y', '10Y']],
-    value='Y',
-    clearable=False,
-    style={'width': '100px'})
+    # Define the dropdown menus and figures
+    dropdowns_and_figures = []
+    for i in range(fig_count):
+        arg_dropdown = dash.dcc.Dropdown(
+            id=f'arg-dropdown-{i}',
+            options=[{'label': matilda_vars[var][0], 'value': var} for var in matilda_vars.keys()],
+            value=default_vars[i],
+            clearable=False,
+            style={'width': '400px', 'fontFamily': 'Arial', 'fontSize': 15}
+        )
+        freq_dropdown = dash.dcc.Dropdown(
+            id=f'freq-dropdown-{i}',
+            options=[{'label': freq, 'value': freq} for freq in ['M', 'Y', '10Y']],
+            value='Y',
+            clearable=False,
+            style={'width': '100px'}
+        )
+        dropdowns_and_figures.append(
+            dash.html.Div([
+                dash.html.Div([
+                    dash.html.Label("Variable:"),
+                    arg_dropdown,
+                ], style={'display': 'inline-block', 'margin-right': '30px'}),
+                dash.html.Div([
+                    dash.html.Label("Frequency:"),
+                    freq_dropdown,
+                ], style={'display': 'inline-block'}),
+                dash.dcc.Graph(id=f'line-plot-{i}'),
+            ])
+        )
+    # Combine the dropdown menus and figures into a single layout
+    app.layout = dash.html.Div(dropdowns_and_figures)
 
-# Add the dropdown menus to the layout and use CSS to place them next to each other
-app.layout = html.Div([
-    html.Div([
-        html.Label("Variable:"),
-        arg_dropdown,
-    ], style={'display': 'inline-block', 'margin-right': '30px'}),
-    html.Div([
-        html.Label("Resampling Frequency:"),
-        freq_dropdown,
-    ], style={'display': 'inline-block'}),
-    dcc.Graph(id='line-plot', figure=fig)
-])
+    if display_mode == 'inLine':
+        # Run the app directly in the output cell
+        app.run_server(mode="inline")
 
-# Run the app
-app.run_server(debug=True, use_reloader=False)  # Turn off reloader inside jupyter
+    elif display_mode == 'tab':
+        # Run the app in a new Jupyter Tab
+        app.run_server(mode="jupyterlab")
+    
+    else:
+        raise ValueError("Invalid property specified for 'display_mode'. Choose either 'inLine' or 'tab'")
+        
 
-# turn into function/class to customize scenario/resample_rate/renderer etc.
-# test in binder and add dash to requirements
-# add fastparquet to requirements
+        
+        
+# Application example:
+matilda_dash(fig_count=3,
+             default_vars=['total_runoff', 'total_precipitation', 'runoff_from_glaciers'],
+             display_mode='inLine')
+
+
