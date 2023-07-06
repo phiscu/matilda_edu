@@ -4,12 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2e234685-736e-44ab-8535-dbd096687dd4" name="Changes" comment="Revision of Notebook1:&#10;- minor bugfixes&#10;- refactoring of variables&#10;- adding markdown&#10;- adding prints">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Notebook1_Catchment_deliniation.ipynb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/config.ini" beforeDir="false" afterPath="$PROJECT_DIR$/config.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pure_python/Notebook1_Catchment_deliniation.py" beforeDir="false" />
-    </list>
+    <list default="true" id="2e234685-736e-44ab-8535-dbd096687dd4" name="Changes" comment="Revision of Notebook1:&#10;- renamed &#10;- adding markdown&#10;- adding prints&#10;- adding sources/references" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -155,6 +150,7 @@
       <workItem from="1687850999009" duration="256000" />
       <workItem from="1687959576116" duration="463000" />
       <workItem from="1688116281598" duration="71000" />
+      <workItem from="1688120923039" duration="380000" />
     </task>
     <task id="LOCAL-00001" summary="Conda venv&#10;Catchment delineation">
       <created>1676675795589</created>
@@ -359,7 +355,14 @@
       <option name="project" value="LOCAL" />
       <updated>1687959731777</updated>
     </task>
-    <option name="localTasksCounter" value="30" />
+    <task id="LOCAL-00030" summary="Revision of Notebook1:&#10;- renamed &#10;- adding markdown&#10;- adding prints&#10;- adding sources/references">
+      <created>1688120985914</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1688120985914</updated>
+    </task>
+    <option name="localTasksCounter" value="31" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -392,7 +395,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Conda venv&#10;Catchment delineation" />
     <MESSAGE value="added python-3.8 runtime" />
     <MESSAGE value="environment added" />
     <MESSAGE value="yml updated" />
@@ -417,7 +419,8 @@
     <MESSAGE value=".idea files for whatever reason" />
     <MESSAGE value="delete venv; updated notebooks (ele_cat, area determination)" />
     <MESSAGE value="Revision of Notebook1:&#10;- minor bugfixes&#10;- refactoring of variables&#10;- adding markdown&#10;- adding prints" />
-    <option name="LAST_COMMIT_MESSAGE" value="Revision of Notebook1:&#10;- minor bugfixes&#10;- refactoring of variables&#10;- adding markdown&#10;- adding prints" />
+    <MESSAGE value="Revision of Notebook1:&#10;- renamed &#10;- adding markdown&#10;- adding prints&#10;- adding sources/references" />
+    <option name="LAST_COMMIT_MESSAGE" value="Revision of Notebook1:&#10;- renamed &#10;- adding markdown&#10;- adding prints&#10;- adding sources/references" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

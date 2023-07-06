@@ -22,7 +22,7 @@
 # 2. ... determine all glaciers within that catchment area and download the glacier characteristics
 # 3. ... create a glacier profile based on the ice thickness and DEM of each glacier
 #
-# We will use Google Earth Engine (GEE) to retrieve the DEM and to perform spatial calculations. Use can use different DEMs as long as they are available in the *Google Earth Engine Data Catalog* (https://developers.google.com/earth-engine/datasets/catalog). The information of the used DEM must be specified in the `config.ini` file.
+# We will use Google Earth Engine (GEE) to retrieve the DEM and to perform spatial calculations. You can use different DEMs as long as they are available in the *Google Earth Engine Data Catalog* (https://developers.google.com/earth-engine/datasets/catalog). The information of the used DEM must be specified in the `config.ini` file.
 
 # %% [markdown]
 # Let's start by importing required packages and defining functions/constants.
@@ -83,6 +83,7 @@ except Exception as e:
 # - show/hide GEE map in notebooks
 
 # %%
+import pandas as pd
 import configparser
 import ast
 
@@ -285,7 +286,7 @@ catchment_area = catchment.area().divide(1000*1000).getInfo()
 print(f"Catchment area is {catchment_area:.2f} km²")
 
 # %% [markdown]
-# **<font color="red">Attention!</font>** Please check that there is some buffer between the catchment area and the used box. If the catchment area is close to the box outline, please extent the box and repeat the DEM download and catchment delineation (&rarr; use [Restart Point #1](#rp01)).
+# **<font color="red">Attention!</font>** Please check that there is some buffer between the catchment area and the used box (&rarr; [Jump to map](#map)). If the catchment area is close to the box outline, please extent the box and repeat the DEM download and catchment delineation (&rarr; use [Restart Point #1](#rp01)).
 #
 # Example:
 #
@@ -431,7 +432,6 @@ display(results.sort_values(['share_of_area'],ascending=False))
 # - exclude glaciers where <50% of the area is part of the catchment &rarr; reduce catchment area by glaicer outlines (if needed)
 
 # %%
-import pandas as pd
 rgi_catchment_merge = pd.merge(rgi_catchment, results, on="RGIId")
 rgi_in_catchment = rgi_catchment_merge.loc[rgi_catchment_merge['share_of_area'] >= 50]
 rgi_out_catchment = rgi_catchment_merge.loc[rgi_catchment_merge['share_of_area'] < 50]
@@ -453,7 +453,7 @@ Path(output_folder + 'RGI').mkdir(parents=True, exist_ok=True)
 glacier_ids = pd.DataFrame(rgi_in_catchment)
 glacier_ids['RGIId'] = glacier_ids['RGIId'].map(lambda x: str(x).lstrip('RGI60-'))
 glacier_ids.to_csv(output_folder + 'RGI/' + 'Glaciers_in_catchment.csv', columns=['RGIId', 'GLIMSId'], index=False)
-display(glacier_ids.head())
+display(glacier_ids)
 
 # %% [markdown]
 # Now let's do spatial calculations and determine the final size of catchment area and glacierized area within catchment.
@@ -498,9 +498,21 @@ rgi = geemap.geopandas_to_ee(rgi_in_catchment)
 if show_map:
     Map.addLayer(c_new, {'color': 'orange'}, "Catchment New")
     Map.addLayer(rgi, {'color': 'white'}, "RGI60")
+    print('New layers added.')
 
 # %% [markdown]
 # &rarr; [Jump to map](#map) to see results.
+
+# %% [markdown]
+# Create a simple plot to show the catchment area and the glaciers that are located within.
+
+# %%
+fig, ax = plt.subplots()
+catchment_new.plot(color='tan',ax=ax)
+rgi_in_catchment.plot(color="white",edgecolor="black",ax=ax)
+plt.scatter(x, y, facecolor='blue', s=100)
+plt.title("Catchment Area with Pouring Point and Glaciers")
+plt.show()
 
 # %% [markdown]
 # After adding the new catchment area to GEE, we can easily calculate the mean catchment elevation in meters above sea level.
@@ -508,7 +520,7 @@ if show_map:
 # %%
 ele_cat = image.reduceRegion(ee.Reducer.mean(),
                           geometry=c_new).getInfo()[dem_config[2]] 
-print(f"Mean catchment elevation (adjusted) is {ele_cat:.2f} m.a.s.l.")
+print(f"Mean catchment elevation (adjusted) is {ele_cat:.2f} m a.s.l.")
 
 
 # %% [markdown]
@@ -557,15 +569,15 @@ print(f'Thickness archives:\t{zips_thickness.tolist()}')
 print(f'DEM archives:\t\t{zips_dem.tolist()}')
 
 # %% [markdown]
-# The archives are stored on a media server with specific references. Find the right resource references for the previously determined archives in the next step. 
+# The archives are stored on a media server with specific references. Find the right resource references for the previously determined archives in the next step. The login data and API key must be defined in the `config.ini` file.
 
 # %%
 from resourcespace import ResourceSpace
 
-# use guest credentials to access media server
-api_base_url = 'https://rs.cms.hu-berlin.de/matilda/api/?'  
-private_key = '9a19c0cee1cde5fe9180c31c27a8145bc6f7a110cfaa3806ba262eb63d16f086' 
-user = 'gast' 
+# use guest credentials to access media server 
+api_base_url = config['MEDIA_SERVER']['api_base_url']
+private_key = config['MEDIA_SERVER']['private_key']
+user = config['MEDIA_SERVER']['user']
 
 myrepository = ResourceSpace(api_base_url, user, private_key)
 
@@ -653,7 +665,9 @@ else:
 # %% [markdown]
 # ## Glacier profile creation
 #
-# Overlay ice thickness and DEM raster for each glacier to create tuples. By this, we now know the ice thickness of a given glacier at a particular altitude.
+# The glacier profile is used to pass the distribution of ice mass in the catchment to the glacio-hydrological model in Notebook 4. The model will calculate the annual mass balance and re-distribute the ice mass accordingly.
+#
+# As a first step, we need to overlay the ice thickness and DEM raster for each glacier to create tuples. By this, we now know the ice thickness of a given glacier at a particular altitude. 
 
 # %%
 from osgeo import gdal
@@ -688,7 +702,7 @@ else:
             print(f'Raster files do not match for {rgiid}')
 
 # %% [markdown]
-# Now, remove all data points with zero ice thickness (note relevant for glaicer profile) and aggregate all data points to 10m elevation zones. In the next step, the **water equivalent** (WE) can be calculated from the average ice thickness of a data point.
+# Now, remove all data points with zero ice thickness (not relevant for glaicer profile) and aggregate all data points to 10m elevation zones. In the next step, the **water equivalent** (WE) can be calculated from the average ice thickness of a data point.
 #
 # The result is exported to the output folder as CSV file `glacier_profile.csv`.
 
@@ -723,17 +737,55 @@ if len(df_all) > 0:
     display(df_agg)
 
 # %% [markdown]
+# Let's visualize the glacier profile by plotting the calculated glacier mass (in Mt) for each elevation zone. The aggregation level can be adjusted by the variable `steps` which is set to 20m by default. 
+
+# %%
+# aggregation level for plot -> feel free to adjust
+steps = 20
+
+# get elevation range where glaciers are present
+we_range = df_agg.loc[df_agg['WE'] > 0]['Elevation']
+we_range.min() // steps * steps
+plt_zones = pd.Series(range(int(we_range.min() // steps * steps), 
+                            int(we_range.max() // steps * steps + steps), 
+                            steps), name='EleZone').to_frame().set_index('EleZone')
+
+# calculate glacier mass and aggregate glacier profile to defined elevation steps
+plt_data = df_agg.copy()
+plt_data['EleZone'] = plt_data['Elevation'].apply(lambda x: int(x // steps * steps))
+plt_data['Mass'] = plt_data['Area'] * catchment_new.iloc[0]['area'] * plt_data['WE'] * 1e-9 # mass in Mt
+plt_data = plt_data.drop(['Area', 'WE'], axis=1).groupby('EleZone').sum().reset_index().set_index('EleZone')
+plt_data = plt_zones.join(plt_data)
+display(plt_data)
+
+# %% [markdown]
+# Create plot showing the glacier mass distribution over elevation zones.
+
+# %%
+import matplotlib.ticker as ticker
+
+fig, ax = plt.subplots(figsize=(4,5))
+plt_data.plot.barh(y='Mass', ax=ax)
+ax.set_xlabel("Glacier mass [Mt]")
+ax.set_yticks(ax.get_yticks()[::int(100/steps)])
+ax.set_ylabel("Elevation zone [m a.s.l.]")
+ax.get_legend().remove()
+plt.title("Initial Ice Distribution")
+plt.tight_layout()
+plt.show()
+
+# %% [markdown]
 # Calculate average glacier elevation in meters above sea level.
 
 # %%
 ele_glac = round(df_all.altitude.mean(), 2)
-print(f'Average glacier elevation in the catchment: {ele_glac:.2f} m.a.s.l.')
+print(f'Average glacier elevation in the catchment: {ele_glac:.2f} m a.s.l.')
 
 # %% [markdown]
 # # Store calculated values for other notebooks
 
 # %% [markdown]
-# Create a `settings.yaml` and store the relevant catchment information. Those information will be used in later notebooks:
+# Create a `settings.yml` and store the relevant catchment information. Those information will be used in later notebooks:
 #
 # - **area_cat**: area of catchment in km²
 # - **ele_cat**: average elevation of catchment in m.a.s.l.
