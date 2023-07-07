@@ -31,29 +31,6 @@
 # %% [markdown]
 # Let's start by importing the necessary packages and defining functions/constants.
 
-# %%
-# Google Earth Engine packages
-import ee
-import geemap
-
-# other packages
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-
-
-#Define a function to plot the digital elevation model
-def plotFigure(data, label, cmap='Blues'):
-    plt.figure(figsize=(12,10))
-    plt.imshow(data, extent=grid.extent, cmap=cmap)
-    plt.colorbar(label=label)
-    plt.grid()
-    
-
-# constants
-ee_img = 'Image'
-ee_ico = 'ImageCollection'
-
 # %% [markdown]
 # First of all, the Google Earth Engine (GEE) access must be initialized. If this is the first time you run the notebook on this machine, you need to authenticate. When using <code>mybinder.org</code> you need to authenticate every time a new session has been launched. **Follow the instructions to log in to GEE, copy the generated token, and paste it into the input field to proceed**.
 #
@@ -70,6 +47,8 @@ ee_ico = 'ImageCollection'
 # > Source: https://developers.google.com/earth-engine/apidocs/ee-authenticate
 
 # %%
+import ee
+
 # initialize GEE at the beginning of session
 try:
     ee.Initialize()
@@ -116,6 +95,8 @@ print(f'Coordinates of discharge point: Lat {y}, Lon {x}')
 # Once we are set up, we can start working with the data. Let's start with the **base map** if enabled in `config.ini`. The individual steps can be traced using the map since more and more layers will be added through the course of the notebook. <a id="map"></a>
 
 # %%
+import geemap
+
 if show_map:
     Map = geemap.Map()
     display(Map)
@@ -126,9 +107,9 @@ else:
 # Now we can add the DEM from the GEE catalog and add it as a new layer to the map.
 
 # %%
-if dem_config[0] == ee_img:
+if dem_config[0] == 'Image':
     image = ee.Image(dem_config[1]).select(dem_config[2])
-elif dem_config[0] == ee_ico:
+elif dem_config[0] == 'ImageCollection':
     image = ee.ImageCollection(dem_config[1]).select(dem_config[2]).mosaic()
 
 if show_map:
@@ -234,6 +215,16 @@ print("Processing completed.")
 # Now let's have a look at the catchment area.
 
 # %%
+import numpy as np
+import matplotlib.pyplot as plt
+
+#Define a function to plot the digital elevation model
+def plotFigure(data, label, cmap='Blues'):
+    plt.figure(figsize=(12,10))
+    plt.imshow(data, extent=grid.extent, cmap=cmap)
+    plt.colorbar(label=label)
+    plt.grid()
+
 demView = grid.view(dem, nodata=np.nan)
 plotFigure(demView,'Elevation in Meters',cmap='terrain')
 plt.show()
