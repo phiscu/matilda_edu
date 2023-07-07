@@ -115,7 +115,7 @@ from matilda.core import matilda_simulation
 output_matilda = matilda_simulation(era5, obs, **settings)
 
 # %% [markdown]
-# The result is obviously far from reality and largely overestimate runoff. Therefore, the model needs calibration.
+# The result is obviously far from reality and largely overestimates runoff. Therefore, the model needs calibration.
 
 # %% [markdown]
 # ## Calibrate MATILDA

@@ -1,5 +1,10 @@
 import yaml
 import pickle
+import pandas as pd
+import os
+from tqdm import tqdm
+import sys
+from pathlib import Path
 
 
 def read_yaml(file_path):
@@ -89,6 +94,72 @@ def drop_keys(dic, keys_to_drop):
     # Create a new dictionary with all elements from dict except for the ones in keys_to_drop
     new_dict = {key: dic[key] for key in dic.keys() if key not in keys_to_drop_set}
     return new_dict
+
+
+def parquet_to_dict(directory_path: str, pbar: bool = True) -> dict:
+    """
+    Recursively loads dataframes from the parquet files in the specified directory and returns a dictionary.
+    Nested directories are supported.
+    Parameters
+    ----------
+    directory_path : str
+        The directory path containing the parquet files.
+    pbar : bool, optional
+        A flag indicating whether to display a progress bar. Default is True.
+    Returns
+    -------
+    dict
+        A dictionary containing the loaded pandas dataframes.
+    """
+    dictionary = {}
+    if pbar:
+        bar_iter = tqdm(sorted(os.listdir(directory_path)), desc='Reading parquet files: ')
+    else:
+        bar_iter = sorted(os.listdir(directory_path))
+    for file_name in bar_iter:
+        file_path = os.path.join(directory_path, file_name)
+        if os.path.isdir(file_path):
+            dictionary[file_name] = parquet_to_dict(file_path, pbar=False)
+        elif file_name.endswith(".parquet"):
+            k = file_name[:-len(".parquet")]
+            dictionary[k] = pd.read_parquet(file_path)
+    return dictionary
  
+
+matilda_vars = {
+ 'avg_temp_catchment': ('Mean Catchment Temperature', '°C'),
+ 'avg_temp_glaciers': ('Mean Temperature of Glacierized Area', '°C'),
+ 'evap_off_glaciers': ('Off-glacier Evaporation', 'mm w.e.'),
+ 'prec_off_glaciers': ('Off-glacier Precipitation', 'mm w.e.'),
+ 'prec_on_glaciers': ('On-glacier Precipitation', 'mm w.e.'),
+ 'rain_off_glaciers': ('Off-glacier Rain', 'mm w.e.'),
+ 'snow_off_glaciers': ('Off-glacier Snow', 'mm w.e.'),
+ 'rain_on_glaciers': ('On-glacier Rain', 'mm w.e.'),
+ 'snow_on_glaciers': ('On-glacier Snow', 'mm w.e.'),
+ 'snowpack_off_glaciers': ('Off-glacier Snowpack', 'mm w.e.'),
+ 'soil_moisture': ('Soil Moisture', 'mm w.e.'),
+ 'upper_groundwater': ('Upper Groundwater', 'mm w.e.'),
+ 'lower_groundwater': ('Lower Groundwater', 'mm w.e.'),
+ 'melt_off_glaciers': ('Off-glacier Melt', 'mm w.e.'),
+ 'melt_on_glaciers': ('On-glacier Melt', 'mm w.e.'),
+ 'ice_melt_on_glaciers': ('On-glacier Ice Melt', 'mm w.e.'),
+ 'snow_melt_on_glaciers': ('On-glacier Snow Melt', 'mm w.e.'),
+ 'refreezing_ice': ('Refreezing Ice', 'mm w.e.'),
+ 'refreezing_snow': ('Refreezing Snow', 'mm w.e.'),
+ 'total_refreezing': ('Total Refreezing', 'mm w.e.'),
+ 'SMB': ('Glacier Surface Mass Balance', 'mm w.e.'),
+ 'actual_evaporation': ('Mean Actual Evaporation', 'mm w.e.'),
+ 'total_precipitation': ('Mean Total Precipitation', 'mm w.e.'),
+ 'total_melt': ('Total Melt', 'mm w.e.'),
+ 'runoff_without_glaciers': ('Runoff without Glaciers', 'mm w.e.'),
+ 'runoff_from_glaciers': ('Runoff from Glaciers', 'mm w.e.'),
+ 'total_runoff': ('Total Runoff', 'mm w.e.'),
+ 'glacier_area': ('Glacier Area', 'km²'),
+ 'glacier_elev': ('Mean Glacier Elevation', 'm.a.s.l.'),
+ 'smb_water_year': ('Surface Mass Balance of the Hydrological Year', 'mm w.e.'),
+ 'smb_scaled': ('Area-scaled Surface Mass Balance', 'mm w.e.'),
+ 'smb_scaled_capped': ('Surface Mass Balance Capped at 0', 'mm w.e.'),
+ 'smb_scaled_capped_cum': ('Cumulative Surface Mass Balance Capped at 0', 'mm w.e.')
+}
 
 
