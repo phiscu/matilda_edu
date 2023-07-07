@@ -12,4 +12,9 @@
 #     name: python3
 # ---
 
-# %%
+# %% [markdown]
+# - check memory and close other notebooks
+#
+# - download output data an restart binder
+#
+# - try ovh cluster if launch fails

@@ -16,9 +16,25 @@
 # # Introduction
 
 # %% [markdown]
-# Welcome to MATILDA, the Python workflow for Modeling Water Resources in Glacierized Catchments! In the following series of notebooks you will go all the way from data acquisition to the analysis of climate change impacts on your catchment. Every notebook tackles an individual step in the modeling workflow. Have fun exploring!
+# Welcome to **MATILDA**, the Python workflow for Modeling Water Resources in Glacierized Catchments! In the following series of notebooks you will go all the way from data acquisition to the analysis of climate change impacts on your catchment. Every notebook tackles an individual step in the modeling workflow. 
 #
-# **Note**: *Although all notebooks can be executed in a Binder, the model calibration is a resource intensive task that will be very slow on a single core. You can speed up the process by downloading the Notebook and your data, and running it on a local computer with more cores. Other options to reduce calibration time are outlined in Notebook 4.*
+# - [Notebook 1 - Catchment Delineation](Notebook1_Catchment_deliniation.ipynb) delineates your catchment and downloads all types of static data such as the digital elevation model, glacier outlines, and ice thickness.
+#
+# - [Notebook 2 - Forcing data](Notebook2_Forcing_data.ipynb) downloads and processes ERA5-Land reanalysis data to calibrate the glacio-hydrological model.
+#
+# - [Notebook 3 - CMIP6](Notebook3_CMIP6.ipynb) downloads and processes CMIP6 climate model data for a historical period and two emission pathways until 2100.
+#
+# - [Notebook 4 - MATILDA](Notebook4_MATILDA.ipynb) runs a glacio-hydrological model for your catchment with default parameters and guides you through the calibration process.
+#
+# - [Notebook 5 - MATILDA scenarios](Notebook5_MATILDA_scenarios.ipynb) uses your calibrated parameter set so run the model for all CMIP6 ensemble members.
+#
+# - [Notebook 6 - Analysis](Notebook6_Analysis.ipynb) visualizes the ensemble output in interactive plots.
+#
+# - [Notebook 7 - Climate Change Indicators](Notebook7_Climate_Change_Impact.ipynb) calculates a set of  meteorological and hydrological indicators from your results and visualizes them in interactive figures.
+#
+# **Note**: *Although all notebooks can be executed in a Binder, the model calibration is a resource intensive task that will be very slow on a single CPU. You can speed up the process by downloading the Notebook and your data, and running it on a local computer with more cores. Other options to reduce calibration time are outlined in Notebook 4.*
+#
+# Have fun exploring!
 
 # %% [markdown]
 # ## Signing up for Google Earth Engine

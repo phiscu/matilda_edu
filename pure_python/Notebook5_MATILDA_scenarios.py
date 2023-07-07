@@ -12,6 +12,19 @@
 #     name: python3
 # ---
 
+# %% [markdown]
+# # MATILDA Scenarios
+
+# %% [markdown]
+# After calibrating MATILDA we can now use the best parameter set to run the model with climate scenario data until 2100. In this notebook we will only
+#
+# - ...run MATILDA with the same parameters and settings but 2 x 31 different climate forcings.
+#
+# **Note:** On a single CPU one MATILDA run over 120y takes ~4s. For all ensemble members this adds up to ~4min. The `MatildaBulkProcessor` class allows you to reduce this time significantly with more CPUs so you might want to run this notebook locally. Or have a coffee. Again...
+#
+
+# %%
+
 # %%
 import pickle
 import os
