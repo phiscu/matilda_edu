@@ -15,7 +15,10 @@ dependencies:
 - bias_correction==0.4
 - fastparquet==2023.4.0
 - dash==2.9.3
-- jupyter-dash==0.4.2 
+- jupyter-dash==0.4.2
+- seaborn==0.12.2
+- spotpy==1.6.2
+- mpl-probscale==0.2.5
 - pip
 - pip:
   - git+https://github.com/cryotools/matilda.git

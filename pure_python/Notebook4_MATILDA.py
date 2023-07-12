@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -71,7 +71,7 @@ for key in dates.keys(): print(key + ': ' + dates[key])
 #
 # Finally, we will also add some optional settings that control the aggregation frequency of the outputs, the choice of graphical outputs, and more.
 
-# %%
+# %% tags=["output_scroll"]
 update_yaml(dir_output + 'settings.yml', dates)
 
 remaining_settings = {"freq": "M",               # aggregation level of model outputs (D, M, Y)
@@ -94,22 +94,26 @@ for key in settings.keys(): print(key + ': ' + str(settings[key]))
 # %% [markdown]
 # We will force MATILDA with the pre-processed ERA5-Land data from Notebook 2. Although MATILDA can run without calibration on observations, the results would have extreme uncertainties. Therefore, we recommend to use at least runoff observations for your selected point to evaluate the simulations against. Here, we load runoff observations for your example catchment from 1982 to 2020 (with gaps).
 
-# %%
-era5 = pd.read_csv(dir_output + 'ERA5L.csv', usecols=['temp', 'prec', 'dt'])
-era5.columns = ['T2', 'RRR', 'TIMESTAMP']
+# %% tags=["output_scroll"]
+era5 = pd.read_csv(dir_output + 'ERA5L.csv', usecols=['dt', 'temp', 'prec'])
+era5.columns = ['TIMESTAMP','T2', 'RRR']
 
 # remove HH:MM:SS from 'TIMESTAMP' column
 era5['TIMESTAMP'] = pd.to_datetime(era5['TIMESTAMP'])
 era5['TIMESTAMP'] = era5['TIMESTAMP'].dt.date
 
+print('ERA5 Data:')
+display(era5)
+
 obs = pd.read_csv('input/' + 'obs_runoff_example.csv')
 
-print(obs)
+print('Observations:')
+display(obs)
 
 # %% [markdown]
 # First, we run MATILDA with default parameters.
 
-# %%
+# %% tags=["output_scroll"]
 from matilda.core import matilda_simulation
 
 output_matilda = matilda_simulation(era5, obs, **settings)
@@ -123,7 +127,8 @@ output_matilda = matilda_simulation(era5, obs, **settings)
 # %% [markdown]
 # To adjust all model parameters to the catchment characteristics, we will perform an automated calibration using the [Statistical Parameter Optimization Tool for Python](https://doi.org/10.1371/journal.pone.0145180). Since large uncertainties in the input data (especially precipitation) can lead to an overestimation of melt when the model is calibrated to the hydrograph only, we will additionally include glacier mass balance data for a multi-objective calibration.
 #
-# **Note:** Statistical parameter optimization (SPOT) algorithms require a large number of model runs, especially for large parameter sets. Both *mybinder.org* and *Google Colab* offer a maximum of two cores per user. One MATILDA run for 20 years takes roughly 3s on one core. Therefore, large optimization runs in an online environment will be slow and may require you to leave the respective browser tab in the foreground for hours. To speed things up, you can either...
+# <div class="alert alert-block alert-info">
+# <b>Note:</b> Statistical parameter optimization (SPOT) algorithms require a large number of model runs, especially for large parameter sets. Both <i>mybinder.org</i> and <i>Google Colab</i> offer a maximum of two cores per user. One MATILDA run for 20 years takes roughly 3s on one core. Therefore, large optimization runs in an online environment will be slow and may require you to leave the respective browser tab in the foreground for hours. To speed things up, you can either...</div>
 #
 # ... run this notebook locally on a computer with more cores (ideally a high performance cluster) or ...
 #
@@ -156,7 +161,7 @@ print('Target glacier mass balance for calibration: ' + str(mean_mb) + ' +-' + s
 # %% [markdown]
 # The MATILDA framework provides an interface to [SPOTPY](https://github.com/thouska/spotpy/). Here we will use the `psample()` function to run MATILDA with the same settings as before. To do this, we will remove redundant `settings` and add some new ones specific to the function. Be sure to choose the number of repetitions carefully.
 
-# %%
+# %% tags=["output_scroll"]
 from tools.helpers import drop_keys
 
 psample_settings = drop_keys(settings, ['warn', 'plots', 'plot_type'])
@@ -181,7 +186,7 @@ for key in psample_settings.keys(): print(key + ': ' + str(psample_settings[key]
 # %% [markdown]
 # With these settings we can start the `psample()` to run our model with various parameter combinations. The default parameter boundaries can be found in the MATILDA [parameter documentation](https://github.com/cryotools/matilda/blob/master/Parameters). If you want to narrow down the parameter space you can do that using the following syntax. Here, we define custom ranges for the temperature lapse rate and the precipitation correction factor.
 
-# %%
+# %% tags=["output_scroll"]
 from matilda.mspot_glacier import psample
 
 lim_dict = {'lr_temp_lo': -0.007, 'lr_temp_up': -0.005, 'PCORR_lo': 0.5, 'PCORR_up': 1.5}
@@ -220,7 +225,7 @@ param = {'lr_temp': -0.006472598,
 print('Calibrated parameter set:\n\n')
 for key in param.keys(): print(key + ': ' + str(param[key]))
 
-# %%
+# %% tags=["output_scroll"]
 output_matilda = matilda_simulation(era5, obs, **settings, parameter_set=param)
 
 # %% [markdown]
@@ -271,7 +276,7 @@ print('Needed number of iterations for FAST: ' + str(fast_iter(21)))
 #
 # **Note:** No matter what number of iterations you define, SPOTPY will run $N*k$ times, where $k$ is the number of model parameters. So even if we set `rep=10`, the algorithm will run at least 21 times.
 
-# %%
+# %% tags=["output_scroll"]
 from matilda.mspot_glacier import psample
 
 fast_settings = {'rep': 52437,                              # Choose wisely before running
@@ -327,7 +332,7 @@ def get_si(fast_results: str, to_csv: bool = False) -> pd.DataFrame:
         sens.to_csv(os.path.basename(fast_results) + '_sensitivity_indices.csv', index=False)
     return sens
 
-print(get_si(dir_input + 'FAST/' + 'example_fast_nolim.csv'))
+display(get_si(dir_input + 'FAST/' + 'example_fast_nolim.csv'))
 
 # %% [markdown]
 # If you have additional information on certain parameters, limiting their bounds can have a large impact on sensitivity. For our example catchment, field observations showed that the temperature lapse rate and precipitation correction were unlikely to exceed a certain range, so we limited the parameter space for both and ran a *FAST* again.
@@ -428,7 +433,7 @@ for key in fixed_param_bounds.keys(): print(key + ': ' + str(fixed_param_bounds[
 # %% [markdown]
 # The `psample()` setup is then as simple as before.
 
-# %%
+# %% tags=["output_scroll"]
 new_settings = {'rep': 10,                             # Number of model runs. For advice check the documentation of the algorithms.
                 'glacier_only': False,                 # True when calibrating a entirely glacierized catchment
                 'obj_dir': 'maximize',                 # should your objective funtion be maximized (e.g. NSE) or minimized (e.g. RMSE)
@@ -446,6 +451,7 @@ psample_settings.update(new_settings)
 best_summary = psample(df=era5, obs=obs, **psample_settings, **fixed_param_bounds)
 
 # %% [markdown]
-# **Note:** The number of iterations required depends on the selected algorithm and the number of free parameters. To choose the correct setting, consult the [SPOTPY documentation](https://spotpy.readthedocs.io/en/latest/Algorithm_guide/) and the original literature for each algorithm.
+# <div class="alert alert-block alert-info">
+# <b>Note:</b> The number of iterations required depends on the selected algorithm and the number of free parameters. To choose the correct setting, consult the <a href='https://spotpy.readthedocs.io/en/latest/Algorithm_guide/'>SPOTPY documentation</a> and the original literature for each algorithm.</div>
 
 # %%
