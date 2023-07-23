@@ -28,7 +28,7 @@
 # ## Custom dataframes
 
 # %% [markdown]
-# First, we again use some helper functions to convert our stored MATILDA output back into a dictionary.
+# First, we again read our paths from the `config.ini` and use some helper functions to convert our stored MATILDA output back into a dictionary.
 #
 # **Note:** We provide two storage options: `pickle` files are fast to read and write, but take up more disk space. You can use them on your local machine. `parquet` files are half the size but take longer to read and write. They should be your choice in the Binder.
 

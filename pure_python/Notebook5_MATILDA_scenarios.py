@@ -23,63 +23,56 @@
 # **Note:** On a single CPU one MATILDA run over 120y takes ~4s. For all ensemble members this adds up to ~4min. The `MatildaBulkProcessor` class allows you to reduce this time significantly with more CPUs so you might want to run this notebook locally. Or have a coffee. Again...
 #
 
-# %%
+# %% [markdown]
+# # Change to parquet
 
 # %%
-import pickle
-import os
+from tools.helpers import update_yaml, read_yaml, write_yaml
+import configparser
+
+# read local config.ini file
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+# get directories from config.ini
+dir_input = config['FILE_SETTINGS']['DIR_INPUT']
+dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
+
+
+# %% [markdown]
+# ## Do not change the yaml but only the dict!!
+
+# %%
 import pandas as pd
-import sys
-from pathlib import Path
-from matilda.core import matilda_simulation
+matilda_settings = read_yaml(f"{dir_output}/settings.yml")
+adapted_settings = {
+    "set_up_start": '1979-01-01',  # Start date of the setup period
+    "set_up_end": '1980-12-31',  # End date of the setup period
+    "sim_start": '1981-01-01',  # Start date of the simulation period
+    "sim_end": '2100-12-31',  # End date of the simulation period
+    "plots": False
+}
 
-home = str(Path.home()) + '/Seafile'
-sys.path.append(home + '/Ana-Lena_Phillip/data/tests_and_tools')
-wd = home + '/EBA-CA/Papers/No1_Kysylsuu_Bash-Kaingdy/data'
-glacier_profile = pd.read_csv(wd + "/kyzulsuu_glacier_profile.csv")
+update_yaml(f"{dir_output}/settings.yml", adapted_settings)
+matilda_settings['glacier_profile'] = pd.read_csv(f"{dir_output}/glacier_profile.csv")
 
-test_dir = '/home/phillip/Seafile/EBA-CA/Repositories/matilda_edu/output/cmip6/'
+for key in matilda_settings.keys(): print(key + ': ' + str(matilda_settings[key]))
 
+# %%
+param_dict = read_yaml(f"{dir_output}/parameters.yml")
 
-def dict_to_pickle(dic, target_path):
-    """
-    Saves a dictionary to a pickle file at the specified target path.
-    Creates target directory if not existing.
-    Parameters
-    ----------
-    dic : dict
-        The dictionary to save to a pickle file.
-    target_path : str
-        The path of the file where the dictionary shall be stored.
-    Returns
-    -------
-    None
-    """
-    target_dir = os.path.dirname(target_path)
-    if not os.path.exists(target_dir):
-        os.makedirs(target_dir)
+# %%
+from tools.helpers import pickle_to_dict
 
-    with open(target_path, 'wb') as f:
-        pickle.dump(dic, f)
+## Read adjusted CMIP6 data
+tas = pickle_to_dict(f"{dir_output}cmip6/adjusted/tas.pickle")
+pr = pickle_to_dict(f"{dir_output}cmip6/adjusted/pr.pickle")
 
 
-def pickle_to_dict(file_path):
-    """
-    Loads a dictionary from a pickle file at a specified file path.
-    Parameters
-    ----------
-    file_path : str
-        The path of the pickle file to load.
-    Returns
-    -------
-    dict
-        The dictionary loaded from the pickle file.
-    """
-    with open(file_path, 'rb') as f:
-        dic = pickle.load(f)
-    return dic
+# %% [markdown]
+# # Continue here...
 
-
+# %%
 def cmip2df(temp, prec, scen, col):
     """
     Converts temperature and precipitation data from a CMIP model output dictionary into a Pandas DataFrame.
@@ -101,57 +94,6 @@ def cmip2df(temp, prec, scen, col):
     df = pd.DataFrame({'T2': temp[scen][col], 'RRR': prec[scen][col]}).reset_index()
     df.columns = ['TIMESTAMP', 'T2', 'RRR']
     return df
-
-
-matilda_settings = {
-    "set_up_start": '1979-01-01',  # Start date of the setup period
-    "set_up_end": '1980-12-31',  # End date of the setup period
-    "sim_start": '1981-01-01',  # Start date of the simulation period
-    "sim_end": '2100-12-31',  # End date of the simulation period
-    "freq": "M",  # Frequency of the data (monthly)
-    "glacier_profile": glacier_profile,  # Glacier profile
-    "area_cat": 295.763,  # Area of the catchment
-    "lat": 42.33,  # Latitude of the catchment
-    "warn": False,  # Warning flag
-    "plot_type": "all",  # Type of plot
-    "plots": False,  # Flag to indicate if plots should be generated
-    "elev_rescaling": True,  # Flag to indicate if elevation rescaling should be done
-    "ele_dat": 3172,  # Elevation of the data
-    "ele_cat": 3295,  # Elevation of the catchment
-    "area_glac": 32.51,  # Area of the glacier
-    "ele_glac": 4068,  # Elevation of the glacier
-    "pfilter": 0  # Filter parameter
-}
-param_dict = {
-    'lr_temp': -0.006077369,  # Lapse rate for temperature
-    'lr_prec': 0.0013269137,  # Lapse rate for precipitation
-    'BETA': 5.654754,
-    'CET': 0.08080378,
-    'FC': 365.68375,  # Field capacity
-    'K0': 0.36890236,  # K0 parameter
-    'K1': 0.022955153,  # K1 parameter
-    'K2': 0.060069658,  # K2 parameter
-    'LP': 0.63395154,  # LP parameter
-    'MAXBAS': 5.094901,  # Maximum basin storage
-    'PERC': 0.39491335,  # Percolation
-    'UZL': 348.0978,  # Upper zone limit
-    'PCORR': 1.0702422,  # Precipitation correction
-    'TT_snow': -1.1521467,  # Temperature threshold for snow
-    'TT_diff': 1.5895765,  # Temperature difference
-    'CFMAX_ice': 3.6518102,  # Maximum ice content
-    'CFMAX_rel': 1.8089349,  # Maximum relative content
-    'SFCF': 0.42293832,  # Soil field capacity
-    'CWH': 0.11234668,  # Crop water holding capacity
-    'AG': 0.9618855,
-    'RFS': 0.11432563  # Rainfall sensitivity ???
-}
-
-
-# %%
-## Read adjusted CMIP6 data
-
-tas = pickle_to_dict(test_dir + 'adjusted/tas.pickle')
-pr = pickle_to_dict(test_dir + 'adjusted/pr.pickle')
 
 
 # %%

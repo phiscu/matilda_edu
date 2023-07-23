@@ -32,6 +32,7 @@
 # %% [markdown]
 # Let's start by importing some helper functions to work with `yaml` and `pickle` files and read required data from the config file.
 
+
 # %%
 from tools.helpers import update_yaml, read_yaml, write_yaml
 import configparser
@@ -95,14 +96,14 @@ for key in settings.keys(): print(key + ': ' + str(settings[key]))
 # We will force MATILDA with the pre-processed ERA5-Land data from Notebook 2. Although MATILDA can run without calibration on observations, the results would have extreme uncertainties. Therefore, we recommend to use at least runoff observations for your selected point to evaluate the simulations against. Here, we load runoff observations for your example catchment from 1982 to 2020 (with gaps).
 
 # %%
-era5 = pd.read_csv(dir_output + 'ERA5L.csv', usecols=['temp', 'prec', 'dt'])
-era5.columns = ['T2', 'RRR', 'TIMESTAMP']
+era5 = pd.read_csv(dir_output + 'ERA5L.csv', usecols=['dt', 'temp', 'prec'])
+era5.columns = ['TIMESTAMP','T2', 'RRR']
 
 # remove HH:MM:SS from 'TIMESTAMP' column
 era5['TIMESTAMP'] = pd.to_datetime(era5['TIMESTAMP'])
 era5['TIMESTAMP'] = era5['TIMESTAMP'].dt.date
 
-obs = pd.read_csv('input/' + 'obs_runoff_example.csv')
+obs = pd.read_csv(dir_input + 'obs_runoff_example.csv')
 
 print(obs)
 
@@ -193,8 +194,9 @@ best_summary = psample(df=era5, obs=obs, **psample_settings, **lim_dict)
 
 # %% [markdown]
 # The following parameter set was computed using an updated version of the Differential Evolution Markov Chain (DE-MCz) algorithm with 55k iterations on an HPC cluster. The parameters were optimized for runoff using the [Kling-Gupta model efficiency coefficient](https://doi.org/10.1016/j.jhydrol.2012.01.011) and the results were filtered to match the target mass balance range.
+# <a id="param"></a>
 
-# %% jupyter={"outputs_hidden": true}
+# %%
 param = {'lr_temp': -0.006472598,
          'lr_prec': 0.00010296448,
          'BETA': 4.625306,
@@ -448,4 +450,18 @@ best_summary = psample(df=era5, obs=obs, **psample_settings, **fixed_param_bound
 # %% [markdown]
 # **Note:** The number of iterations required depends on the selected algorithm and the number of free parameters. To choose the correct setting, consult the [SPOTPY documentation](https://spotpy.readthedocs.io/en/latest/Algorithm_guide/) and the original literature for each algorithm.
 
+# %% [markdown]
+# Now, we save the best parameter set for use in the next notebook. The set is stored in the `best_summary` variable.
+
+# %% [markdown]
+# **Note:** In our example we will skip this step and use the [result from the calibration on an HPC cluster](#param). 
+
 # %%
+# param = best_summary['best_param']
+
+# %% [markdown]
+# Finally, we store the parameter set in a `.yml` file.
+
+# %%
+write_yaml(param, dir_output + 'parameters.yml')
+print(f"Parameter set stored in '{dir_output}parameters.yml'")

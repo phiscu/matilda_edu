@@ -74,6 +74,29 @@ def pickle_to_dict(file_path):
     with open(file_path, 'rb') as f:
         dic = pickle.load(f)
     return dic
+
+
+def dict_to_pickle(dic, target_path):
+    """
+    Saves a dictionary to a pickle file at the specified target path.
+    Creates target directory if not existing.
+    Parameters
+    ----------
+    dic : dict
+        The dictionary to save to a pickle file.
+    target_path : str
+        The path of the file where the dictionary shall be stored.
+    Returns
+    -------
+    None
+    """
+    target_dir = os.path.dirname(target_path)
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir)
+
+    with open(target_path, 'wb') as f:
+        pickle.dump(dic, f)
+
     
 
 def drop_keys(dic, keys_to_drop):
@@ -125,6 +148,33 @@ def parquet_to_dict(directory_path: str, pbar: bool = True) -> dict:
             dictionary[k] = pd.read_parquet(file_path)
     return dictionary
  
+
+def dict_to_parquet(dictionary: dict, directory_path: str, pbar: bool = True) -> None:
+    """
+    Recursively stores the dataframes in the input dictionary as parquet files in the specified directory.
+    Nested dictionaries are supported. If the specified directory does not exist, it will be created.
+    Parameters
+    ----------
+    dictionary : dict
+        A nested dictionary containing pandas dataframes.
+    directory_path : str
+        The directory path to store the parquet files.
+    pbar : bool, optional
+        A flag indicating whether to display a progress bar. Default is True.
+    """
+    if not os.path.exists(directory_path):
+        os.makedirs(directory_path)
+    if pbar:
+        bar_iter = tqdm(dictionary.items(), desc='Writing parquet files: ')
+    else:
+        bar_iter = dictionary.items()
+    for k, v in bar_iter:
+        if isinstance(v, dict):
+            dict_to_parquet(v, os.path.join(directory_path, k), pbar=False)
+        else:
+            file_path = os.path.join(directory_path, k + ".parquet")
+            write(file_path, v, compression='GZIP')
+
 
 matilda_vars = {
  'avg_temp_catchment': ('Mean Catchment Temperature', '°C'),
