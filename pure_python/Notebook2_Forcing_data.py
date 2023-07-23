@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -307,7 +307,7 @@ plt.tight_layout()
 plt.show()
 
 # %% [markdown]
-# # Store data for next steps
+# ## Store data for next steps
 
 # %% [markdown]
 # To continue in the workflow, we write the ERA5 data to a `.csv` file...
