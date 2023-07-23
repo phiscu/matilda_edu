@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -124,7 +124,8 @@ if show_map:
 # %% [markdown]
 # Next, we add the configured discharge point to the map and generate a **40km** buffer box. 
 #
-# **Note:** Please check whether the default box covers your research area. Alternatively, you can adjust the box manually. **The catchment area will be cropped if the selected box is too small.**
+# <div class="alert alert-block alert-info">
+#     <b>Note:</b> Please check whether the default box covers your research area. Alternatively, you can adjust the box manually. <b>The catchment area will be cropped if the selected box is too small.</b></div>
 
 # %%
 point = ee.Geometry.Point(x,y)
@@ -165,7 +166,8 @@ geemap.ee_export_image(image, filename=filename, scale=30, region=box, file_per_
 #
 # The full documentation of the <code>pysheds</code> module can be found [here](https://mattbartos.com/pysheds/).
 #
-# **Note:** The catchment delineation involves several steps with large array operations and can take a moment.
+# <div class="alert alert-block alert-info">
+# <b>Note:</b> The catchment delineation involves several steps with large array operations and can take a moment.</div>
 
 # %%
 # %%time
@@ -283,7 +285,9 @@ catchment_area = catchment.area().divide(1000*1000).getInfo()
 print(f"Catchment area is {catchment_area:.2f} km²")
 
 # %% [markdown]
-# **Note:** Please make sure to leave some buffer between the catchment outline and the used box (&rarr; [Jump to map](#map)). If the bounding box is close to the catchment, please extent the box and repeat the DEM download and catchment delineation (&rarr; use [Restart Point #1](#rp01)).
+# <div class="alert alert-block alert-warning">
+# <b>Note:</b>
+#  Please make sure to leave some buffer between the catchment outline and the used box (&rarr; <a href='#map'>Jump to map</a>). If the bounding box is close to the catchment, please extent the box and repeat the DEM download and catchment delineation (&rarr; use <a href='#rp01'>Restart Point #1</a>).</div>
 #
 # Example:
 #
@@ -318,7 +322,7 @@ print(f"Catchment area is {catchment_area:.2f} km²")
 #
 # > Source: [RGI Consortium (2017)](https://doi.org/10.7265/4m1f-gd79)
 
-# %%
+# %% tags=["output_scroll"]
 import geopandas as gpd
 
 # load catcment and RGI regions as DF
@@ -364,7 +368,9 @@ else:
 # %% [markdown]
 # In the next step, the glacier inventory outlines for the determined RGI region will be downloaded. A spatial join is performed to determine all glacier outlines that intersect with the catchment area.
 #
-# **Note**: Depending on the region and bandwidth, this might take 1 min or longer. 
+# <div class="alert alert-block alert-info">
+# <b>Note:</b>
+#  Depending on the region and bandwidth, this might take 1 min or longer.</div> 
 
 # %%
 # %%time
@@ -408,7 +414,7 @@ if rgi_region != None:
 # %% [markdown]
 # Some glaciers are not actually in the catchment, but intersect its outline. We will first determine their fractional overlap with the target catchment.
 
-# %%
+# %% tags=["output_scroll"]
 # intersects selects too many. calculate percentage of glacier area that is within catchment
 rgi_catchment['rgi_area'] = rgi_catchment.to_crs(crs).area    
     
@@ -443,7 +449,7 @@ print(f'Number of excluded glacier outlines (overlap < 50%): {len(rgi_out_catchm
 # %% [markdown]
 # The RGI-IDs of the remaining glaciers are stored in `Glaciers_in_catchment.csv`.
 
-# %%
+# %% tags=["output_scroll"]
 from pathlib import Path
 Path(output_folder + 'RGI').mkdir(parents=True, exist_ok=True)
 
@@ -647,7 +653,9 @@ for idx,row in refs_dem.iterrows():
 print(f'{cnt_dem} files have been extracted (DEM)')
 
 # %% [markdown]
-# **Note:** Please check whether all files have been extracted to the output folder without error messages and **the number of files matches the number of glaciers**.
+# <div class="alert alert-block alert-warning">
+# <b>Note:</b>
+#  Please check whether all files have been extracted to the output folder without error messages and <b>the number of files matches the number of glaciers</b>.</div>
 
 # %%
 if len(rgi_in_catchment) == cnt_thickness == cnt_dem:
@@ -782,7 +790,7 @@ ele_glac = round(df_all.altitude.mean(), 2)
 print(f'Average glacier elevation in the catchment: {ele_glac:.2f} m a.s.l.')
 
 # %% [markdown]
-# # Store calculated values for other notebooks
+# ## Store calculated values for other notebooks
 
 # %% [markdown]
 # Create a `settings.yml` and store the relevant catchment information. Those information will be used in later notebooks:

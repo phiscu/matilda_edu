@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -310,7 +310,7 @@ ssp2_pr_raw, ssp5_pr_raw = processor_p.get_results()
 # %% [markdown]
 # Let's have a look. We can see that our scenario dataset now contains 33 CMIP6 models in alphabetical order.
 
-# %%
+# %% tags=["output_scroll"]
 print(ssp2_tas_raw.info())
 
 # %% [markdown]
@@ -975,7 +975,7 @@ pp_matrix(ssp5_pr_raw, era5['prec'], ssp5_pr, precip=True, scenario='SSP5', show
 # Considering the complexity and heterogeneity of precipitation data, the performance of SDM is convincing. While the fitted data of most models deviate from the target data for low and very high values, the general distribution of monthly precipitation is well met. 
 
 # %% [markdown]
-# # Write CMIP6 data to file
+# ## Write CMIP6 data to file
 
 # %% [markdown]
 # After a thorough review of the climate scenario data, we can write the final selection to files for use in the next notebook. Since the whole ensemble results in relatively large files, we store the dictionaries in binary `pickle` files. These are not human readable, but compact and fast to read and write.
