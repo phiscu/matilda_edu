@@ -5,6 +5,7 @@ import os
 from tqdm import tqdm
 import sys
 from pathlib import Path
+from fastparquet import write
 
 
 def read_yaml(file_path):

@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.6
+#       jupytext_version: 1.14.5
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -978,37 +978,20 @@ pp_matrix(ssp5_pr_raw, era5['prec'], ssp5_pr, precip=True, scenario='SSP5', show
 # ## Write CMIP6 data to file
 
 # %% [markdown]
-# After a thorough review of the climate scenario data, we can write the final selection to files for use in the next notebook. Since the whole ensemble results in relatively large files, we store the dictionaries in binary `pickle` files. These are not human readable, but compact and fast to read and write.
-
-# %%
-import os
-import pickle
-
-def dict_to_pickle(dic, target_path):
-    """
-    Saves a dictionary to a pickle file at the specified target path.
-    Creates target directory if not existing.
-    Parameters
-    ----------
-    dic : dict
-        The dictionary to save to a pickle file.
-    target_path : str
-        The path of the file where the dictionary shall be stored.
-    Returns
-    -------
-    None
-    """
-    target_dir = os.path.dirname(target_path)
-    if not os.path.exists(target_dir):
-        os.makedirs(target_dir)
-
-    with open(target_path, 'wb') as f:
-        pickle.dump(dic, f)
-
+# After a thorough review of the climate scenario data, we can write the final selection to files for use in the next notebook. Since the whole ensemble results in relatively large files, we store the dictionaries in binary files. These are not human readable, but compact and fast to read and write.
 
 # %% [markdown]
-# The `dict_to_pickle()` function will create a target folder if it doesn't exist.
+# <div class="alert alert-block alert-info">
+# <b>Note:</b> We provide two storage options: <code>pickle</code> files are fast to read and write, but take up more disk space. You can use them on your local machine. <code>parquet</code> files are half the size but take longer to read and write. They should be your choice in the Binder.</div>
 
 # %%
-dict_to_pickle(ssp_tas_dict, cmip_dir + 'adjusted/ssp_tas_dict.pickle')
-dict_to_pickle(ssp_pr_dict, cmip_dir + 'adjusted/ssp_pr_dict.pickle')
+from tools.helpers import dict_to_pickle, dict_to_parquet
+
+# For storage efficiency:
+dict_to_parquet(ssp_tas_dict, cmip_dir + 'adjusted/ssp_tas_parquet')
+dict_to_parquet(ssp_pr_dict, cmip_dir + 'adjusted/ssp_pr_parquet')
+
+
+# For speed:
+# dict_to_pickle(ssp_tas_dict, cmip_dir + 'adjusted/ssp_tas_dict.pickle')
+# dict_to_pickle(ssp_pr_dict, cmip_dir + 'adjusted/ssp_pr_dict.pickle')
