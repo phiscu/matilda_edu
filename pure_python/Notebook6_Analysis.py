@@ -39,6 +39,7 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
 
+print("Importing MATILDA scenarios...")
 # For size:
 matilda_scenarios = parquet_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
 

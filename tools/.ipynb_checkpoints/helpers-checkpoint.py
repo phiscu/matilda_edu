@@ -6,6 +6,7 @@ from tqdm import tqdm
 import sys
 from pathlib import Path
 from fastparquet import write
+import numpy as np
 
 
 def read_yaml(file_path):

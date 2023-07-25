@@ -2,6 +2,8 @@ from tools.helpers import hydrologicalize
 import spotpy.hydrology.signatures as sig
 from climate_indices.indices import spei, spi, Distribution
 from climate_indices import compute, utils
+import pandas as pd
+import numpy as np
 
 def prec_minmax(df):
     """
@@ -460,3 +462,31 @@ def cc_indicators(df, **kwargs):
         indicator_df = pd.concat([indicator_df, result], axis=1)
 
     return indicator_df
+
+
+indicator_vars = {
+ 'max_prec_month': ('Month with Maximum Precipitation', '-'),
+ 'min_prec_month': ('Month with Minimum Precipitation', '-'),
+ 'peak_day': ('Timing of Peak Runoff', 'DoY'),
+ 'melt_season_start': ('Beginning of Melting Season', 'DoY'),
+ 'melt_season_end': ('End of Melting Season', 'DoY'),
+ 'melt_season_length': ('Length of Melting Season', 'd'),
+ 'actual_aridity': ('Relative Change of Actual Aridity', '%'),
+ 'potential_aridity': ('Relative Change of Potential Aridity', '%'),
+ 'dry_spell_days': ('Total Length of Dry Spells per year', 'd/a'),
+ 'qlf_freq': ('Frequency of Low-flow events', 'yr^-1'),
+ 'qlf_dur': ('Mean Duration of Low-flow events', 'd'),
+ 'qhf_freq': ('Frequency of High-flow events', 'yr^-1'),
+ 'qhf_dur': ('Mean Duration of High-flow events', 'd'),
+ 'clim_water_balance': ('Climatic Water Balance', 'mm w.e.'),
+ 'spi1': ('Standardized Precipitation Index (1 month)', '-'),
+ 'spei1': ('Standardized Precipitation Evaporation Index (1 month)', '-'),
+ 'spi3': ('Standardized Precipitation Index (3 months)', '-'),
+ 'spei3': ('Standardized Precipitation Evaporation Index (3 months)', '-'),
+ 'spi6': ('Standardized Precipitation Index (6 months)', '-'),
+ 'spei6': ('Standardized Precipitation Evaporation Index (6 months)', '-'),
+ 'spi12': ('Standardized Precipitation Index (12 months)', '-'),
+ 'spei12': ('Standardized Precipitation Evaporation Index (12 months)', '-'),
+ 'spi24': ('Standardized Precipitation Index (24 months)', '-'),
+ 'spei24': ('Standardized Precipitation Evaporation Index (24 months)', '-')
+}
