@@ -70,26 +70,33 @@ matilda_settings.update(adapted_settings)
 print("Settings for MATILDA scenario runs:\n")
 for key in matilda_settings.keys(): print(key + ': ' + str(matilda_settings[key]))
 
-# %%
-
-# %%
-
 # %% [markdown]
-# # Change to parquet
-
-# %% [markdown]
-#
+# As we want to use the best calibrated parameter set for the projections we read the `parameters.yml`...
 
 # %%
 param_dict = read_yaml(f"{dir_output}/parameters.yml")
 
+# %% [markdown]
+# ...and our forcing data.
+#
+# <div class="alert alert-block alert-info">
+# <b>Note:</b> Choose either <code>pickle</code> or <code>parquet</code> depending on what you used in Notebook 3.</div>
+
 # %%
 from tools.helpers import parquet_to_dict, pickle_to_dict
 
-## Read adjusted CMIP6 data
-tas = pickle_to_dict(f"{dir_output}cmip6/adjusted/tas.pickle")
-pr = pickle_to_dict(f"{dir_output}cmip6/adjusted/pr.pickle")
+# For size:
+tas = parquet_to_dict(f"{dir_output}cmip6/adjusted/tas_parquet")
+pr = parquet_to_dict(f"{dir_output}cmip6/adjusted/pr_parquet")
 
+## For speed
+# tas = pickle_to_dict(f"{dir_output}cmip6/adjusted/tas.pickle")
+# pr = pickle_to_dict(f"{dir_output}cmip6/adjusted/pr.pickle")
+
+# %%
+
+# %% [markdown]
+#
 
 # %% [markdown]
 # # Continue here...

@@ -985,13 +985,20 @@ pp_matrix(ssp5_pr_raw, era5['prec'], ssp5_pr, precip=True, scenario='SSP5', show
 # <b>Note:</b> We provide two storage options: <code>pickle</code> files are fast to read and write, but take up more disk space. You can use them on your local machine. <code>parquet</code> files are half the size but take longer to read and write. They should be your choice in the Binder.</div>
 
 # %%
+ssp_tas_dict.keys()
+
+# %%
 from tools.helpers import dict_to_pickle, dict_to_parquet
 
+tas = {'SSP2': ssp_tas_dict['SSP2_adjusted'], 'SSP5': ssp_tas_dict['SSP5_adjusted']}
+pr = {'SSP2': ssp_pr_dict['SSP2_adjusted'], 'SSP5': ssp_pr_dict['SSP5_adjusted']}
+
+
 # For storage efficiency:
-dict_to_parquet(ssp_tas_dict, cmip_dir + 'adjusted/ssp_tas_parquet')
-dict_to_parquet(ssp_pr_dict, cmip_dir + 'adjusted/ssp_pr_parquet')
+dict_to_parquet(tas, cmip_dir + 'adjusted/tas_parquet')
+dict_to_parquet(tas, cmip_dir + 'adjusted/pr_parquet')
 
 
 # For speed:
-# dict_to_pickle(ssp_tas_dict, cmip_dir + 'adjusted/ssp_tas_dict.pickle')
-# dict_to_pickle(ssp_pr_dict, cmip_dir + 'adjusted/ssp_pr_dict.pickle')
+# dict_to_pickle(tas, cmip_dir + 'adjusted/tas.pickle')
+# dict_to_pickle(pr, cmip_dir + 'adjusted/pr.pickle')
