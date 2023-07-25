@@ -20,14 +20,17 @@
 #
 # - ...run MATILDA with the same parameters and settings but 2 x 31 different climate forcings.
 #
-# **Note:** On a single CPU one MATILDA run over 120y takes ~4s. For all ensemble members this adds up to ~4min. The `MatildaBulkProcessor` class allows you to reduce this time significantly with more CPUs so you might want to run this notebook locally. Or have a coffee. Again...
+# <div class="alert alert-block alert-info">
+# <b>Note:</b> On a single CPU one MATILDA run over 120y takes ~4s. For all ensemble members this adds up to ~4min. The <code>MatildaBulkProcessor</code> class allows you to reduce this time significantly with more CPUs so you might want to run this notebook locally. Or have a coffee. Again...</div>
 #
 
 # %% [markdown]
-# # Change to parquet
+# ## Set up the scenario runs
+
+# %% [markdown]
+# As before, we start by reading our paths from the `config.ini`.
 
 # %%
-from tools.helpers import update_yaml, read_yaml, write_yaml
 import configparser
 
 # read local config.ini file
@@ -38,11 +41,19 @@ config.read('config.ini')
 dir_input = config['FILE_SETTINGS']['DIR_INPUT']
 dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
 
+print(f"Input path: '{dir_input}'")
+print(f"Output path: '{dir_output}'")
+
 
 # %% [markdown]
-# ## Do not change the yaml but only the dict!!
+# <div class="alert alert-block alert-info">
+# <b>Note:</b> We provide two storage options: <code>pickle</code> files are fast to read and write, but take up more disk space. You can use them on your local machine. <code>parquet</code> files are half the size but take longer to read and write. They should be your choice in the Binder.</div>
+
+# %% [markdown]
+# To run MATILDA for a period in the future, we need to adapt the modeling period. Therefore, we read the `settings.yaml` to a ditionary and change the respective settings. We also turn of the plotting module to reduce processing time and add the glacier profile from its `.csv`.
 
 # %%
+from tools.helpers import read_yaml, write_yaml
 import pandas as pd
 matilda_settings = read_yaml(f"{dir_output}/settings.yml")
 adapted_settings = {
@@ -52,11 +63,22 @@ adapted_settings = {
     "sim_end": '2100-12-31',  # End date of the simulation period
     "plots": False
 }
-
-update_yaml(f"{dir_output}/settings.yml", adapted_settings)
 matilda_settings['glacier_profile'] = pd.read_csv(f"{dir_output}/glacier_profile.csv")
 
+matilda_settings.update(adapted_settings)
+
+print("Settings for MATILDA scenario runs:\n")
 for key in matilda_settings.keys(): print(key + ': ' + str(matilda_settings[key]))
+
+# %%
+
+# %%
+
+# %% [markdown]
+# # Change to parquet
+
+# %% [markdown]
+#
 
 # %%
 param_dict = read_yaml(f"{dir_output}/parameters.yml")
