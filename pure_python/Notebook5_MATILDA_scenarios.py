@@ -50,7 +50,7 @@ print(f"Output path: '{dir_output}'")
 # <b>Note:</b> We provide two storage options: <code>pickle</code> files are fast to read and write, but take up more disk space. You can use them on your local machine. <code>parquet</code> files are half the size but take longer to read and write. They should be your choice in the Binder.</div>
 
 # %% [markdown]
-# To run MATILDA for a period in the future, we need to adapt the modeling period. Therefore, we read the `settings.yaml` to a ditionary and change the respective settings. We also turn of the plotting module to reduce processing time and add the glacier profile from its `.csv`.
+# To run MATILDA for a period in the future, we need to adapt the modeling period. Therefore, we read the `settings.yaml` to a ditionary and change the respective settings. We also turn off the plotting module to reduce processing time and add the glacier profile from its `.csv`.
 
 # %%
 from tools.helpers import read_yaml, write_yaml
@@ -84,7 +84,7 @@ for key in matilda_settings.keys(): print(key + ': ' + str(matilda_settings[key]
 param_dict = read_yaml(f"{dir_output}/parameters.yml")
 
 # %%
-from tools.helpers import pickle_to_dict
+from tools.helpers import parquet_to_dict, pickle_to_dict
 
 ## Read adjusted CMIP6 data
 tas = pickle_to_dict(f"{dir_output}cmip6/adjusted/tas.pickle")
