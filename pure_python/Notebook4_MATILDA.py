@@ -170,7 +170,7 @@ psample_settings = drop_keys(settings, ['warn', 'plots', 'plot_type'])
 additional_settings = {'rep': 10,                            # Number of model runs. For advice check the documentation of the algorithms.
                        'glacier_only': False,                 # True when calibrating a entirely glacierized catchment
                        'obj_dir': 'maximize',                 # should your objective funtion be maximized (e.g. NSE) or minimized (e.g. RMSE)
-                       'target_mb': -156,                     # Average annual glacier mass balance to target at
+                       'target_mb': mean_mb,                  # Average annual glacier mass balance to target at
                        'dbformat': None,                      # Write the results to a file ('csv', 'hdf5', 'ram', 'sql')
                        'output': None,                        # Choose where to store the files
                        'algorithm': 'lhs',                    # Choose algorithm (for parallelization: mc, lhs, fast, rope, sceua or demcz)
