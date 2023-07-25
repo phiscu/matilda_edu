@@ -982,7 +982,7 @@ pp_matrix(ssp5_pr_raw, era5['prec'], ssp5_pr, precip=True, scenario='SSP5', show
 
 # %% [markdown]
 # <div class="alert alert-block alert-info">
-# <b>Note:</b> We provide two storage options: <code>pickle</code> files are fast to read and write, but take up more disk space. You can use them on your local machine. <code>parquet</code> files are half the size but take longer to read and write. They should be your choice in the Binder.</div>
+# <b>Note:</b> We provide two storage options: <code>pickle</code> files are fast to read and write, but take up more disk space. You can use them on your local machine. <code>parquet</code> files need less disk space but take longer to read and write. They should be your choice in the Binder.</div>
 
 # %%
 ssp_tas_dict.keys()

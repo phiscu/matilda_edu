@@ -16,21 +16,19 @@
 # # Model Output Analysis
 
 # %% [markdown]
-# Now that we have run MATILDA so many times we finally want to have a look at the **results**. In this notebook we will
+# Now that we have run MATILDA so many times we finally want to have a look at the **results**. In this notebook we will...
 #
-# 1. ...create custom data frames containing individual output variables from all ensemble members,
+# 1. ...create **custom data frames** containing individual output variables from all ensemble members,
 #
-# 2. ...plot the ensemble mean of these variables with a 90% confidence interval,
+# 2. ...**plot the ensemble mean** of these variables with a 90% confidence interval,
 #
-# 3. ...and create an interactive application to explore the results.
+# 3. ...and create an **interactive application** to explore the results.
 
 # %% [markdown]
 # ## Custom dataframes
 
 # %% [markdown]
 # First, we read our paths from the `config.ini` again and use some helper functions to convert our stored MATILDA output back into a dictionary.
-#
-# **Note:** We provide two storage options: `pickle` files are fast to read and write, but take up more disk space. You can use them on your local machine. `parquet` files are half the size but take longer to read and write. They should be your choice in the Binder.
 
 # %%
 from tools.helpers import pickle_to_dict, parquet_to_dict
@@ -39,13 +37,13 @@ import configparser
 # read output directory from config.ini file
 config = configparser.ConfigParser()
 config.read('config.ini')
-dir_output = config['FILE_SETTINGS']['DIR_OUTPUT'] + 'cmip6/'        # ADJUST TO NOTEBOOK5 PATHS!
+dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
 
 # For size:
-matilda_scenarios = parquet_to_dict(dir_output + 'adjusted/parquet')  # ADJUST TO NOTEBOOK5 PATHS!
+matilda_scenarios = parquet_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
 
 # For speed:
-# matilda_scenarios = pickle_to_dict(test_dir + 'adjusted/matilda_scenarios.pickle')
+# matilda_scenarios = pickle_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
 
 # %% [markdown]
 # At the moment, the structure of the ensemble output is as follows:
@@ -78,35 +76,44 @@ matilda_scenarios = parquet_to_dict(dir_output + 'adjusted/parquet')  # ADJUST T
 # %% [markdown]
 # To analyze all projections of a single variable, we need a function to rearrange the data. The `custom_df_matilda()` function returns a dataframe with all ensemble members for a given variable and scenario resampled to a desired frequency, e.g. **the total annual runoff under SSP 2**.
 
-# %%
+# %% tags=["output_scroll"]
 import pandas as pd
 
 def custom_df_matilda(dic, scenario, var, resample_freq=None):
     """
-    Takes a dictionary of MATILDA outputs and returns a combined dataframe of a specific variable for a given scenario.
-    Parameters:
-        dic (dict): A nested dictionary of MATILDA outputs.
-                    The outer keys are scenario names and the inner keys are model names.
-                    The corresponding values are dictionaries containing two keys:
-                        'model_output' (DataFrame): containing model outputs for a given scenario and model
-                        'glacier_rescaling' (DataFrame): containing glacier properties for a given scenario and model
-        scenario (str): The name of the scenario to select from the dictionary.
-        var (str): The name of the variable to extract from the model output DataFrame.
-        resample_freq (str, optional): The frequency of the resulting time series data.
-                                       Defaults to None (i.e. no resampling).
-                                       If provided, should be in pandas resample frequency string format.
-    Returns:
-        pandas.DataFrame: A DataFrame containing the combined data of the specified variable for the selected scenario
-                          and models. The DataFrame is indexed by the time steps of the original models.
-                          The columns are the names of the models in the selected scenario.
-    Raises:
-        ValueError: If the provided  var  string is not one of the following: ['avg_temp_catchment', 'avg_temp_glaciers',
-                    'evap_off_glaciers', 'prec_off_glaciers', 'prec_on_glaciers', 'rain_off_glaciers', 'snow_off_glaciers',
-                    'rain_on_glaciers', 'snow_on_glaciers', 'snowpack_off_glaciers', 'soil_moisture', 'upper_groundwater',
-                    'lower_groundwater', 'melt_off_glaciers', 'melt_on_glaciers', 'ice_melt_on_glaciers', 'snow_melt_on_glaciers',
-                    'refreezing_ice', 'refreezing_snow', 'total_refreezing', 'SMB', 'actual_evaporation', 'total_precipitation',
-                    'total_melt', 'runoff_without_glaciers', 'runoff_from_glaciers', 'total_runoff', 'glacier_area',
-                    'glacier_elev', 'smb_water_year', 'smb_scaled', 'smb_scaled_capped', 'smb_scaled_capped_cum', 'surplus']
+    Takes a dictionary of model outputs and returns a combined dataframe of a specific variable for a given scenario.
+    Parameters
+    -------
+    dic : dict
+        A nested dictionary of model outputs.
+        The outer keys are scenario names and the inner keys are model names.
+        The corresponding values are dictionaries containing two keys:
+        'model_output' (DataFrame): containing model outputs for a given scenario and model
+        'glacier_rescaling' (DataFrame): containing glacier properties for a given scenario and model
+    scenario : str
+        The name of the scenario to select from the dictionary.
+    var : str
+        The name of the variable to extract from the model output DataFrame.
+    resample_freq : str, optional
+        The frequency of the resulting time series data.
+        Defaults to None (i.e. no resampling).
+        If provided, should be in pandas resample frequency string format.
+    Returns
+    -------
+    pandas.DataFrame
+        A DataFrame containing the combined data of the specified variable for the selected scenario
+        and models. The DataFrame is indexed by the time steps of the original models.
+        The columns are the names of the models in the selected scenario.
+    Raises
+    -------
+    ValueError
+        If the provided  var  string is not one of the following: ['avg_temp_catchment', 'avg_temp_glaciers',
+        'evap_off_glaciers', 'prec_off_glaciers', 'prec_on_glaciers', 'rain_off_glaciers', 'snow_off_glaciers',
+        'rain_on_glaciers', 'snow_on_glaciers', 'snowpack_off_glaciers', 'soil_moisture', 'upper_groundwater',
+        'lower_groundwater', 'melt_off_glaciers', 'melt_on_glaciers', 'ice_melt_on_glaciers', 'snow_melt_on_glaciers',
+        'refreezing_ice', 'refreezing_snow', 'total_refreezing', 'SMB', 'actual_evaporation', 'total_precipitation',
+        'total_melt', 'runoff_without_glaciers', 'runoff_from_glaciers', 'total_runoff', 'glacier_area',
+        'glacier_elev', 'smb_water_year', 'smb_scaled', 'smb_scaled_capped', 'smb_scaled_capped_cum', 'surplus']
     """
     out1_cols = ['avg_temp_catchment', 'avg_temp_glaciers', 'evap_off_glaciers',
                  'prec_off_glaciers', 'prec_on_glaciers', 'rain_off_glaciers',
@@ -167,7 +174,7 @@ print(custom_df_matilda(matilda_scenarios, 'SSP2', 'total_runoff', 'Y'))
 # ## Plot ensemble mean with confidence interval
 
 # %% [markdown]
-# Showing 31 curves in one figure becomes confusing. A standard way to visualize ensemble data is to plot **the mean** (or median) **across all ensemble members with a confidence interval**. We choose a 95% confidence interval, meaning that based on this sample of 31 climate models, there is a 95% probability that the "true" mean lies within this interval.
+# Showing 31 curves in one figure gets confusing. A standard way to visualize ensemble data is to plot **the mean** (or median) **across all ensemble members with a confidence interval**. We choose a 95% confidence interval, meaning that based on this sample of 31 climate models, there is a 95% probability that the "true" mean lies within this interval.
 #
 # [<img src="https://miro.medium.com/max/3840/1*qSCzTfliGMCcPfIQcGIAJw.jpeg" width="70%"/>](https://miro.medium.com/max/3840/1*qSCzTfliGMCcPfIQcGIAJw.jpeg)
 #

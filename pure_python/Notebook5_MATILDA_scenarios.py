@@ -93,43 +93,11 @@ pr = parquet_to_dict(f"{dir_output}cmip6/adjusted/pr_parquet")
 # tas = pickle_to_dict(f"{dir_output}cmip6/adjusted/tas.pickle")
 # pr = pickle_to_dict(f"{dir_output}cmip6/adjusted/pr.pickle")
 
-# %%
-
 # %% [markdown]
-#
-
-# %% [markdown]
-# # Continue here...
+# Now we have to convert the individual climate projections into MATILDA input dataframes with the correct column names. We store these 2 x 31 MATILDA inputs in a nested dictionary again and save the file in a `parquet` (or `pickle`).
 
 # %%
-def cmip2df(temp, prec, scen, col):
-    """
-    Converts temperature and precipitation data from a CMIP model output dictionary into a Pandas DataFrame.
-    Parameters
-    ----------
-    temp : dict
-        dictionary of temperature data from a CMIP model
-    prec : dict
-        dictionary of precipitation data from a CMIP model
-    scen : str
-        name of the scenario (e.g. RCP4.5)
-    col : str
-        name of the column containing data for the scenario (e.g. tas)
-    Returns:
-    ----------
-    df : pandas.DataFrame
-        DataFrame containing the temperature and precipitation data for the given scenario and column
-    """
-    df = pd.DataFrame({'T2': temp[scen][col], 'RRR': prec[scen][col]}).reset_index()
-    df.columns = ['TIMESTAMP', 'T2', 'RRR']
-    return df
-
-
-# %%
-## Create MATILDA input
-
-import pandas as pd
-
+from tools.helpers import dict_to_parquet, dict_to_pickle
 
 def create_scenario_dict(tas: dict, pr: dict, scenario_nums: list) -> dict:
     """
@@ -166,15 +134,28 @@ def create_scenario_dict(tas: dict, pr: dict, scenario_nums: list) -> dict:
     return scenarios
 
 scenarios = create_scenario_dict(tas, pr, [2, 5])
-dict_to_pickle(scenarios, test_dir + 'adjusted/matilda_input.pickle')
 
-# scenarios = pickle_to_dict(test_dir + 'adjusted/matilda_input.pickle')
+print("Storing MATILDA scenario input dataframes on disk...")
+dict_to_parquet(scenarios, f"{dir_output}cmip6/adjusted/matilda_scenario_input_parquet")
+
+# dict_to_pickle(scenarios, f"{dir_output}cmip6/adjusted/matilda_scenario_input.pickle")
+
+# %% [markdown]
+# ## Running MATILDA for all climate projections
+
+# %% [markdown]
+# Now that we are set up we need to **run MATILDA for every CMIP6 model and both scenarios**. This adds up to **62 model runs at ~4s each** on a single core. SO you can either start the bulk processor and have a break or download data and notebook to run it on more cores on a local computer.
+#
+# <div class="alert alert-block alert-info">
+# <b>Note:</b> Don't be confused by the status bar. It only updates after one full scenario is processed.</div>
 
 # %%
 ## Run Matilda in a loop (takes a while - have a coffee)
 
+from matilda.core import matilda_simulation
 from tqdm import tqdm
 import contextlib
+import os
 from multiprocessing import Pool
 from functools import partial
 
@@ -302,171 +283,11 @@ matilda_bulk = MatildaBulkProcessor(scenarios, matilda_settings, param_dict)
 # matilda_scenarios = matilda_bulk.run_single_process()
 matilda_scenarios = matilda_bulk.run_multi_process()
 
-dict_to_pickle(matilda_scenarios, test_dir + 'adjusted/matilda_scenarios.pickle')
+print("Storing MATILDA scenario outputs on disk...")
+dict_to_parquet(matilda_scenarios, f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
 
-# matilda_scenarios = pickle_to_dict(test_dir + 'adjusted/matilda_scenarios.pickle')
-
-
-# %%
-## Store results in parquet files to limit storage costs
-
-import pandas as pd
-import os
-from fastparquet import write
-from tqdm import tqdm
+# dict_to_pickle(matilda_scenarios, test_dir + 'adjusted/matilda_scenarios.pickle')
 
 
-def dict_to_parquet(dictionary: dict, directory_path: str, pbar: bool = True) -> None:
-    """
-    Recursively stores the dataframes in the input dictionary as parquet files in the specified directory.
-    Nested dictionaries are supported. If the specified directory does not exist, it will be created.
-    Parameters
-    ----------
-    dictionary : dict
-        A nested dictionary containing pandas dataframes.
-    directory_path : str
-        The directory path to store the parquet files.
-    pbar : bool, optional
-        A flag indicating whether to display a progress bar. Default is True.
-    """
-    if not os.path.exists(directory_path):
-        os.makedirs(directory_path)
-    if pbar:
-        bar_iter = tqdm(dictionary.items(), desc='Writing parquet files: ')
-    else:
-        bar_iter = dictionary.items()
-    for k, v in bar_iter:
-        if isinstance(v, dict):
-            dict_to_parquet(v, os.path.join(directory_path, k), pbar=False)
-        else:
-            file_path = os.path.join(directory_path, k + ".parquet")
-            write(file_path, v, compression='GZIP')
-
-
-def parquet_to_dict(directory_path: str, pbar: bool = True) -> dict:
-    """
-    Recursively loads the dataframes from the parquet files in the specified directory and returns a dictionary.
-    Nested directories are supported.
-    Parameters
-    ----------
-    directory_path : str
-        The directory path containing the parquet files.
-    pbar : bool, optional
-        A flag indicating whether to display a progress bar. Default is True.
-    Returns
-    -------
-    dict
-        A dictionary containing the loaded pandas dataframes.
-    """
-    dictionary = {}
-    if pbar:
-        bar_iter = tqdm(sorted(os.listdir(directory_path)), desc='Reading parquet files: ')
-    else:
-        bar_iter = sorted(os.listdir(directory_path))
-    for file_name in bar_iter:
-        file_path = os.path.join(directory_path, file_name)
-        if os.path.isdir(file_path):
-            dictionary[file_name] = parquet_to_dict(file_path, pbar=False)
-        elif file_name.endswith(".parquet"):
-            k = file_name[:-len(".parquet")]
-            dictionary[k] = pd.read_parquet(file_path)
-    return dictionary
-
-
-# Store dictionary in Parquet files
-dict_to_parquet(matilda_scenarios, test_dir + 'adjusted/parquet')
-# Load dictionary from Parquet files
-matilda_scenarios = parquet_to_dict(test_dir + 'adjusted/parquet')
-
-
-# %%
-## Create custom dataframes for analysis
-
-def custom_df(dic, scenario, var, resample_freq=None):
-    """
-    Takes a dictionary of model outputs and returns a combined dataframe of a specific variable for a given scenario.
-    Parameters
-    -------
-    dic : dict
-        A nested dictionary of model outputs.
-        The outer keys are scenario names and the inner keys are model names.
-        The corresponding values are dictionaries containing two keys:
-        'model_output' (DataFrame): containing model outputs for a given scenario and model
-        'glacier_rescaling' (DataFrame): containing glacier properties for a given scenario and model
-    scenario : str
-        The name of the scenario to select from the dictionary.
-    var : str
-        The name of the variable to extract from the model output DataFrame.
-    resample_freq : str, optional
-        The frequency of the resulting time series data.
-        Defaults to None (i.e. no resampling).
-        If provided, should be in pandas resample frequency string format.
-    Returns
-    -------
-    pandas.DataFrame
-        A DataFrame containing the combined data of the specified variable for the selected scenario
-        and models. The DataFrame is indexed by the time steps of the original models.
-        The columns are the names of the models in the selected scenario.
-    Raises
-    -------
-    ValueError
-        If the provided  var  string is not one of the following: ['avg_temp_catchment', 'avg_temp_glaciers',
-        'evap_off_glaciers', 'prec_off_glaciers', 'prec_on_glaciers', 'rain_off_glaciers', 'snow_off_glaciers',
-        'rain_on_glaciers', 'snow_on_glaciers', 'snowpack_off_glaciers', 'soil_moisture', 'upper_groundwater',
-        'lower_groundwater', 'melt_off_glaciers', 'melt_on_glaciers', 'ice_melt_on_glaciers', 'snow_melt_on_glaciers',
-        'refreezing_ice', 'refreezing_snow', 'total_refreezing', 'SMB', 'actual_evaporation', 'total_precipitation',
-        'total_melt', 'runoff_without_glaciers', 'runoff_from_glaciers', 'total_runoff', 'glacier_area',
-        'glacier_elev', 'smb_water_year', 'smb_scaled', 'smb_scaled_capped', 'smb_scaled_capped_cum', 'surplus']
-    """
-    out1_cols = ['avg_temp_catchment', 'avg_temp_glaciers', 'evap_off_glaciers',
-                 'prec_off_glaciers', 'prec_on_glaciers', 'rain_off_glaciers',
-                 'snow_off_glaciers', 'rain_on_glaciers', 'snow_on_glaciers',
-                 'snowpack_off_glaciers', 'soil_moisture', 'upper_groundwater',
-                 'lower_groundwater', 'melt_off_glaciers', 'melt_on_glaciers',
-                 'ice_melt_on_glaciers', 'snow_melt_on_glaciers', 'refreezing_ice',
-                 'refreezing_snow', 'total_refreezing', 'SMB', 'actual_evaporation',
-                 'total_precipitation', 'total_melt', 'runoff_without_glaciers',
-                 'runoff_from_glaciers', 'total_runoff']
-
-    out2_cols = ['glacier_area', 'glacier_elev', 'smb_water_year',
-                 'smb_scaled', 'smb_scaled_capped', 'smb_scaled_capped_cum',
-                 'surplus']
-
-    if var in out1_cols:
-        output_df = 'model_output'
-    elif var in out2_cols:
-        output_df = 'glacier_rescaling'
-    else:
-        raise ValueError("var needs to be one of the following strings: " +
-                         str([out1_cols, out2_cols]))
-
-    # Create an empty list to store the dataframes
-    dfs = []
-    # Loop over the models in the selected scenario
-    for model in dic[scenario].keys():
-        # Get the dataframe for the current model
-        df = dic[scenario][model][output_df]
-        # Append the dataframe to the list of dataframes
-        dfs.append(df[var])
-    # Concatenate the dataframes into a single dataframe
-    combined_df = pd.concat(dfs, axis=1)
-    # Set the column names of the combined dataframe to the model names
-    combined_df.columns = dic[scenario].keys()
-    # Resample time series
-    if resample_freq is not None:
-        if output_df == 'glacier_rescaling':
-            if var in ['glacier_area', 'glacier_elev']:
-                combined_df = combined_df.resample(resample_freq).mean()
-            else:
-                combined_df = combined_df.resample(resample_freq).sum()
-        else:
-            if var in ['avg_temp_catchment', 'avg_temp_glaciers']:
-                combined_df = combined_df.resample(resample_freq).mean()
-            else:
-                combined_df = combined_df.resample(resample_freq).sum()
-
-    return combined_df
-
-custom_df(matilda_scenarios, scenario='SSP5', var='smb_water_year', resample_freq='Y')
-
-# %%
+# %% [markdown]
+# The results is a large nested dictionary with 62 x 2 dataframes of MATILDA outputs. To have a look at the results, continue with Notebook 6.

@@ -214,3 +214,56 @@ matilda_vars = {
 }
 
 
+def water_year(df, begin=10):
+    """
+    Calculates the water year for each date in the index of the input DataFrame.
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input DataFrame with a DatetimeIndex.
+    begin : int, optional
+        The month (1-12) that marks the beginning of the water year. Default is 10.
+    Returns
+    -------
+    numpy.ndarray
+        An array of integers representing the water year for each date in the input DataFrame index.
+    """
+    return np.where(df.index.month < begin, df.index.year, df.index.year + 1)
+
+
+def crop2wy(df, begin=10):
+    """
+    Crops a DataFrame to include only the rows that fall within a complete water year.
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input DataFrame with a DatetimeIndex and a 'water_year' column.
+    begin : int, optional
+        The month (1-12) that marks the beginning of the water year. Default is 10.
+    Returns
+    -------
+    pandas.DataFrame or None
+        A new DataFrame containing only the rows that fall within a complete water year.
+    """
+    cut_begin = pd.to_datetime(f'{begin}-{df.water_year[0]}', format='%m-%Y')
+    cut_end = pd.to_datetime(f'{begin}-{df.water_year[-1]-1}', format='%m-%Y') - pd.DateOffset(days=1)
+    return df[cut_begin:cut_end].copy()
+
+
+def hydrologicalize(df, begin_of_water_year=10):
+    """
+    Adds a 'water_year' column to a DataFrame and crops it to include only complete water years.
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input DataFrame with a DatetimeIndex.
+    begin_of_water_year : int, optional
+        The month (1-12) that marks the beginning of the water year. Default is 10.
+    Returns
+    -------
+    pandas.DataFrame or None
+        A new DataFrame with a 'water_year' column and only rows that fall within complete water years.
+    """
+    df_new = df.copy()
+    df_new['water_year'] = water_year(df_new, begin_of_water_year)
+    return crop2wy(df_new, begin_of_water_year)
