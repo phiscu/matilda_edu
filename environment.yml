@@ -16,6 +16,7 @@ dependencies:
 - fastparquet==2023.4.0
 - dash==2.9.3
 - jupyter-dash==0.4.2
+- jupyterlab-dash
 - seaborn==0.12.2
 - spotpy==1.6.2
 - mpl-probscale==0.2.5
