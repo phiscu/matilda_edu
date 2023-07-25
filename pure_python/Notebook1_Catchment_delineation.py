@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -156,7 +156,7 @@ if show_map:
 # Now we can export the DEM as a `.tif` file for the selected extent to the output folder. Unfortunately there is a file size limit for GEE downloads. If your selected box is too big, please adjust the extent and try again.
 
 # %%
-geemap.ee_export_image(image, filename=filename, scale=30, region=box, file_per_band=False)
+geemap.ee_export_image(image, filename=filename, scale=100, region=box, file_per_band=False)
 
 # %% [markdown]
 # ## Catchment deliniation
