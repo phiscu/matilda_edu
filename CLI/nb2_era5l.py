@@ -12,7 +12,6 @@ import numpy as np
 import datetime
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-
 import sys
 import os
 # Add change cwd to matilda_edu home dir and add it to PATH
@@ -129,6 +128,8 @@ def netcdf_to_ee(ds):
 
 image, data_np, transform = netcdf_to_ee(cropped_ds)
 
+cropped_ds.close()
+
 # Calculate area-weighted average geopotential and convert it to geopotential height in m.a.s.l.
 # execute reducer
 dict = image.reduceRegion(ee.Reducer.mean(),
@@ -189,3 +190,4 @@ print("Stored data in 'ERA5L.csv'")
 # update `settings.yml` file with the reference altitude of the ERA5-Land data (`ele_dat`).
 update_yaml(dir_output + 'settings.yml', {'ele_dat': float(ele_dat)})
 print("Updated 'settings.yml'")
+
