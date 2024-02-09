@@ -298,7 +298,7 @@ class CMIPProcessor:
 # %% [markdown]
 # The `CMIPProcessor` processes variables individually and returns a single dataframe for each of both scenarios from 1979 to 2100.
 
-# %%
+# %% jupyter={"source_hidden": true}
 cmip_dir = dir_output + 'cmip6/'
 
 processor_t = CMIPProcessor(file_dir=cmip_dir, var='tas')
@@ -996,7 +996,7 @@ pr = {'SSP2': ssp_pr_dict['SSP2_adjusted'], 'SSP5': ssp_pr_dict['SSP5_adjusted']
 
 # For storage efficiency:
 dict_to_parquet(tas, cmip_dir + 'adjusted/tas_parquet')
-dict_to_parquet(tas, cmip_dir + 'adjusted/pr_parquet')
+dict_to_parquet(pr, cmip_dir + 'adjusted/pr_parquet')
 
 
 # For speed:

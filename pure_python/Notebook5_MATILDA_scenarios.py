@@ -251,7 +251,7 @@ class MatildaBulkProcessor:
             out_dict[scenario] = model_dict
         return out_dict
 
-    def run_multi_process(self):
+    def run_multi_process(self, num_cores=2):
         """
         Runs the MATILDA simulations for the scenarios and models in multi-processing mode and returns a dictionary
         of results.
@@ -262,7 +262,7 @@ class MatildaBulkProcessor:
         """
 
         out_dict = {}  # Create an empty dictionary to store the outputs
-        with Pool() as pool:
+        with Pool(num_cores) as pool:
             # Loop over the scenarios with progress bar
             for scenario in tqdm(self.scenarios.keys(), desc="Scenarios SSP2 and SSP5"):
                 model_dict = {}  # Create an empty dictionary to store the model outputs
@@ -281,7 +281,7 @@ class MatildaBulkProcessor:
 
 matilda_bulk = MatildaBulkProcessor(scenarios, matilda_settings, param_dict)
 # matilda_scenarios = matilda_bulk.run_single_process()
-matilda_scenarios = matilda_bulk.run_multi_process()
+matilda_scenarios = matilda_bulk.run_multi_process(num_cores=4)
 
 print("Storing MATILDA scenario outputs on disk...")
 dict_to_parquet(matilda_scenarios, f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")

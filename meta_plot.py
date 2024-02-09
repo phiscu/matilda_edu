@@ -337,36 +337,36 @@ plt.show()
 ###
 
 
-import matplotlib
-import matplotlib.pyplot as plt
-import numpy as np
-import math
-
-
-t = np.arange(0.0, 2.0, 0.01)
-s = 1 + np.sin(2 * np.pi * t)
-
-fig, ax = plt.subplots()
-ax.plot(t, s)
-
-ax.set(xlabel='time (s)', ylabel='voltage (mV)',
-       title='About as simple as it gets, folks')
-ax.grid()
-
-# fig.savefig("test.png")
-plt.show()
-
-
-
+# import matplotlib
+# import matplotlib.pyplot as plt
+# import numpy as np
+# import math
+#
+#
+# t = np.arange(0.0, 2.0, 0.01)
+# s = 1 + np.sin(2 * np.pi * t)
+#
+# fig, ax = plt.subplots()
+# ax.plot(t, s)
+#
+# ax.set(xlabel='time (s)', ylabel='voltage (mV)',
+#        title='About as simple as it gets, folks')
+# ax.grid()
+#
+# # fig.savefig("test.png")
+# plt.show()
+#
+#
+#
+# # ###
+# # plotly_fig = tls.mpl_to_plotly(figure)
+# # plotly_fig.write_html('plotly.html', auto_open=True)
+#
+# np.random.seed(0)
+# x, y = np.random.random((2,30))
 # ###
-# plotly_fig = tls.mpl_to_plotly(figure)
-# plotly_fig.write_html('plotly.html', auto_open=True)
-
-np.random.seed(0)
-x, y = np.random.random((2,30))
-###
-fig, ax = plt.subplots()
-plt.plot(x, y, 'bo')
-texts = [plt.text(x[i], y[i], 'Text%s' %i) for i in range(len(x))]
-adjust_text(texts,only_move='y', arrowprops=dict(arrowstyle='->', color='red'))
-plt.show()
+# fig, ax = plt.subplots()
+# plt.plot(x, y, 'bo')
+# texts = [plt.text(x[i], y[i], 'Text%s' %i) for i in range(len(x))]
+# adjust_text(texts,only_move='y', arrowprops=dict(arrowstyle='->', color='red'))
+# plt.show()
