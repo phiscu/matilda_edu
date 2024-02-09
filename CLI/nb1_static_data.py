@@ -32,7 +32,7 @@ cwd = os.getcwd()
 parent_dir = os.path.dirname(cwd)
 sys.path.append(cwd)            # Hotfix. Master script runs subprocess that changes the CWD.
 sys.path.append(parent_dir)
-print(sys.path)
+
 from resourcespace import ResourceSpace
 
 ## Initialize GEE
