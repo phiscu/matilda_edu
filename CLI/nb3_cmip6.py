@@ -823,9 +823,9 @@ def pp_matrix(original, target, corrected, scenario=None, nrow=7, ncol=5, precip
                      ' (' + starty + '-' + endy + ')', fontweight='bold', fontsize=20)
     plt.subplots_adjust(top=0.93)
     if precip:
-        plt.savefig(dir_output + 'cmip6_ensemble_precipitation_probplots.png')
+        plt.savefig(dir_output + f'cmip6_ensemble_precipitation_probplots_{scenario}.png')
     else:
-        plt.savefig(dir_output + 'cmip6_ensemble_temperature_probplots.png')
+        plt.savefig(dir_output + f'cmip6_ensemble_temperature_probplots_{scenario}.png')
 
     if show:
         plt.show()

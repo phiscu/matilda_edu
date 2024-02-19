@@ -4,11 +4,15 @@ import subprocess
 import os
 import json
 
-# Get the current working directory of the "master script"
-master_script_dir = os.getcwd()
+## Arguments:
 
-# Specify the path to the subfolder containing the scripts
-subfolder_path = os.path.join(master_script_dir, 'CLI')
+add_kwargs = {
+    'nb1_static_data.py': {},
+    'nb2_era5l.py': {},
+    'nb3_cmip6.py': {},
+    'nb4_matilda_calibration.py': {},
+    'nb5_matilda_ensembles.py': {'num_cores': 4}
+}
 
 # MATILDA parameter set
 param = {'lr_temp': -0.006472598,
@@ -36,6 +40,16 @@ param = {'lr_temp': -0.006472598,
 # Dump parameter set
 param_string = json.dumps(param)
 
+## Run sub-scripts
+# Get the current working directory of the "master script"
+master_script_dir = os.getcwd()
+
+# Specify the path to the subfolder containing the scripts
+subfolder_path = os.path.join(master_script_dir, 'CLI')
+
+
+
+
 # Iterate over the scripts in the subfolder
 
 for script in sorted(os.listdir(subfolder_path)):
@@ -44,19 +58,29 @@ for script in sorted(os.listdir(subfolder_path)):
     # Set an environment variable to identify as subprocess
     env = os.environ.copy()
     env["MATILDA_PARENT"] = "true"
-    # Pass parameters to Matilda, run other scripts without arguments
+    # Pass parameters and additional arguments to corresponding scripts
     if script == 'nb4_matilda_calibration.py':
         env["MATILDA_PARAMS"] = param_string
-        subprocess.call(['python', script_path], env=env, cwd=master_script_dir)
-    else:
-        subprocess.call(['python', script_path], env=env, cwd=master_script_dir)
+    # Check if additional variables are defined for this script
+    if script in add_kwargs:
+        for var_name, var_value in add_kwargs[script].items():
+            env[var_name] = str(var_value)
+    subprocess.call(['python', script_path], env=env, cwd=master_script_dir)
+
+
+
+
+# IT DOESN'T WORK TO PASS VARIABLES TO THE SUB-SCRIPTS THAT WAY.
+
+
+
 
 
 # Possible arguments:
     # NB3: resampling intv, parquet or pickle
     # NB4: parameter set from file,
+    # NB5: parquet or pickle
 
 
 # Probleme:
-    # - identische CMIP6 figures unterschiedlich benannt
 
