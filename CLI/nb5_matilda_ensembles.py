@@ -16,7 +16,7 @@ from tools.helpers import read_yaml, write_yaml, parquet_to_dict, pickle_to_dict
 
 ## Parsed arguments
 
-# num_cores = 4
+num_cores = 5
 
 ## Setup
 # read local config.ini file

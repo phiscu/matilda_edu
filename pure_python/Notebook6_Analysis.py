@@ -41,10 +41,10 @@ dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
 
 print("Importing MATILDA scenarios...")
 # For size:
-matilda_scenarios = parquet_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
+# matilda_scenarios = parquet_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
 
 # For speed:
-# matilda_scenarios = pickle_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
+matilda_scenarios = pickle_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
 
 # %% [markdown]
 # At the moment, the structure of the ensemble output is as follows:
@@ -409,8 +409,8 @@ def matilda_dash(fig_count=4,
         
         
 # Application example:
-matilda_dash(fig_count=3,
-             default_vars=['total_runoff', 'total_precipitation', 'runoff_from_glaciers'],
+matilda_dash(fig_count=4,
+             # default_vars=['total_runoff', 'total_precipitation', 'runoff_from_glaciers'],
              display_mode='inLine')
 
 

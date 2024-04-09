@@ -36,10 +36,10 @@ dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
 
 print("Importing MATILDA scenarios...")
 # For size:
-matilda_scenarios = parquet_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
+# matilda_scenarios = parquet_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
 
 # For speed:
-# matilda_scenarios = pickle_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
+matilda_scenarios = pickle_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
 
 # %% [markdown]
 # This module calculates the following statistics for all ensemble members in annual resolution:
@@ -101,8 +101,8 @@ def calculate_indicators(dic, **kwargs):
 print("Calculating Climate Change Indicators...")
 matilda_indicators = calculate_indicators(matilda_scenarios)
 print("Writing Indicators To File...")
-dict_to_parquet(matilda_indicators, f"{dir_output}cmip6/adjusted/matilda_indicators_parquet")
-# dict_to_pickle(matilda_indicators, f"{dir_output}cmip6/adjusted/matilda_indicators_pickle")
+# dict_to_parquet(matilda_indicators, f"{dir_output}cmip6/adjusted/matilda_indicators_parquet")
+dict_to_pickle(matilda_indicators, f"{dir_output}cmip6/adjusted/matilda_indicators_pickle")
 
 # %% [markdown]
 # Similar to the last notebook we write a function to **create customs dataframes for individual indicators** across all ensemble members...
@@ -348,11 +348,11 @@ app = dash.Dash()
 default_vars = ['peak_day', 'melt_season_length', 'potential_aridity', 'spei12']
 default_types = ['line', 'line', 'line', 'bar']
 
-default_vars = ['melt_season_length', 'potential_aridity', 'spei12']
-default_types = ['line', 'line', 'bar']
+# default_vars = ['melt_season_length', 'potential_aridity', 'spei12']
+# default_types = ['line', 'line', 'bar']
 
 # Create separate callback functions for each dropdown menu and graph combination
-for i in range(3):
+for i in range(4):
     @app.callback(
         Output(f'line-plot-{i}', 'figure'),
         Input(f'arg-dropdown-{i}', 'value'),
@@ -364,7 +364,7 @@ for i in range(3):
 
 # Define the dropdown menus and figures
 dropdowns_and_figures = []
-for i in range(3):
+for i in range(4):
     arg_dropdown = dcc.Dropdown(
         id=f'arg-dropdown-{i}',
         options=[{'label': indicator_vars[var][0], 'value': var} for var in indicator_vars.keys()],
