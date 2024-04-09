@@ -203,6 +203,13 @@ def add_cmip_ensemble(param_scenarios, val_name, ylabel, ax, ylim=None, target=N
         target_plot = ax.plot(target, linewidth=1.5, c=target_color)
 
 
+def ensemble_max(param_scenarios, val_name, rolling=None, cutoff=None, intv_sum='Y'):
+    for i in param_scenarios.keys():
+        df_pred = df2long(param_scenarios[i], val_name, intv_sum=intv_sum, intv_mean='Y', rolling=rolling, cutoff=cutoff)
+    return round(df_pred[val_name].max())
+
+
+
 ###
 
 plt.rcParams["font.family"] = "Arial"
@@ -231,7 +238,7 @@ for line in ax0l.lines:
         last_val = ydata[-1]
         perc_val = last_val / max(ydata) * 100
         ax0l.annotate(f'{last_val:.0f} km² ({perc_val:.0f} %)',
-                      xy=(1, last_val), xytext=(55, last_val), va='center', ha='right',
+                      xy=(1, last_val), xytext=(55, min(max(ydata)*0.9, last_val * 4)), va='center', ha='right',
                       fontsize=8,
                       xycoords=('axes fraction', 'data'), textcoords=('offset points', 'data'),
                       arrowprops=arrow_props)
@@ -261,18 +268,35 @@ ax1l.axhline(y=0, color='white', linestyle='-')
 ax1l.plot(melt_diff.index, melt_diff['diff_snow'], color='#b6b6b6')
 ax1l.plot(melt_diff.index, melt_diff['diff_ice'], color='#a1bceb') # darkblue
 
-ax1l.set_ylim(-149, 149)
+# Auto-scale y-axis of the stack plot to match the data range
+ymax_ax1l = max(max(melt_ssp5['ssp5_avg_snow'] + melt_ssp5['ssp5_avg_ice']),
+           max(melt_ssp2['ssp2_avg_snow'] + melt_ssp2['ssp2_avg_ice']))
+
+ymax_ax1l_upper = round(ymax_ax1l*1.55, 1)     # add some space for the legend
+ymax_ax1l_lower = round(-ymax_ax1l*1.1, 1)
+
+ax1l.set_ylim(ymax_ax1l_lower, ymax_ax1l_upper)
+# ax1l.set_ylim(-149, 149)
 # ax1l.set_ylim(-600, 600)
 ax1l.set_ylabel('Melt (mm/a)')
 
+# y = melt_ssp5['ssp5_avg_snow'][-1]
+# annotate_final_val(ax1l, y, y, abs(y), 'mm')
+# y = melt_ssp5['ssp5_avg_ice'][-1]+melt_ssp5['ssp5_avg_snow'][-1]
+# annotate_final_val(ax1l, y, y, abs(y), 'mm')
+# y = melt_ssp2['ssp2_avg_snow'][-1]*-1
+# annotate_final_val(ax1l, y, y, abs(y), 'mm')
+# y = (melt_ssp2['ssp2_avg_ice'][-1]+melt_ssp2['ssp2_avg_snow'][-1])*-1
+# annotate_final_val(ax1l, y, y, abs(y), 'mm')
+
 y = melt_ssp5['ssp5_avg_snow'][-1]
-annotate_final_val(ax1l, y, y, abs(y), 'mm')
+annotate_final_val(ax1l, y, ymax_ax1l*0.3, abs(y), 'mm')
 y = melt_ssp5['ssp5_avg_ice'][-1]+melt_ssp5['ssp5_avg_snow'][-1]
-annotate_final_val(ax1l, y, y, abs(y), 'mm')
+annotate_final_val(ax1l, y, ymax_ax1l*0.8, abs(y), 'mm')
 y = melt_ssp2['ssp2_avg_snow'][-1]*-1
-annotate_final_val(ax1l, y, y, abs(y), 'mm')
+annotate_final_val(ax1l, y, ymax_ax1l*-0.3, abs(y), 'mm')
 y = (melt_ssp2['ssp2_avg_ice'][-1]+melt_ssp2['ssp2_avg_snow'][-1])*-1
-annotate_final_val(ax1l, y, y, abs(y), 'mm')
+annotate_final_val(ax1l, y, ymax_ax1l*-0.8, abs(y), 'mm')
 
 ax1l.yaxis.set_major_formatter(custom_formatter_abs_val)
 
@@ -281,9 +305,16 @@ print("Let the water cycle")
 
 ax2l = axs[2]
 
+# Auto-scale y-axis of the line plot to match the data range
+ymax_ax2l = max(ensemble_max(param_scenarios=runoff, val_name='runoff', rolling=rolling, cutoff='1981-12-31'),
+                ensemble_max(param_scenarios=evaporation, val_name='eva', rolling=rolling, cutoff='1981-12-31'),
+                ensemble_max(param_scenarios=precipitation, val_name='prec', rolling=rolling, cutoff='1981-12-31'))
+ymax_ax2l = ymax_ax2l * 1.1     # some space for the legend
+
+
 print("- runoff")
 obs_rs = obs['Qobs'].resample('Y').agg(pd.Series.sum, skipna=False).rolling(rolling, min_periods=2).mean()
-add_cmip_ensemble(param_scenarios=runoff, val_name='runoff', ylabel=' (mm/a)', ylim=(0,1550),
+add_cmip_ensemble(param_scenarios=runoff, val_name='runoff', ylabel=' (mm/a)', ylim=(0, ymax_ax2l),
                   target=obs_rs, target_color='blue',
                   ax=ax2l, rolling=rolling, cutoff='2020-12-31')
 
@@ -322,20 +353,22 @@ annote_final_val_lines(ax3l, '°C')
 ax3l.axhline(y=0, color='lightgrey', linestyle=':', linewidth = 1)
 ax3l.text(dt.datetime(1982, 1, 1), 0, f"0 °C", ha='left', va='bottom', size=8, color='grey')
 
-ax3l.axvline(dt.datetime(2022, 12, 31), color='salmon')
+ax3l.axvline(dt.datetime(2020, 12, 31), color='salmon')
 
 # -> create legend
 ax1l.legend(['Snow Melt', 'Ice Melt','_Snow','_Ice','_White','SSP5-SSP2','SSP5-SSP2'], ncol=2, fontsize="8",
             loc="upper left",
             frameon=False)
 
-ax2l.legend(['_SSP2','Runoff','_SSP5','_CI5','_Runoff',
+ax2l_legend = ax2l.legend(['_SSP2','Runoff','_SSP5','_CI5','_Runoff',
              '_SSP2','Evaporation','_SSP5','_CI5',
              '_SSP2','Precipitation','_SSP5','_CI5',
              'Observation data',],
              ncol=4, fontsize="8",
              loc="upper left",
-             frameon=False)
+             frameon=True)
+ax2l_legend.get_frame().set_facecolor('white')
+ax2l_legend.get_frame().set_edgecolor('white')
 
 scenario_legend = ax3l.legend(['SSP2 Scenario', '_ci1', 'SSP5 Scenario', '_ci2'],
                             loc="lower right", bbox_to_anchor=(1, -0.8), ncol=2,
@@ -366,7 +399,7 @@ for ax in axs:
 for ax in [ax1l,ax2l]:
     ax.grid(axis='y', color='lightgrey', linestyle='--', dashes=(5, 5))
 
-plt.suptitle(f"MATILDA Summary")
+plt.suptitle(f"MATILDA Summary", fontweight='bold', fontsize=14)
 figure.tight_layout(rect=[0, 0.02, 1, 1])  # Make some room at the bottom
 
 # --- SHOW ---

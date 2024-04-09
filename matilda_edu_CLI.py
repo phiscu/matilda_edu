@@ -91,4 +91,5 @@ for script in script_list:
 
 
 # Probleme:
+    # Der Parametersatz aus dem Masterscript, wird nur am Ende von NB4 in das .yml geschrieben. Wenn man nur NB5 laufen lässt, nimmt er nicht die hier angegebenen Parameter
 
