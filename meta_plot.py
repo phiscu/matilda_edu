@@ -1,6 +1,6 @@
 import pandas as pd
 import configparser
-from tools.helpers import parquet_to_dict, read_yaml
+from tools.helpers import parquet_to_dict, read_yaml, pickle_to_dict
 
 import matplotlib.pyplot as plt
 import warnings
@@ -91,10 +91,15 @@ df_era5 = pd.read_csv(dir_output + 'ERA5L.csv', **{
         'index_col':    'dt',
         'parse_dates':  ['dt']}).resample('D').agg({'temp': 'mean', 'prec': 'sum'})
 
-tas = parquet_to_dict(f"{dir_output}cmip6/adjusted/tas_parquet")
-pr = parquet_to_dict(f"{dir_output}cmip6/adjusted/pr_parquet")
+# tas = parquet_to_dict(f"{dir_output}cmip6/adjusted/tas_parquet")
+# pr = parquet_to_dict(f"{dir_output}cmip6/adjusted/pr_parquet")
+#
+# matilda_scenarios = parquet_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
 
-matilda_scenarios = parquet_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
+tas = pickle_to_dict(f"{dir_output}cmip6/adjusted/tas.pickle")
+pr = pickle_to_dict(f"{dir_output}cmip6/adjusted/pr.pickle")
+
+matilda_scenarios = pickle_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
 
 ###
 """
