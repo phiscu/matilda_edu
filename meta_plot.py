@@ -127,6 +127,10 @@ ice_melt = {'SSP2': get_matilda_result_all_models('SSP2', 'ice_melt_on_glaciers'
 off_melt = {'SSP2': get_matilda_result_all_models('SSP2', 'melt_off_glaciers'),
             'SSP5': get_matilda_result_all_models('SSP5', 'melt_off_glaciers')}
 
+# Melt off glacier is always snow melt:
+snow_melt['SSP2'] = snow_melt['SSP2'] + off_melt['SSP2']
+snow_melt['SSP5'] = snow_melt['SSP5'] + off_melt['SSP5']
+
 ###
 
 for scenario in ['SSP2','SSP5']:
@@ -142,19 +146,19 @@ df_era5['temp'] = df_era5['temp'] - 273.15
 melt_ssp2 = pd.DataFrame()
 melt_ssp2['ssp2_avg_snow'] = snow_melt['SSP2'].mean(axis=1)
 melt_ssp2['ssp2_avg_ice'] = ice_melt['SSP2'].mean(axis=1)
-melt_ssp2['ssp2_avg_off'] = off_melt['SSP2'].mean(axis=1)
+# melt_ssp2['ssp2_avg_off'] = off_melt['SSP2'].mean(axis=1)
 melt_ssp2 = melt_ssp2.resample('Y').sum()
 
 melt_ssp5 = pd.DataFrame()
 melt_ssp5['ssp5_avg_snow'] = snow_melt['SSP5'].mean(axis=1)
 melt_ssp5['ssp5_avg_ice'] = ice_melt['SSP5'].mean(axis=1)
-melt_ssp5['ssp5_avg_off'] = off_melt['SSP5'].mean(axis=1)
+# melt_ssp5['ssp5_avg_off'] = off_melt['SSP5'].mean(axis=1)
 melt_ssp5 = melt_ssp5.resample('Y').sum()
 
 melt_diff = pd.DataFrame()
 melt_diff['diff_snow'] = melt_ssp5['ssp5_avg_snow'] - melt_ssp2['ssp2_avg_snow']
 melt_diff['diff_ice'] = melt_ssp5['ssp5_avg_ice'] - melt_ssp2['ssp2_avg_ice']
-melt_diff['diff_off'] = melt_ssp5['ssp5_avg_off'] - melt_ssp2['ssp2_avg_off']
+# melt_diff['diff_off'] = melt_ssp5['ssp5_avg_off'] - melt_ssp2['ssp2_avg_off']
 
 ###
 

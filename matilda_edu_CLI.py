@@ -6,7 +6,7 @@ import json
 
 ## Arguments:
 
-steps = ['nb5']       # ['all'] or any of ['nb1', 'nb2', 'nb3', 'nb4', 'nb5']
+steps = ['all']       # ['all'] or any of ['nb1', 'nb2', 'nb3', 'nb4', 'nb5']
 
 add_kwargs = {
     'nb1_static_data.py': {},
@@ -39,7 +39,7 @@ add_kwargs = {
 #          'AG': 0.8640329,
 #          'RFS': 0.21825151}
 
-param = {'lr_temp': -0.0057516084, 'lr_prec': 0.0015256472, 'BETA': 5.6014814, 'FC': 323.61023, 'K0': 0.124523245, 'K1': 0.01791149, 'K2': 0.006872296, 'LP': 0.5467752, 'MAXBAS': 5.325173, 'PERC': 2.9256027, 'UZL': 354.0794, 'TT_snow': 0.5702063, 'TT_diff': 1.9629607, 'CFMAX_ice': 5.2739882, 'CFMAX_rel': 1.2821848, 'CWH': 0.05004947, 'AG': 0.5625456, 'RFS': 0.2245709, 'PCORR': 0.64, 'SFCF': 1, 'CET': 0}
+param = {'BETA': 1.007054, 'FC': 302.78784, 'K1': 0.0130889015, 'K2': 0.0049547367, 'PERC': 0.8058457, 'UZL': 482.38788, 'TT_snow': -0.418914, 'CFMAX_ice': 5.592482, 'CWH': 0.10325227, 'PCORR': 0.64, 'SFCF': 1, 'CET': 0, 'lr_temp': -0.00605, 'lr_prec': 0.00117, 'TT_diff': 1.36708, 'CFMAX_rel': 1.81114}
 
 # Dump parameter set
 param_string = json.dumps(param)
