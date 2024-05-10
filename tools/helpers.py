@@ -26,21 +26,39 @@ def read_yaml(file_path):
         return data
 
 
+import yaml
+import numpy as np
+
 def write_yaml(data, file_path):
     """
     Write a dictionary to a YAML file.
+    Ensures all values are in standard Python types before writing.
+    
     Parameters
     ----------
     data : dict
         The dictionary to write to a YAML file.
     file_path : str
         The path of the file where the YAML data shall be stored.
+    
     Returns
     -------
     None
     """
+    
+    # Convert non-standard types (like numpy.float64) to standard Python types
+    for key in data:
+        value = data[key]
+        if isinstance(value, np.float64):
+            data[key] = float(value)  # Convert to native Python float
+        elif isinstance(value, np.int64):
+            data[key] = int(value)  # Convert to native Python int
+    
     with open(file_path, 'w') as f:
         yaml.safe_dump(data, f)
+
+    print(f"Data successfully written to YAML at {file_path}")
+
 
 
 def update_yaml(file_path, new_items):
