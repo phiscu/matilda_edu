@@ -213,12 +213,11 @@ def ensemble_max(param_scenarios, val_name, rolling=None, cutoff=None, intv_sum=
     return round(df_pred[val_name].max())
 
 
-
 ###
 
-plt.rcParams["font.family"] = "Arial"
+plt.rcParams["font.family"] = "Palatino"
 
-rolling = 5
+rolling = None
 
 arrow_props = dict(facecolor='grey', edgecolor='grey', arrowstyle='-', linewidth=0.5)
 
@@ -317,10 +316,12 @@ ymax_ax2l = ymax_ax2l * 1.1     # some space for the legend
 
 
 print("- runoff")
-obs_rs = obs['Qobs'].resample('Y').agg(pd.Series.sum, skipna=False).rolling(rolling, min_periods=2).mean()
+obs_rs = obs['Qobs'].resample('Y').agg(pd.Series.sum, skipna=False)#.rolling(rolling, min_periods=2).mean()
 add_cmip_ensemble(param_scenarios=runoff, val_name='runoff', ylabel=' (mm/a)', ylim=(0, ymax_ax2l),
-                  target=obs_rs, target_color='blue',
-                  ax=ax2l, rolling=rolling, cutoff='2020-12-31')
+                  target=None, target_color='blue',
+                  ax=ax2l, rolling=rolling, cutoff='1981-12-31')
+
+# ax2l.plot(obs_rs, linewidth=1.5, c='blue')
 
 print("- evaporation")
 add_cmip_ensemble(param_scenarios=evaporation, val_name='eva', ylabel=' (mm/a)',
@@ -341,14 +342,14 @@ for index, row in obs.dropna().iterrows():
     start = mdates.date2num(row['Date'])
     ax2l.add_patch(Rectangle((start, 0), width=1, height=1400, alpha=0.1, label='_obs_data', zorder=0))
 
-ax2l.axvline(dt.datetime(2020, 12, 31), color='salmon')
+ax2l.axvline(dt.datetime(2022, 12, 31), color='salmon')
 
 # -> fill box: Temperature
 print("Turn on some heat")
 
 ax3l = axs[3]
 
-era5_temp_rs = df_era5['temp'].resample('Y').agg(pd.Series.mean, skipna=False).rolling(rolling, min_periods=2).mean()
+era5_temp_rs = df_era5['temp'].resample('Y').agg(pd.Series.mean, skipna=False)#.rolling(rolling, min_periods=2).mean()
 add_cmip_ensemble(param_scenarios=tas, val_name='temp', ylabel='Temp. (°C)',
                   target=era5_temp_rs, target_color='red',
                   ax=ax3l, rolling=rolling, cutoff='2022-12-31', intv_sum=None)
@@ -357,14 +358,14 @@ annote_final_val_lines(ax3l, '°C')
 ax3l.axhline(y=0, color='lightgrey', linestyle=':', linewidth = 1)
 ax3l.text(dt.datetime(1982, 1, 1), 0, f"0 °C", ha='left', va='bottom', size=8, color='grey')
 
-ax3l.axvline(dt.datetime(2020, 12, 31), color='salmon')
+ax3l.axvline(dt.datetime(2022, 12, 31), color='salmon')
 
 # -> create legend
 ax1l.legend(['Snow Melt', 'Ice Melt','_Snow','_Ice','_White','SSP5-SSP2','SSP5-SSP2'], ncol=2, fontsize="8",
             loc="upper left",
             frameon=False)
 
-ax2l_legend = ax2l.legend(['_SSP2','Runoff','_SSP5','_CI5','_Runoff',
+ax2l_legend = ax2l.legend(['_SSP2','Runoff','_SSP5','_CI5',#'_Runoff',
              '_SSP2','Evaporation','_SSP5','_CI5',
              '_SSP2','Precipitation','_SSP5','_CI5',
              'Observation data',],
@@ -391,8 +392,8 @@ ax1l.text(dt.datetime(1982, 1, 1), -6, f"SSP2", ha='left', va='top', **style)
 ax1l.text(dt.datetime(2100, 1, 1), 120, f"Diff +", ha='right', va='bottom', **style)
 ax1l.text(dt.datetime(2100, 1, 1), -120, f"Diff -", ha='right', va='top', **style)
 
-ax2l.text(dt.datetime(2100, 1, 1), 0, f"{rolling} year rolling mean", ha='right', va='bottom', style='italic', **style)
-ax3l.text(dt.datetime(2100, 1, 1), era5_temp_rs.dropna().min(), f"{rolling} year rolling mean", ha='right', va='bottom', style='italic', **style)
+# ax2l.text(dt.datetime(2100, 1, 1), 0, f"{rolling} year rolling mean", ha='right', va='bottom', style='italic', **style)
+# ax3l.text(dt.datetime(2100, 1, 1), era5_temp_rs.dropna().min(), f"{rolling} year rolling mean", ha='right', va='bottom', style='italic', **style)
 
 # -> final polish: modify x-Axis and show current date line
 ax3l.xaxis.set_major_locator(mdates.YearLocator(base=10))
