@@ -26,10 +26,6 @@ def read_yaml(file_path):
         return data
 
 
-import yaml
-import numpy as np
-
-
 def write_yaml(data, file_path):
     """
     Write a dictionary to a YAML file.

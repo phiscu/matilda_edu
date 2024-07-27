@@ -8,6 +8,9 @@ import seaborn as sns
 import datetime as dt
 import matplotlib.dates as mdates
 from matplotlib.patches import Rectangle
+import matplotlib.font_manager as fm
+path_to_palatinottf = '/home/phillip/Downloads/Palatino.ttf'
+fm.fontManager.addfont(path_to_palatinottf)
 
 ###
 """
@@ -409,3 +412,8 @@ figure.tight_layout(rect=[0, 0.02, 1, 1])  # Make some room at the bottom
 
 # --- SHOW ---
 plt.show()
+
+
+
+
+

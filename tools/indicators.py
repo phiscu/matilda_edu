@@ -4,6 +4,8 @@ from climate_indices.indices import spei, spi, Distribution
 from climate_indices import compute, utils
 import pandas as pd
 import numpy as np
+import inspect
+
 
 def prec_minmax(df):
     """
@@ -324,7 +326,7 @@ def hydrological_signatures(df):
 def drought_indicators(df, freq='M', dist='gamma'):
     """
     Calculate the climatic water balance, SPI (Standardized Precipitation Index), and
-    SPEI (Standardized Precipitation Evapotranspiration Index) for 1, 3, 6, 12, and 24 months..
+    SPEI (Standardized Precipitation Evapotranspiration Index) for 1, 3, 6, 12, and 24 months.
     Parameters
     ----------
     df : pandas.DataFrame
@@ -352,7 +354,7 @@ def drought_indicators(df, freq='M', dist='gamma'):
     If 'freq' is 'D', the input data is transformed from Gregorian to a 366-day format for SPI and SPEI calculation,
     and then transformed back to Gregorian format for output.
     The default distribution for SPI and SPEI calculation is Gamma.
-    The calibration period for SPI and SPEI calculation is th full data range from 1981 to 2100.
+    The calibration period for SPI and SPEI calculation is from 1981 to 2020.
     """
     # Check if frequency is valid
     if freq != 'D' and freq != 'M':
@@ -391,7 +393,7 @@ def drought_indicators(df, freq='M', dist='gamma'):
                      'periodicity': periodicity,
                      'data_start_year': 1981,
                      'calibration_year_initial': 1981,
-                     'calibration_year_final': 2100}
+                     'calibration_year_final': 2020}
 
     # Set parameters for SPEI calculation
     spei_params = {'precips_mm': prec,
@@ -423,7 +425,7 @@ def drought_indicators(df, freq='M', dist='gamma'):
 
 
 # Wrapper function
-import inspect
+
 def cc_indicators(df, **kwargs):
     """
     Apply a list of climate change indicator functions to output DataFrame of MATILDA and concatenate
