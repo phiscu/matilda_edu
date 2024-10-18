@@ -945,3 +945,5 @@ pr = {'SSP2': ssp2_pr, 'SSP5': ssp5_pr}
 dict_to_pickle(tas, cmip_dir + 'adjusted/tas.pickle')
 dict_to_pickle(pr, cmip_dir + 'adjusted/pr.pickle')
 print("CMIP6 data stored in '.pickle' files.")
+
+os.getcwd()
