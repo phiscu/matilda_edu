@@ -271,7 +271,7 @@ print(ssp2_tas_raw.info())
 print('Models that failed the consistency checks:\n')
 print(processor_t.dropped_models)
 
-## Bias adjustment using reananlysis data
+## Bias adjustment using reanalysis data
 
 
 def read_era5l(file):
@@ -285,25 +285,66 @@ def read_era5l(file):
 
 
 def adjust_bias(predictand, predictor, method='normal_mapping'):
-    """Applies scaled distribution mapping to all passed climate projections (predictand)
-     based on a predictor timeseries."""
+    """Applies bias correction to specified periods individually."""
 
+    # Read predictor data
     predictor = read_era5l(predictor)
-    if predictand.mean().mean() > 100:
-        var = 'temp'
-    else:
-        var = 'prec'
-    training_period = slice('1979-01-01', '2022-12-31')
-    prediction_period = slice('1979-01-01', '2100-12-31')
-    corr = pd.DataFrame()
-    for m in predictand.columns:
-        x_train = predictand[m][training_period].squeeze()
-        y_train = predictor[training_period][var].squeeze()
-        x_predict = predictand[m][prediction_period].squeeze()
-        bc_corr = BiasCorrection(y_train, x_train, x_predict)
-        corr[m] = pd.DataFrame(bc_corr.correct(method=method))
 
-    return corr
+    # Determine variable type based on the mean value
+    var = 'temp' if predictand.mean().mean() > 100 else 'prec'
+
+    # Adjust bias in discrete blocks as suggested by Switanek et.al. (2017) (https://doi.org/10.5194/hess-21-2649-2017)
+    # Initialize periods dict
+    correction_periods = [
+        {'correction_range': ('1979-01-01', '2010-12-31'), 'extraction_range': ('1979-01-01', '1990-12-31')},
+    ]
+    # Add decades from 1991 to 2090
+    for decade_start in range(1991, 2090, 10):
+        correction_start = f"{decade_start - 10}-01-01"
+        correction_end = f"{decade_start + 19}-12-31"
+        extraction_start = f"{decade_start}-01-01"
+        extraction_end = f"{decade_start + 9}-12-31"
+
+        correction_periods.append({
+            'correction_range': (correction_start, correction_end),
+            'extraction_range': (extraction_start, extraction_end)
+        })
+
+    # Add the last decade of the century (2091-2100)
+    correction_periods.append({
+        'correction_range': ('2081-01-01', '2100-12-31'),
+        'extraction_range': ('2091-01-01', '2100-12-31')
+    })
+
+    # Prepare a dataframe to hold the corrected results
+    corrected_data = pd.DataFrame()
+    # Define one common training period
+    training_period = slice('1979-01-01', '2022-12-31')
+    # Loop through each correction period
+    for period in correction_periods:
+        correction_start, correction_end = period['correction_range']
+        extraction_start, extraction_end = period['extraction_range']
+
+        correction_slice = slice(correction_start, correction_end)
+        extraction_slice = slice(extraction_start, extraction_end)
+
+        # Perform bias correction for each period
+        data_corr = pd.DataFrame()
+        for col in predictand.columns:
+            x_train = predictand[col][training_period].squeeze()
+            y_train = predictor[training_period][var].squeeze()
+            x_predict = predictand[col][correction_slice].squeeze()
+            bc_corr = BiasCorrection(y_train, x_train, x_predict)
+            corrected_col = pd.DataFrame(bc_corr.correct(method=method))
+
+            # Extract the desired years after correction
+            data_corr[col] = corrected_col.loc[extraction_slice]
+
+        # Append the corrected data to the main dataframe
+        corrected_data = corrected_data.append(data_corr, ignore_index=False)
+
+    return corrected_data
+
 
 print('Running bias adjustment routine...')
 era5_file = dir_output + 'ERA5L.csv'
@@ -313,12 +354,12 @@ ssp2_pr = adjust_bias(predictand=ssp2_pr_raw, predictor=era5_file)
 ssp5_pr = adjust_bias(predictand=ssp5_pr_raw, predictor=era5_file)
 print('Done!')
 
-## 	Visualization
-
 # store our raw and adjusted data in dictionaries.
 ssp_tas_dict = {'SSP2_raw': ssp2_tas_raw, 'SSP2_adjusted': ssp2_tas, 'SSP5_raw': ssp5_tas_raw,
                 'SSP5_adjusted': ssp5_tas}
 ssp_pr_dict = {'SSP2_raw': ssp2_pr_raw, 'SSP2_adjusted': ssp2_pr, 'SSP5_raw': ssp5_pr_raw, 'SSP5_adjusted': ssp5_pr}
+
+## 	Visualization
 
 ## Time series
 def cmip_plot(ax, df, target, title=None, precip=False, intv_sum='M', intv_mean='10Y',
@@ -836,13 +877,64 @@ pp_matrix(ssp5_tas_raw, era5['temp'], ssp5_tas, scenario='SSP5')
 pp_matrix(ssp2_pr_raw, era5['prec'], ssp2_pr, precip=True, scenario='SSP2')
 pp_matrix(ssp5_pr_raw, era5['prec'], ssp5_pr, precip=True, scenario='SSP5')
 print('Figures for CMIP6 bias adjustment performance created.')
+# Close all open figures
+plt.close('all')
+
+## Merge ERA5-Land and CMIP6 scenarios to consistent timeseries
+
+
+def replace_values(target_df, source_df, source_column):
+    """
+    Replaces values in the overlapping period in the target dataframe with values
+    from the source dataframe using the specified source column.
+
+    Args:
+        target_df (pd.DataFrame): Target dataframe where values will be replaced.
+        source_df (pd.DataFrame): Source dataframe from which values will be taken.
+        source_column (str): Column name in the source dataframe to use for replacement.
+
+    Returns:
+        pd.DataFrame: The target dataframe with updated values.
+    """
+
+    # Identify overlapping period based on index (datetime)
+    overlapping_period = target_df.index.intersection(source_df.index)
+
+
+    if len(overlapping_period) == 0:
+        raise ValueError("No overlapping period between the source and target dataframes.")
+
+    # Ensure the source dataframe has the required column
+    if source_column not in source_df.columns:
+        raise ValueError(f"The source dataframe does not have a column named '{source_column}'")
+
+    # Get the replacement values from the source column
+    replacement_values = source_df.loc[overlapping_period, source_column]
+
+    assert len(overlapping_period) == len(
+        replacement_values), "Mismatch in lengths of overlapping period and replacement values."
+
+    # Apply these values to all columns in the target DataFrame in the overlapping period
+    target_df.loc[overlapping_period] = replacement_values.values[:, None]
+
+    return target_df
+
+
+era5l = read_era5l(era5_file)
+ssp2_tas = ssp_tas_dict['SSP2_adjusted'].copy()
+ssp5_tas = ssp_tas_dict['SSP5_adjusted'].copy()
+ssp2_pr = ssp_pr_dict['SSP2_adjusted'].copy()
+ssp5_pr = ssp_pr_dict['SSP5_adjusted'].copy()
+
+ssp2_tas = replace_values(ssp2_tas, era5l, 'temp')
+ssp5_tas = replace_values(ssp5_tas, era5l, 'temp')
+ssp2_pr = replace_values(ssp2_pr, era5l, 'prec')
+ssp5_pr = replace_values(ssp5_pr, era5l, 'prec')
 
 ## Write CMIP6 data to file
 
-ssp_tas_dict.keys()
-
-tas = {'SSP2': ssp_tas_dict['SSP2_adjusted'], 'SSP5': ssp_tas_dict['SSP5_adjusted']}
-pr = {'SSP2': ssp_pr_dict['SSP2_adjusted'], 'SSP5': ssp_pr_dict['SSP5_adjusted']}
+tas = {'SSP2': ssp2_tas, 'SSP5': ssp5_tas}
+pr = {'SSP2': ssp2_pr, 'SSP5': ssp5_pr}
 
 # For storage efficiency:
 # dict_to_parquet(tas, cmip_dir + 'adjusted/tas_parquet')
@@ -853,3 +945,5 @@ pr = {'SSP2': ssp_pr_dict['SSP2_adjusted'], 'SSP5': ssp_pr_dict['SSP5_adjusted']
 dict_to_pickle(tas, cmip_dir + 'adjusted/tas.pickle')
 dict_to_pickle(pr, cmip_dir + 'adjusted/pr.pickle')
 print("CMIP6 data stored in '.pickle' files.")
+
+os.getcwd()

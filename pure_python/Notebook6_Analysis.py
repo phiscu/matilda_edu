@@ -113,22 +113,50 @@ def custom_df_matilda(dic, scenario, var, resample_freq=None):
         'rain_on_glaciers', 'snow_on_glaciers', 'snowpack_off_glaciers', 'soil_moisture', 'upper_groundwater',
         'lower_groundwater', 'melt_off_glaciers', 'melt_on_glaciers', 'ice_melt_on_glaciers', 'snow_melt_on_glaciers',
         'refreezing_ice', 'refreezing_snow', 'total_refreezing', 'SMB', 'actual_evaporation', 'total_precipitation',
-        'total_melt', 'runoff_without_glaciers', 'runoff_from_glaciers', 'total_runoff', 'glacier_area',
-        'glacier_elev', 'smb_water_year', 'smb_scaled', 'smb_scaled_capped', 'smb_scaled_capped_cum', 'surplus']
+        'total_melt', 'runoff_without_glaciers', 'runoff_from_glaciers', 'runoff_ratio', 'total_runoff', 'glacier_area',
+        'glacier_elev', 'smb_water_year', 'smb_scaled', 'smb_scaled_capped', 'smb_scaled_capped_cum', 'surplus',
+        'glacier_melt_perc', 'glacier_mass_mmwe', 'glacier_vol_m3', 'glacier_vol_perc']
     """
-    out1_cols = ['avg_temp_catchment', 'avg_temp_glaciers', 'evap_off_glaciers',
-                 'prec_off_glaciers', 'prec_on_glaciers', 'rain_off_glaciers',
-                 'snow_off_glaciers', 'rain_on_glaciers', 'snow_on_glaciers',
-                 'snowpack_off_glaciers', 'soil_moisture', 'upper_groundwater',
-                 'lower_groundwater', 'melt_off_glaciers', 'melt_on_glaciers',
-                 'ice_melt_on_glaciers', 'snow_melt_on_glaciers', 'refreezing_ice',
-                 'refreezing_snow', 'total_refreezing', 'SMB', 'actual_evaporation',
-                 'total_precipitation', 'total_melt', 'runoff_without_glaciers',
-                 'runoff_from_glaciers', 'total_runoff']
+    out1_cols = ['avg_temp_catchment',
+                 'avg_temp_glaciers',
+                 'evap_off_glaciers',
+                 'prec_off_glaciers',
+                 'prec_on_glaciers',
+                 'rain_off_glaciers',
+                 'snow_off_glaciers',
+                 'rain_on_glaciers',
+                 'snow_on_glaciers',
+                 'snowpack_off_glaciers',
+                 'soil_moisture',
+                 'upper_groundwater',
+                 'lower_groundwater',
+                 'melt_off_glaciers',
+                 'melt_on_glaciers',
+                 'ice_melt_on_glaciers',
+                 'snow_melt_on_glaciers',
+                 'refreezing_ice',
+                 'refreezing_snow',
+                 'total_refreezing',
+                 'SMB',
+                 'actual_evaporation',
+                 'total_precipitation',
+                 'total_melt',
+                 'runoff_without_glaciers',
+                 'runoff_from_glaciers',
+                 'runoff_ratio',
+                 'total_runoff']
 
-    out2_cols = ['glacier_area', 'glacier_elev', 'smb_water_year',
-                 'smb_scaled', 'smb_scaled_capped', 'smb_scaled_capped_cum',
-                 'surplus']
+    out2_cols = ['glacier_area',
+                 'glacier_elev',
+                 'smb_water_year',
+                 'smb_scaled',
+                 'smb_scaled_capped',
+                 'smb_scaled_capped_cum',
+                 'surplus',
+                 'glacier_melt_perc',
+                 'glacier_mass_mmwe',
+                 'glacier_vol_m3',
+                 'glacier_vol_perc']
 
     if var in out1_cols:
         output_df = 'model_output'
@@ -153,10 +181,11 @@ def custom_df_matilda(dic, scenario, var, resample_freq=None):
     # Resample time series
     if resample_freq is not None:
         if output_df == 'glacier_rescaling':
-            if var in ['glacier_area', 'glacier_elev']:
-                combined_df = combined_df.resample(resample_freq).mean()
-            else:
-                combined_df = combined_df.resample(resample_freq).sum()
+            if resample_freq == '10Y':
+                if var in ['glacier_area', 'glacier_elev']:
+                    combined_df = combined_df.resample(resample_freq).mean()
+                else:
+                    combined_df = combined_df.resample(resample_freq).sum()
         else:
             if var in ['avg_temp_catchment', 'avg_temp_glaciers']:
                 combined_df = combined_df.resample(resample_freq).mean()
