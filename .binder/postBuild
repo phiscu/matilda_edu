@@ -1,3 +1,4 @@
-chmod +x .binder/start.sh
+#!/bin/bash
 
-./start.sh
+# Run the startup script
+./.binder/start.sh
