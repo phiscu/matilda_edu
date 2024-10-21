@@ -91,6 +91,21 @@ df_era5 = pd.read_csv(dir_output + 'ERA5L.csv', **{
         'index_col':    'dt',
         'parse_dates':  ['dt']}).resample('D').agg({'temp': 'mean', 'prec': 'sum'})
 
+
+
+
+
+# Adjust start date:
+df_era5.index = pd.to_datetime(df_era5.index)  # Convert the index to datetime
+df_era5 = df_era5[df_era5.index >= '2000-01-01']  # Filter rows where the date is >= 2000-01-01
+obs = obs[obs.index >= '2000-01-01']  # Filter rows where the date is >= 2000-01-01
+
+
+
+
+
+
+
 # tas = parquet_to_dict(f"{dir_output}cmip6/adjusted/tas_parquet")
 # pr = parquet_to_dict(f"{dir_output}cmip6/adjusted/pr_parquet")
 #
@@ -98,6 +113,33 @@ df_era5 = pd.read_csv(dir_output + 'ERA5L.csv', **{
 
 tas = pickle_to_dict(f"{dir_output}cmip6/adjusted/tas.pickle")
 pr = pickle_to_dict(f"{dir_output}cmip6/adjusted/pr.pickle")
+
+
+
+
+
+
+
+
+
+# Adjust start date
+def adjust_startdate(data_dict, start_date='2000-01-01'):
+    for key in data_dict:
+        df = data_dict[key]
+        df.index = pd.to_datetime(df.index)  # Convert the index to datetime
+        data_dict[key] = df[df.index >= start_date]  # Filter rows where the date is >= start_date
+
+
+# Apply the function to both dictionaries
+adjust_startdate(tas)
+adjust_startdate(pr)
+
+
+
+
+
+
+
 
 matilda_scenarios = pickle_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
 
@@ -131,6 +173,9 @@ off_melt = {'SSP2': get_matilda_result_all_models('SSP2', 'melt_off_glaciers'),
 snow_melt['SSP2'] = snow_melt['SSP2'] + off_melt['SSP2']
 snow_melt['SSP5'] = snow_melt['SSP5'] + off_melt['SSP5']
 
+# Glacier area starts one year earlier
+adjust_startdate(glacier_area)
+
 ###
 
 for scenario in ['SSP2','SSP5']:
@@ -149,11 +194,15 @@ melt_ssp2['ssp2_avg_ice'] = ice_melt['SSP2'].mean(axis=1)
 # melt_ssp2['ssp2_avg_off'] = off_melt['SSP2'].mean(axis=1)
 melt_ssp2 = melt_ssp2.resample('Y').sum()
 
+melt_ssp2.index = melt_ssp2.index.map(lambda x: x.replace(month=1, day=1))  # Assign the first day of the year
+
 melt_ssp5 = pd.DataFrame()
 melt_ssp5['ssp5_avg_snow'] = snow_melt['SSP5'].mean(axis=1)
 melt_ssp5['ssp5_avg_ice'] = ice_melt['SSP5'].mean(axis=1)
 # melt_ssp5['ssp5_avg_off'] = off_melt['SSP5'].mean(axis=1)
 melt_ssp5 = melt_ssp5.resample('Y').sum()
+
+melt_ssp5.index = melt_ssp5.index.map(lambda x: x.replace(month=1, day=1))  # Assign the first day of the year
 
 melt_diff = pd.DataFrame()
 melt_diff['diff_snow'] = melt_ssp5['ssp5_avg_snow'] - melt_ssp2['ssp2_avg_snow']
@@ -163,12 +212,48 @@ melt_diff['diff_ice'] = melt_ssp5['ssp5_avg_ice'] - melt_ssp2['ssp2_avg_ice']
 ###
 
 
+# def df2long(df, val_name, intv_sum=None, intv_mean='Y', rolling=None, cutoff=None):
+#     """Resamples dataframes and converts them into long format to be passed to seaborn.lineplot()."""
+#     if intv_sum is not None:
+#         df = df.resample(intv_sum).sum()
+#
+#     df = df.resample(intv_mean).mean()
+#
+#     if rolling is not None:
+#         df = df.rolling(rolling).mean()
+#
+#     if cutoff is not None:
+#         df = df.loc[cutoff:]
+#
+#     df = df.reset_index()
+#     df = df.melt('TIMESTAMP', var_name='model', value_name=val_name)
+#
+#     return df
+
+# def df2long(df, val_name, intv_sum=None, intv_mean='Y', rolling=None, cutoff=None):
+#     """Resamples dataframes and converts them into long format to be passed to seaborn.lineplot()."""
+#     if intv_sum is not None:
+#         df = df.resample(intv_sum, label='left').sum()  # Align resampling to the start of the period
+#
+#     df = df.resample(intv_mean, label='left').mean()  # Align resampling to the start of the period
+#
+#     if rolling is not None:
+#         df = df.rolling(rolling).mean()
+#
+#     if cutoff is not None:
+#         df = df.loc[cutoff:]
+#
+#     df = df.reset_index()
+#     df = df.melt('TIMESTAMP', var_name='model', value_name=val_name)
+#
+#     return df
+
 def df2long(df, val_name, intv_sum=None, intv_mean='Y', rolling=None, cutoff=None):
     """Resamples dataframes and converts them into long format to be passed to seaborn.lineplot()."""
     if intv_sum is not None:
-        df = df.resample(intv_sum).sum()
+        df = df.resample(intv_sum, label='right').sum()  # Align resampling to the start of the period
 
-    df = df.resample(intv_mean).mean()
+    df = df.resample(intv_mean, label='right').mean()  # Align resampling to the start of the period
 
     if rolling is not None:
         df = df.rolling(rolling).mean()
@@ -176,7 +261,16 @@ def df2long(df, val_name, intv_sum=None, intv_mean='Y', rolling=None, cutoff=Non
     if cutoff is not None:
         df = df.loc[cutoff:]
 
+    # Adjust the index to assign the first day of the period
+    if intv_mean == 'Y':
+        df.index = df.index.map(lambda x: x.replace(month=1, day=1))  # Assign the first day of the year
+    elif intv_mean == 'M':
+        df.index = df.index.map(lambda x: x.replace(day=1))  # Assign the first day of the month
+
+    # Reset index to turn the timestamp index into a column
     df = df.reset_index()
+
+    # Melt the dataframe into long format
     df = df.melt('TIMESTAMP', var_name='model', value_name=val_name)
 
     return df
@@ -218,7 +312,7 @@ def ensemble_max(param_scenarios, val_name, rolling=None, cutoff=None, intv_sum=
 
 plt.rcParams["font.family"] = "Arial"
 
-rolling = 5
+rolling = None
 
 arrow_props = dict(facecolor='grey', edgecolor='grey', arrowstyle='-', linewidth=0.5)
 
@@ -250,7 +344,7 @@ for line in ax0l.lines:
 # 50% line
 half_y = ax0l.get_ylim()[1] / 2
 ax0l.axhline(y=half_y, color='lightgrey', linestyle=':', linewidth = 1)
-ax0l.text(dt.datetime(1982, 1, 1), half_y, f"50%", ha='left', va='bottom', size=8, color='grey')
+ax0l.text(dt.datetime(2001, 1, 1), half_y, f"50%", ha='left', va='bottom', size=8, color='grey')
 
 # -> fill box: snow & ice melt
 print("Melt snow & ice")
@@ -310,27 +404,31 @@ print("Let the water cycle")
 ax2l = axs[2]
 
 # Auto-scale y-axis of the line plot to match the data range
-ymax_ax2l = max(ensemble_max(param_scenarios=runoff, val_name='runoff', rolling=rolling, cutoff='1981-12-31'),
-                ensemble_max(param_scenarios=evaporation, val_name='eva', rolling=rolling, cutoff='1981-12-31'),
-                ensemble_max(param_scenarios=precipitation, val_name='prec', rolling=rolling, cutoff='1981-12-31'))
+ymax_ax2l = max(ensemble_max(param_scenarios=runoff, val_name='runoff', rolling=rolling, cutoff='2000-12-31'),
+                ensemble_max(param_scenarios=evaporation, val_name='eva', rolling=rolling, cutoff='2000-12-31'),
+                ensemble_max(param_scenarios=precipitation, val_name='prec', rolling=rolling, cutoff='2000-12-31'))
 ymax_ax2l = ymax_ax2l * 1.1     # some space for the legend
 
 
 print("- runoff")
-obs_rs = obs['Qobs'].resample('Y').agg(pd.Series.sum, skipna=False).rolling(rolling, min_periods=2).mean()
+if rolling is not None:
+    obs_rs = obs['Qobs'].resample('Y').agg(pd.Series.sum, skipna=False).rolling(rolling, min_periods=2).mean()
+else:
+    obs_rs = obs['Qobs'].resample('Y').agg(pd.Series.sum, skipna=False).mean()
+
 add_cmip_ensemble(param_scenarios=runoff, val_name='runoff', ylabel=' (mm/a)', ylim=(0, ymax_ax2l),
                   target=obs_rs, target_color='blue',
-                  ax=ax2l, rolling=rolling, cutoff='2020-12-31')
+                  ax=ax2l, rolling=rolling, cutoff='2000-12-31')
 
 print("- evaporation")
 add_cmip_ensemble(param_scenarios=evaporation, val_name='eva', ylabel=' (mm/a)',
                   target=None, target_color='green',  #linestyle='dashed',
-                  ax=ax2l, rolling=rolling, cutoff='1981-12-31')
+                  ax=ax2l, rolling=rolling, cutoff='2000-12-31')
 
 print("- precipitation")
 add_cmip_ensemble(param_scenarios=precipitation, val_name='prec', ylabel=' (mm/a)',
                   target=None, target_color='darkgrey',
-                  ax=ax2l, rolling=rolling, cutoff='1981-12-31')
+                  ax=ax2l, rolling=rolling, cutoff='2000-12-31')
 
 annote_final_val_lines(ax2l, 'mm', min_dist=100)
 
@@ -341,23 +439,27 @@ for index, row in obs.dropna().iterrows():
     start = mdates.date2num(row['Date'])
     ax2l.add_patch(Rectangle((start, 0), width=1, height=1400, alpha=0.1, label='_obs_data', zorder=0))
 
-ax2l.axvline(dt.datetime(2020, 12, 31), color='salmon')
+ax2l.axvline(dt.datetime(2022, 12, 31), color='salmon')
 
 # -> fill box: Temperature
 print("Turn on some heat")
 
 ax3l = axs[3]
 
-era5_temp_rs = df_era5['temp'].resample('Y').agg(pd.Series.mean, skipna=False).rolling(rolling, min_periods=2).mean()
+if rolling is not None:
+    era5_temp_rs = df_era5['temp'].resample('Y').agg(pd.Series.mean, skipna=False).rolling(rolling, min_periods=2).mean()
+else:
+    era5_temp_rs = df_era5['temp'].resample('Y').agg(pd.Series.mean, skipna=False).mean()
+
 add_cmip_ensemble(param_scenarios=tas, val_name='temp', ylabel='Temp. (°C)',
                   target=era5_temp_rs, target_color='red',
-                  ax=ax3l, rolling=rolling, cutoff='2022-12-31', intv_sum=None)
+                  ax=ax3l, rolling=rolling, cutoff='2000-12-31', intv_sum=None)
 annote_final_val_lines(ax3l, '°C')
 
 ax3l.axhline(y=0, color='lightgrey', linestyle=':', linewidth = 1)
-ax3l.text(dt.datetime(1982, 1, 1), 0, f"0 °C", ha='left', va='bottom', size=8, color='grey')
+ax3l.text(dt.datetime(2001, 1, 1), 0, f"0 °C", ha='left', va='bottom', size=8, color='grey')
 
-ax3l.axvline(dt.datetime(2020, 12, 31), color='salmon')
+ax3l.axvline(dt.datetime(2022, 12, 31), color='salmon')
 
 # -> create legend
 ax1l.legend(['Snow Melt', 'Ice Melt','_Snow','_Ice','_White','SSP5-SSP2','SSP5-SSP2'], ncol=2, fontsize="8",
@@ -367,7 +469,7 @@ ax1l.legend(['Snow Melt', 'Ice Melt','_Snow','_Ice','_White','SSP5-SSP2','SSP5-S
 ax2l_legend = ax2l.legend(['_SSP2','Runoff','_SSP5','_CI5','_Runoff',
              '_SSP2','Evaporation','_SSP5','_CI5',
              '_SSP2','Precipitation','_SSP5','_CI5',
-             'Observation data',],
+             'Runoff observation period',],
              ncol=4, fontsize="8",
              loc="upper left",
              frameon=True)
@@ -385,20 +487,21 @@ print("Legend ready")
 
 # -> Add texts to the plot
 style = dict(size=8, color='black')
-ax1l.text(dt.datetime(1982, 1, 1), 5, f"SSP5", ha='left', va='bottom', **style)
-ax1l.text(dt.datetime(1982, 1, 1), -6, f"SSP2", ha='left', va='top', **style)
+ax1l.text(dt.datetime(2001, 1, 1), 5, f"SSP5", ha='left', va='bottom', **style)
+ax1l.text(dt.datetime(2001, 1, 1), -6, f"SSP2", ha='left', va='top', **style)
 
-ax1l.text(dt.datetime(2100, 1, 1), 120, f"Diff +", ha='right', va='bottom', **style)
-ax1l.text(dt.datetime(2100, 1, 1), -120, f"Diff -", ha='right', va='top', **style)
+ax1l.text(dt.datetime(2099, 1, 1), 120, f"Diff +", ha='right', va='bottom', **style)
+ax1l.text(dt.datetime(2099, 1, 1), -120, f"Diff -", ha='right', va='top', **style)
 
-ax2l.text(dt.datetime(2100, 1, 1), 0, f"{rolling} year rolling mean", ha='right', va='bottom', style='italic', **style)
-ax3l.text(dt.datetime(2100, 1, 1), era5_temp_rs.dropna().min(), f"{rolling} year rolling mean", ha='right', va='bottom', style='italic', **style)
-
+if rolling is not None:
+    ax2l.text(dt.datetime(2100, 1, 1), 0, f"{rolling} year rolling mean", ha='right', va='bottom', style='italic', **style)
+    ax3l.text(dt.datetime(2100, 1, 1), era5_temp_rs.dropna().min(), f"{rolling} year rolling mean", ha='right', va='bottom', style='italic', **style)
 # -> final polish: modify x-Axis and show current date line
 ax3l.xaxis.set_major_locator(mdates.YearLocator(base=10))
 
 for ax in axs:
     ax.margins(x=0)
+    ax.set_xlim([dt.datetime(2000, 1, 1), None])  # Set lower limit to 2000, upper limit adjusts automatically
 
 for ax in [ax1l,ax2l]:
     ax.grid(axis='y', color='lightgrey', linestyle='--', dashes=(5, 5))
@@ -406,5 +509,10 @@ for ax in [ax1l,ax2l]:
 plt.suptitle(f"MATILDA Summary", fontweight='bold', fontsize=14)
 figure.tight_layout(rect=[0, 0.02, 1, 1])  # Make some room at the bottom
 
+
 # --- SHOW ---
 plt.show()
+
+
+
+

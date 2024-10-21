@@ -57,9 +57,9 @@ from tools.helpers import read_yaml, write_yaml
 import pandas as pd
 matilda_settings = read_yaml(f"{dir_output}/settings.yml")
 adapted_settings = {
-    "set_up_start": '1979-01-01',  # Start date of the setup period
-    "set_up_end": '1980-12-31',  # End date of the setup period
-    "sim_start": '1981-01-01',  # Start date of the simulation period
+    "set_up_start": '1998-01-01',  # Start date of the setup period
+    "set_up_end": '1999-12-31',  # End date of the setup period
+    "sim_start": '2000-01-01',  # Start date of the simulation period
     "sim_end": '2100-12-31',  # End date of the simulation period
     "plots": False
 }
@@ -86,12 +86,12 @@ param_dict = read_yaml(f"{dir_output}/parameters.yml")
 from tools.helpers import parquet_to_dict, pickle_to_dict
 
 # For size:
-tas = parquet_to_dict(f"{dir_output}cmip6/adjusted/tas_parquet")
-pr = parquet_to_dict(f"{dir_output}cmip6/adjusted/pr_parquet")
+# tas = parquet_to_dict(f"{dir_output}cmip6/adjusted/tas_parquet")
+# pr = parquet_to_dict(f"{dir_output}cmip6/adjusted/pr_parquet")
 
 ## For speed
-# tas = pickle_to_dict(f"{dir_output}cmip6/adjusted/tas.pickle")
-# pr = pickle_to_dict(f"{dir_output}cmip6/adjusted/pr.pickle")
+tas = pickle_to_dict(f"{dir_output}cmip6/adjusted/tas.pickle")
+pr = pickle_to_dict(f"{dir_output}cmip6/adjusted/pr.pickle")
 
 # %% [markdown]
 # Now we have to convert the individual climate projections into MATILDA input dataframes with the correct column names. We store these 2 x 31 MATILDA inputs in a nested dictionary again and save the file in a `parquet` (or `pickle`).
@@ -136,9 +136,9 @@ def create_scenario_dict(tas: dict, pr: dict, scenario_nums: list) -> dict:
 scenarios = create_scenario_dict(tas, pr, [2, 5])
 
 print("Storing MATILDA scenario input dataframes on disk...")
-dict_to_parquet(scenarios, f"{dir_output}cmip6/adjusted/matilda_scenario_input_parquet")
+# dict_to_parquet(scenarios, f"{dir_output}cmip6/adjusted/matilda_scenario_input_parquet")
 
-# dict_to_pickle(scenarios, f"{dir_output}cmip6/adjusted/matilda_scenario_input.pickle")
+dict_to_pickle(scenarios, f"{dir_output}cmip6/adjusted/matilda_scenario_input.pickle")
 
 # %% [markdown]
 # ## Running MATILDA for all climate projections
@@ -284,9 +284,9 @@ matilda_bulk = MatildaBulkProcessor(scenarios, matilda_settings, param_dict)
 matilda_scenarios = matilda_bulk.run_multi_process(num_cores=4)
 
 print("Storing MATILDA scenario outputs on disk...")
-dict_to_parquet(matilda_scenarios, f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
+# dict_to_parquet(matilda_scenarios, f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
 
-# dict_to_pickle(matilda_scenarios, test_dir + 'adjusted/matilda_scenarios.pickle')
+dict_to_pickle(matilda_scenarios, test_dir + 'adjusted/matilda_scenarios.pickle')
 
 
 # %% [markdown]

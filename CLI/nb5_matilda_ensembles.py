@@ -33,9 +33,9 @@ print(f"Output path: '{dir_output}'")
 # Read and adapt settings
 matilda_settings = read_yaml(f"{dir_output}/settings.yml")
 adapted_settings = {
-    "set_up_start": '1979-01-01',  # Start date of the setup period
-    "set_up_end": '1980-12-31',  # End date of the setup period
-    "sim_start": '1981-01-01',  # Start date of the simulation period
+    "set_up_start": '1998-01-01',  # Start date of the setup period
+    "set_up_end": '1999-12-31',  # End date of the setup period
+    "sim_start": '2000-01-01',  # Start date of the simulation period
     "sim_end": '2100-12-31',  # End date of the simulation period
     "plots": False
 }
