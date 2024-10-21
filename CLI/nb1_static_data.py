@@ -35,6 +35,12 @@ sys.path.append(parent_dir)
 
 from resourcespace import ResourceSpace
 
+import matplotlib.font_manager as fm
+path_to_palatinottf = '/home/phillip/Downloads/Palatino.ttf'
+fm.fontManager.addfont(path_to_palatinottf)
+plt.rcParams["font.family"] = "Palatino"
+
+
 ## Initialize GEE
 try:
     ee.Initialize()

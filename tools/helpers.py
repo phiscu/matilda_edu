@@ -29,18 +29,32 @@ def read_yaml(file_path):
 def write_yaml(data, file_path):
     """
     Write a dictionary to a YAML file.
+    Ensures all values are in standard Python types before writing.
+    
     Parameters
     ----------
     data : dict
         The dictionary to write to a YAML file.
     file_path : str
         The path of the file where the YAML data shall be stored.
+    
     Returns
     -------
     None
     """
+
+    # Convert non-standard types (like numpy.float64) to standard Python types
+    for key in data:
+        value = data[key]
+        if isinstance(value, np.float64):
+            data[key] = float(value)  # Convert to native Python float
+        elif isinstance(value, np.int64):
+            data[key] = int(value)  # Convert to native Python int
+
     with open(file_path, 'w') as f:
         yaml.safe_dump(data, f)
+
+    print(f"Data successfully written to YAML at {file_path}")
 
 
 def update_yaml(file_path, new_items):
@@ -59,8 +73,8 @@ def update_yaml(file_path, new_items):
     data = read_yaml(file_path)
     data.update(new_items)
     write_yaml(data, file_path)
-   
-    
+
+
 def pickle_to_dict(file_path):
     """
     Loads a dictionary from a pickle file at a specified file path.
@@ -99,7 +113,6 @@ def dict_to_pickle(dic, target_path):
     with open(target_path, 'wb') as f:
         pickle.dump(dic, f)
 
-    
 
 def drop_keys(dic, keys_to_drop):
     """Removes specified keys from a dictionary.
@@ -149,7 +162,7 @@ def parquet_to_dict(directory_path: str, pbar: bool = True) -> dict:
             k = file_name[:-len(".parquet")]
             dictionary[k] = pd.read_parquet(file_path)
     return dictionary
- 
+
 
 def dict_to_parquet(dictionary: dict, directory_path: str, pbar: bool = True) -> None:
     """
@@ -179,39 +192,43 @@ def dict_to_parquet(dictionary: dict, directory_path: str, pbar: bool = True) ->
 
 
 matilda_vars = {
- 'avg_temp_catchment': ('Mean Catchment Temperature', '°C'),
- 'avg_temp_glaciers': ('Mean Temperature of Glacierized Area', '°C'),
- 'evap_off_glaciers': ('Off-glacier Evaporation', 'mm w.e.'),
- 'prec_off_glaciers': ('Off-glacier Precipitation', 'mm w.e.'),
- 'prec_on_glaciers': ('On-glacier Precipitation', 'mm w.e.'),
- 'rain_off_glaciers': ('Off-glacier Rain', 'mm w.e.'),
- 'snow_off_glaciers': ('Off-glacier Snow', 'mm w.e.'),
- 'rain_on_glaciers': ('On-glacier Rain', 'mm w.e.'),
- 'snow_on_glaciers': ('On-glacier Snow', 'mm w.e.'),
- 'snowpack_off_glaciers': ('Off-glacier Snowpack', 'mm w.e.'),
- 'soil_moisture': ('Soil Moisture', 'mm w.e.'),
- 'upper_groundwater': ('Upper Groundwater', 'mm w.e.'),
- 'lower_groundwater': ('Lower Groundwater', 'mm w.e.'),
- 'melt_off_glaciers': ('Off-glacier Melt', 'mm w.e.'),
- 'melt_on_glaciers': ('On-glacier Melt', 'mm w.e.'),
- 'ice_melt_on_glaciers': ('On-glacier Ice Melt', 'mm w.e.'),
- 'snow_melt_on_glaciers': ('On-glacier Snow Melt', 'mm w.e.'),
- 'refreezing_ice': ('Refreezing Ice', 'mm w.e.'),
- 'refreezing_snow': ('Refreezing Snow', 'mm w.e.'),
- 'total_refreezing': ('Total Refreezing', 'mm w.e.'),
- 'SMB': ('Glacier Surface Mass Balance', 'mm w.e.'),
- 'actual_evaporation': ('Mean Actual Evaporation', 'mm w.e.'),
- 'total_precipitation': ('Mean Total Precipitation', 'mm w.e.'),
- 'total_melt': ('Total Melt', 'mm w.e.'),
- 'runoff_without_glaciers': ('Runoff without Glaciers', 'mm w.e.'),
- 'runoff_from_glaciers': ('Runoff from Glaciers', 'mm w.e.'),
- 'total_runoff': ('Total Runoff', 'mm w.e.'),
- 'glacier_area': ('Glacier Area', 'km²'),
- 'glacier_elev': ('Mean Glacier Elevation', 'm.a.s.l.'),
- 'smb_water_year': ('Surface Mass Balance of the Hydrological Year', 'mm w.e.'),
- 'smb_scaled': ('Area-scaled Surface Mass Balance', 'mm w.e.'),
- 'smb_scaled_capped': ('Surface Mass Balance Capped at 0', 'mm w.e.'),
- 'smb_scaled_capped_cum': ('Cumulative Surface Mass Balance Capped at 0', 'mm w.e.')
+    'avg_temp_catchment': ('Mean Catchment Temperature', '°C'),
+    'avg_temp_glaciers': ('Mean Temperature of Glacierized Area', '°C'),
+    'evap_off_glaciers': ('Off-glacier Evaporation', 'mm w.e.'),
+    'prec_off_glaciers': ('Off-glacier Precipitation', 'mm w.e.'),
+    'prec_on_glaciers': ('On-glacier Precipitation', 'mm w.e.'),
+    'rain_off_glaciers': ('Off-glacier Rain', 'mm w.e.'),
+    'snow_off_glaciers': ('Off-glacier Snow', 'mm w.e.'),
+    'rain_on_glaciers': ('On-glacier Rain', 'mm w.e.'),
+    'snow_on_glaciers': ('On-glacier Snow', 'mm w.e.'),
+    'snowpack_off_glaciers': ('Off-glacier Snowpack', 'mm w.e.'),
+    'soil_moisture': ('Soil Moisture', 'mm w.e.'),
+    'upper_groundwater': ('Upper Groundwater', 'mm w.e.'),
+    'lower_groundwater': ('Lower Groundwater', 'mm w.e.'),
+    'melt_off_glaciers': ('Off-glacier Melt', 'mm w.e.'),
+    'melt_on_glaciers': ('On-glacier Melt', 'mm w.e.'),
+    'ice_melt_on_glaciers': ('On-glacier Ice Melt', 'mm w.e.'),
+    'snow_melt_on_glaciers': ('On-glacier Snow Melt', 'mm w.e.'),
+    'refreezing_ice': ('Refreezing Ice', 'mm w.e.'),
+    'refreezing_snow': ('Refreezing Snow', 'mm w.e.'),
+    'total_refreezing': ('Total Refreezing', 'mm w.e.'),
+    'SMB': ('Glacier Surface Mass Balance', 'mm w.e.'),
+    'actual_evaporation': ('Mean Actual Evaporation', 'mm w.e.'),
+    'total_precipitation': ('Mean Total Precipitation', 'mm w.e.'),
+    'total_melt': ('Total Melt', 'mm w.e.'),
+    'runoff_without_glaciers': ('Runoff without Glaciers', 'mm w.e.'),
+    'runoff_from_glaciers': ('Runoff from Glaciers', 'mm w.e.'),
+    'total_runoff': ('Total Runoff', 'mm w.e.'),
+    'glacier_area': ('Glacier Area', 'km²'),
+    'glacier_elev': ('Mean Glacier Elevation', 'm.a.s.l.'),
+    'smb_water_year': ('Surface Mass Balance of the Hydrological Year', 'mm w.e.'),
+    'smb_scaled': ('Area-scaled Surface Mass Balance', 'mm w.e.'),
+    'smb_scaled_capped': ('Surface Mass Balance Capped at 0', 'mm w.e.'),
+    'smb_scaled_capped_cum': ('Cumulative Surface Mass Balance Capped at 0', 'mm w.e.'),
+    'glacier_melt_perc': ('Melted Glacier Fraction', '%'),
+    'glacier_mass_mmwe': ('Glacier Mass', 'mm w.e.'),
+    'glacier_vol_m3': ('Glacier Volume', 'm³'),
+    'glacier_vol_perc': ('Fraction of Initial Glacier Volume (2000)', '-')
 }
 
 
@@ -247,7 +264,7 @@ def crop2wy(df, begin=10):
         A new DataFrame containing only the rows that fall within a complete water year.
     """
     cut_begin = pd.to_datetime(f'{begin}-{df.water_year[0]}', format='%m-%Y')
-    cut_end = pd.to_datetime(f'{begin}-{df.water_year[-1]-1}', format='%m-%Y') - pd.DateOffset(days=1)
+    cut_end = pd.to_datetime(f'{begin}-{df.water_year[-1] - 1}', format='%m-%Y') - pd.DateOffset(days=1)
     return df[cut_begin:cut_end].copy()
 
 

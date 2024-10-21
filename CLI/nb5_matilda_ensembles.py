@@ -232,3 +232,5 @@ print("Storing MATILDA scenario outputs on disk...")
 # dict_to_parquet(matilda_scenarios, f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
 dict_to_pickle(matilda_scenarios, f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
 print('Done.')
+
+scenarios_test = pickle_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
