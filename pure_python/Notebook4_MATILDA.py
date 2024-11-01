@@ -471,3 +471,13 @@ best_summary = psample(df=era5, obs=obs, **psample_settings, **fixed_param_bound
 # %%
 write_yaml(param, dir_output + 'parameters.yml')
 print(f"Parameter set stored in '{dir_output}parameters.yml'")
+
+# %%
+import shutil
+
+# refresh `output_download.zip` with data retrieved within this notebook
+shutil.make_archive('output_download', 'zip', 'output')
+print('Output folder can be download now (file output_download.zip)')
+
+# %%
+%reset -f

@@ -989,7 +989,6 @@ ssp_tas_dict.keys()
 
 # %%
 from tools.helpers import dict_to_pickle, dict_to_parquet
-import shutil
 
 tas = {'SSP2': ssp_tas_dict['SSP2_adjusted'], 'SSP5': ssp_tas_dict['SSP5_adjusted']}
 pr = {'SSP2': ssp_pr_dict['SSP2_adjusted'], 'SSP5': ssp_pr_dict['SSP5_adjusted']}
@@ -1002,6 +1001,9 @@ dict_to_parquet(pr, cmip_dir + 'adjusted/pr_parquet')
 # For speed:
 # dict_to_pickle(tas, cmip_dir + 'adjusted/tas.pickle')
 # dict_to_pickle(pr, cmip_dir + 'adjusted/pr.pickle')
+
+# %%
+import shutil
 
 # refresh `output_download.zip` with data retrieved within this notebook
 shutil.make_archive('output_download', 'zip', 'output')

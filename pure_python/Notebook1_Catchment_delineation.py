@@ -838,5 +838,5 @@ print('Output folder can be download now (file output_download.zip)')
 
 
 # %%
-%reset -f
+# %reset -f
 
