@@ -376,6 +376,7 @@ else:
 # %%time
 
 import urllib.request
+import fsspec
 import re
 
 if rgi_region != None:
@@ -400,7 +401,11 @@ if rgi_region != None:
 
         # read zip into dataframe
         print('Loading shapefiles...')
-        rgi = gpd.read_file(url+file)
+        path = f"simplecache::{url+file}"
+        print('Path:', path)
+        with fsspec.open(path) as file:
+            rgi = gpd.read_file(file)
+
         if rgi.crs != catchment.crs:
             print("CRS adjusted")
             catchment = catchment.to_crs(rgi.crs)
@@ -562,7 +567,7 @@ print(f"Mean catchment elevation (adjusted) is {ele_cat:.2f} m a.s.l.")
 def getArchiveNames(row):
     region = row['RGIId'].split('.')[0]
     id = (int(row['RGIId'].split('.')[1]) - 1) // 1000 + 1
-    return f'ice_thickness_RGI60-{region}_{id}', f'dem_surface_DEM_RGI60-{region}_{id}'
+    return f'ice_thickness_{region}_{id}', f'dem_surface_DEM_{region}_{id}'
 
 
 # determine relevant .zip files for derived RGI IDs 
@@ -618,7 +623,7 @@ for idx, row in refs_thickness.iterrows():
         # Get a list of all archived file names from the zip
         listOfFileNames = zipObj.namelist()
         for rgiid in df_rgiids.loc[df_rgiids['thickness'] == row['field8']]['RGIId']:
-            filename = 'RGI60-' + rgiid + '_thickness.tif'
+            filename = rgiid + '_thickness.tif'
             if filename in listOfFileNames:
                 cnt_thickness += 1
                 zipObj.extract(filename, output_folder+'RGI')
@@ -642,7 +647,7 @@ for idx,row in refs_dem.iterrows():
         # Get a list of all archived file names from the zip
         listOfFileNames = zipObj.namelist()
         for rgiid in df_rgiids.loc[df_rgiids['dem']==row['field8']]['RGIId']:
-            filename = f"surface_DEM_RGI60-{rgiid}.tif"
+            filename = f"surface_DEM_{rgiid}.tif"
             if filename in listOfFileNames:
                 cnt_dem += 1
                 zipObj.extract(filename, output_folder+'RGI')
@@ -728,7 +733,7 @@ if len(df_all) > 0:
     
     # aggregate per bin and do some math
     df_agg = df_all.groupby(pd.cut(df_all['altitude'], bins))['thickness'].agg(count='size', mean='mean').reset_index()
-    df_agg['Elevation'] = df_agg['altitude'].apply(lambda x: x.left)
+    df_agg['Elevation'] = df_agg['altitude'].apply(lambda x: x.left).astype(int)
     df_agg['Area'] = df_agg['count']*pixelSizeX*pixelSizeY / catchment_new.iloc[0]['area']
     df_agg['WE'] = df_agg['mean']*0.908*1000
     df_agg['EleZone'] = df_agg['Elevation'].apply(lambda x: 100*int(x/100))
@@ -815,6 +820,11 @@ with open(output_folder + 'settings.yml', 'w') as f:
 
 print('Settings saved to file.')
 display(pd.DataFrame(settings.items(),columns=['Parameter','Value']).set_index('Parameter'))
+
+# %%
+import shutil
+shutil.make_archive('output_download', 'zip', 'output')
+print('Output folder can be download now (file output_download.zip)')
 
 # %%
 # %reset -f
