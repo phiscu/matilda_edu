@@ -316,17 +316,19 @@ plt.show()
 df.to_csv(dir_output + 'ERA5L.csv',header=True,index=False)
 
 # %% [markdown]
-# ...and update the `settings.yml` file with the reference altitude of the ERA5-Land data (`ele_dat`).
+# ...and update the `settings.yml` file with the reference altitude of the ERA5-Land data (`ele_dat`) and refresh `output_download.zip` with newly acquired data.
 
 # %%
 from tools.helpers import update_yaml
-        
+import shutil
+
+# update settings file
 update_yaml(dir_output + 'settings.yml', {'ele_dat': float(ele_dat)})
 
-import shutil
+# refresh `output_download.zip` with data retrieved within this notebook
 shutil.make_archive('output_download', 'zip', 'output')
 print('Output folder can be download now (file output_download.zip)')
 
 # %%
-# %reset -f
+%reset -f
 

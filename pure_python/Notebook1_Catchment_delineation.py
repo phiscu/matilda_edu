@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.16.4
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -821,12 +821,22 @@ with open(output_folder + 'settings.yml', 'w') as f:
 print('Settings saved to file.')
 display(pd.DataFrame(settings.items(),columns=['Parameter','Value']).set_index('Parameter'))
 
+# %% [markdown]
+# ## Download Outputs
+#
+# <div class="alert alert-block alert-info">
+# <b>Note:</b>
+#  The output folder is zipped at the end of each notebook and can be downloaded (file <code>output_download.zip</code>). This is especially useful if you want to use the binder environment again, but don't want to start from notebook #1.</div>
+#
+# <img src="images/download_output.png" width=300>
+#
 # %%
 import shutil
+
 shutil.make_archive('output_download', 'zip', 'output')
 print('Output folder can be download now (file output_download.zip)')
 
-# %%
-# %reset -f
 
 # %%
+%reset -f
+

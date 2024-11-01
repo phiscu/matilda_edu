@@ -393,11 +393,11 @@ ssp_pr_dict = {'SSP2_raw': ssp2_pr_raw, 'SSP2_adjusted': ssp2_pr, 'SSP5_raw': ss
 # %%
 import matplotlib.pyplot as plt
 
-def cmip_plot(ax, df, target, title=None, precip=False, intv_sum='M', intv_mean='10Y',
+def cmip_plot(ax, df, target, title=None, precip=False, intv_sum='ME', intv_mean='10YE',
               target_label='Target', show_target_label=False):
     """Resamples and plots climate model and target data."""
 
-    if intv_mean == '10Y' or intv_mean == '5Y' or intv_mean == '20Y':
+    if intv_mean == '10YE' or intv_mean == '5YE' or intv_mean == '20YE':
         closure = 'left'
     else:
         closure = 'right'
@@ -417,7 +417,7 @@ def cmip_plot(ax, df, target, title=None, precip=False, intv_sum='M', intv_mean=
     ax.grid(True)
     
 
-def cmip_plot_combined(data, target, title=None, precip=False, intv_sum='M', intv_mean='10Y',
+def cmip_plot_combined(data, target, title=None, precip=False, intv_sum='ME', intv_mean='10YE',
                        target_label='Target', show=False):
     """Combines multiple subplots of climate data in different scenarios before and after bias adjustment.
     Shows target data for comparison"""
@@ -453,13 +453,13 @@ def cmip_plot_combined(data, target, title=None, precip=False, intv_sum='M', int
 
 
 # %% [markdown]
-# By default temperature data is resampled to 10y means (`intv_mean='10Y'`), precipitation data is shown in 10y (`intv_mean='10Y'`) means of monthly sums (`intv_sum='M'`). You can adapt this as you please by specifying the respective arguments.
+# By default temperature data is resampled to 10y means (`intv_mean='10YE'`), precipitation data is shown in 10y (`intv_mean='10YE'`) means of monthly sums (`intv_sum='ME'`). You can adapt this as you please by specifying the respective arguments.
 
 # %%
 era5 = read_era5l(era5_file)
 
 cmip_plot_combined(data=ssp_tas_dict, target=era5, title='10y Mean of Air Temperature', target_label='ERA5-Land', show=True)
-cmip_plot_combined(data=ssp_pr_dict, target=era5, title='10y Mean of Monthly Precipitation', precip=True, target_label='ERA5-Land', show=True, intv_mean='10Y')
+cmip_plot_combined(data=ssp_pr_dict, target=era5, title='10y Mean of Monthly Precipitation', precip=True, target_label='ERA5-Land', show=True, intv_mean='10YE')
 
 # %% [markdown]
 # Apparently, some models have striking curves indicating unrealistic outliers or sudden jumps in the data. To clearly identify faulty time series, one option is to choose a qualitative approach by identifying the models using an interactive `plotly` plot. Here we can zoom and select/deselect curves as we like, to identify model names.
@@ -467,7 +467,7 @@ cmip_plot_combined(data=ssp_pr_dict, target=era5, title='10y Mean of Monthly Pre
 # %%
 import plotly.express as px
 
-fig = px.line(ssp5_tas_raw.resample('10Y', closed='left', label='left').mean())
+fig = px.line(ssp5_tas_raw.resample('10YE', closed='left', label='left').mean())
 fig.show()
 
 
@@ -495,7 +495,7 @@ pr_adjusted = dict_filter(ssp_pr_dict, 'adjusted')
 # The `violinplot()` function requires input data in `long` format. 
 
 # %%
-def df2long(df, intv_sum='M', intv_mean='Y', precip=False):
+def df2long(df, intv_sum='ME', intv_mean='YE', precip=False):
     """Resamples dataframes and converts them into long format to be passed to seaborn.lineplot()."""
 
     if precip:
@@ -541,8 +541,8 @@ def vplots(before, after, target, target_label='Target', precip=False, show=Fals
     inner = outer[0].subgridspec(2, 1)
     axis = inner.subplots(sharex='col')
 
-    all_data = pd.concat([df2long(before[i], precip=precip, intv_sum='Y') for i in before.keys()] +
-                         [df2long(after[i], precip=precip, intv_sum='Y') for i in after.keys()])
+    all_data = pd.concat([df2long(before[i], precip=precip, intv_sum='YE') for i in before.keys()] +
+                         [df2long(after[i], precip=precip, intv_sum='YE') for i in after.keys()])
     xmin, xmax = all_data[var].min(), all_data[var].max()
 
     if precip:
@@ -551,9 +551,9 @@ def vplots(before, after, target, target_label='Target', precip=False, show=Fals
         xlim = (xmin - 1, xmax +1 )
 
     for (i, k) in zip(before.keys(), range(0, 4, 1)):
-        df = df2long(before[i], precip=precip, intv_sum='Y')
+        df = df2long(before[i], precip=precip, intv_sum='YE')
         axis[k].grid()
-        sns.violinplot(ax=axis[k], x=var, y='model', data=df, scale="count", bw=.2)
+        sns.violinplot(ax=axis[k], x=var, y='model', data=df, density_norm="count", bw_adjust=.2)
         axis[k].set(xlim=xlim)
         axis[k].set_ylabel(i, fontsize=18, fontweight='bold')
         if k == 0:
@@ -563,9 +563,9 @@ def vplots(before, after, target, target_label='Target', precip=False, show=Fals
     inner = outer[1].subgridspec(2, 1)
     axis = inner.subplots(sharex='col')
     for (i, k) in zip(after.keys(), range(0, 4, 1)):
-        df = df2long(after[i], precip=precip, intv_sum='Y')
+        df = df2long(after[i], precip=precip, intv_sum='YE')
         axis[k].grid()
-        sns.violinplot(ax=axis[k], x=var, y='model', data=df, scale="count", bw=.2)
+        sns.violinplot(ax=axis[k], x=var, y='model', data=df, density_norm="count", bw_adjust=.2)
         axis[k].set(xlim=xlim)
         axis[k].set_ylabel(i, fontsize=18, fontweight='bold')
         axis[k].get_yaxis().set_visible(False)
@@ -681,10 +681,10 @@ class DataFilter:
 #
 # The functions can be applied separately (`check_outliers` or `check_jumps`) or together (`filter_all`). All three return a `list` of model names.
 #
-# Here, we also use the `resampling_rate` parameter to resample the data to annual means (`'Y'`) before running the checks.
+# Here, we also use the `resampling_rate` parameter to resample the data to annual means (`'YE'`) before running the checks.
 
 # %%
-filter = DataFilter(ssp5_tas_raw, zscore_threshold=3, jump_threshold=5, resampling_rate='Y')
+filter = DataFilter(ssp5_tas_raw, zscore_threshold=3, jump_threshold=5, resampling_rate='YE')
 
 print('Models with temperature outliers: ' + str(filter.outliers))
 print('Models with temperature jumps: ' + str(filter.jumps))
@@ -734,7 +734,7 @@ ssp_pr_dict = drop_model(filter.filtered_models, ssp_pr_dict)
 
 
 cmip_plot_combined(data=ssp_tas_dict, target=era5, title='10y Mean of Air Temperature', target_label='ERA5-Land', show=True)
-cmip_plot_combined(data=ssp_pr_dict, target=era5, title='10y Mean of Monthly Precipitation', precip=True, target_label='ERA5-Land', show=True, intv_mean='10Y')
+cmip_plot_combined(data=ssp_pr_dict, target=era5, title='10y Mean of Monthly Precipitation', precip=True, target_label='ERA5-Land', show=True, intv_mean='10YE')
 
 # %% [markdown]
 # ### Ensemble mean plots
@@ -749,7 +749,7 @@ import seaborn as sns
 from matplotlib.legend import Legend
 
 
-def cmip_plot_ensemble(cmip, target, precip=False, intv_sum='M', intv_mean='Y', figsize=(10, 6), show=True):
+def cmip_plot_ensemble(cmip, target, precip=False, intv_sum='ME', intv_mean='YE', figsize=(10, 6), show=True):
     """
     Plots the multi-model mean of climate scenarios including the 90% confidence interval.
     Parameters
@@ -762,9 +762,9 @@ def cmip_plot_ensemble(cmip, target, precip=False, intv_sum='M', intv_mean='Y', 
     precip: bool
         If True, plot the mean precipitation. If False, plot the mean temperature. Default is False.
     intv_sum: str
-        Interval for precipitation sums. Default is monthly ('M').
+        Interval for precipitation sums. Default is monthly ('ME').
     intv_mean: str
-        Interval for the mean of temperature data or precipitation sums. Default is annual ('Y').
+        Interval for the mean of temperature data or precipitation sums. Default is annual ('YE').
     figsize: tuple
         Figure size for the plot. Default is (10,6).
     show: bool
@@ -823,8 +823,8 @@ def cmip_plot_ensemble(cmip, target, precip=False, intv_sum='M', intv_mean='Y', 
 # With less lines in the plot, we can also reduce the resample frequency and show annual means.
 
 # %%
-cmip_plot_ensemble(ssp_tas_dict, era5['temp'], intv_mean='Y')
-cmip_plot_ensemble(ssp_pr_dict, era5['prec'], precip=True, intv_sum='M', intv_mean='Y')
+cmip_plot_ensemble(ssp_tas_dict, era5['temp'], intv_mean='YE')
+cmip_plot_ensemble(ssp_pr_dict, era5['prec'], precip=True, intv_sum='ME', intv_mean='YE')
 
 # %% [markdown]
 # We can see that the SDM adjusts the range and mean of the target data while preserving the distribution and trend of the original data. However, the inter-model variance is slightly reduced for temperature and significantly increased for precipitation.
@@ -921,9 +921,9 @@ def pp_matrix(original, target, corrected, scenario=None, nrow=7, ncol=5, precip
         var = 'Precipitation'
         var_label = 'Monthly ' + var
         unit = ' [mm]'
-        original = original.resample('M').sum()
-        target = target.resample('M').sum()
-        corrected = corrected.resample('M').sum()
+        original = original.resample('ME').sum()
+        target = target.resample('ME').sum()
+        corrected = corrected.resample('ME').sum()
     else:
         var = 'Temperature'
         var_label = 'Daily Mean ' + var
@@ -989,6 +989,7 @@ ssp_tas_dict.keys()
 
 # %%
 from tools.helpers import dict_to_pickle, dict_to_parquet
+import shutil
 
 tas = {'SSP2': ssp_tas_dict['SSP2_adjusted'], 'SSP5': ssp_tas_dict['SSP5_adjusted']}
 pr = {'SSP2': ssp_pr_dict['SSP2_adjusted'], 'SSP5': ssp_pr_dict['SSP5_adjusted']}
@@ -998,7 +999,13 @@ pr = {'SSP2': ssp_pr_dict['SSP2_adjusted'], 'SSP5': ssp_pr_dict['SSP5_adjusted']
 dict_to_parquet(tas, cmip_dir + 'adjusted/tas_parquet')
 dict_to_parquet(pr, cmip_dir + 'adjusted/pr_parquet')
 
-
 # For speed:
 # dict_to_pickle(tas, cmip_dir + 'adjusted/tas.pickle')
 # dict_to_pickle(pr, cmip_dir + 'adjusted/pr.pickle')
+
+# refresh `output_download.zip` with data retrieved within this notebook
+shutil.make_archive('output_download', 'zip', 'output')
+print('Output folder can be download now (file output_download.zip)')
+
+# %%
+%reset -f
