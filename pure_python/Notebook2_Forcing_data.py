@@ -323,6 +323,10 @@ from tools.helpers import update_yaml
         
 update_yaml(dir_output + 'settings.yml', {'ele_dat': float(ele_dat)})
 
+import shutil
+shutil.make_archive('output_download', 'zip', 'output')
+print('Output folder can be download now (file output_download.zip)')
+
 # %%
 # %reset -f
 
