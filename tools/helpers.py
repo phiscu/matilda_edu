@@ -285,3 +285,34 @@ def hydrologicalize(df, begin_of_water_year=10):
     df_new = df.copy()
     df_new['water_year'] = water_year(df_new, begin_of_water_year)
     return crop2wy(df_new, begin_of_water_year)
+
+
+def adjust_jupyter_config():
+    from jupyter_server import serverapp
+    from dash._jupyter import _jupyter_config
+    import os
+
+    js = list(serverapp.list_running_servers())[0]
+
+    if js['hostname'] == 'localhost':
+        print('JupyterLab seems to run on local machine.')
+    else:
+        base = js['base_url']
+        if base.split('/')[1] == 'binder':
+            print('JupyterLab seems to run on binder server.')
+
+            # start updating jupyter server config
+            # official docu: https://dash.plotly.com/dash-in-jupyter
+            # however, due to problems of jupyterlab v4 a work-around must be implemented
+            # see: https://github.com/plotly/dash/issues/2804
+            # and: https://github.com/plotly/dash/issues/2998
+            # solution inspired by: https://github.com/mthiboust/jupyterlab-retrieve-base-url/tree/main
+            conf = {'type': 'base_url_response',
+                    'server_url': 'https://notebooks.gesis.org',
+                    'base_subpath': os.getenv('JUPYTERHUB_SERVICE_PREFIX'),
+                    'frontend': 'jupyterlab'}
+
+            _jupyter_config.update(conf)
+            print('Jupyter config has been updated to run Dash!')
+        else:
+            print('JupyterLab seems to run on unsupported environment.')

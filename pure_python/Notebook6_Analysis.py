@@ -360,33 +360,11 @@ plot_ci_matilda('total_runoff', resample_freq='YE', show=True)
 # To make the full dataset more accessible, we can integrate these figures into an **interactive application** using [`ploty.Dash`](https://dash.plotly.com/). This launches a `Dash` server that updates the figures as you select variables and frequencies in the **dropdown menus**. To compare time series, you can align multiple figures in the same application. The demo application aligns three figures showing *total runoff, total precipitation* and *runoff_from_glaciers* by default directly in the output cell. If you want to display the complete application in a separate Jupyter tab, set `display_mode='tab'`.
 
 # %%
-# retrieve server information to find out whether it's running locally or on mybinder.org server
-from jupyter_server import serverapp
-from dash._jupyter import _jupyter_config
-import os
-
-js = list(serverapp.list_running_servers())[0]
-
-if js['hostname'] == 'localhost':
-    print('JupyterLab seems to run on local machine.')
-else:
-    base = js['base_url']
-    if base.split('/')[1] == 'binder':
-        print('JupyterLab seems to run on binder server.')
-        conf = {'type': 'base_url_response',
-                'server_url': 'https://notebooks.gesis.org',
-                'base_subpath': os.getenv('JUPYTERHUB_SERVICE_PREFIX'),
-                'frontend': 'jupyterlab'}
-
-        _jupyter_config.update(conf)
-        print('Jupyter config has been updated to run Dash!')
-    else:
-        print('JupyterLab seems to run on unsupported environment.')
-
-
-
-# %%
 from dash import Dash, dcc, html, Input, Output
+from tools.helpers import adjust_jupyter_config
+
+# retrieve server information to find out whether it's running locally or on mybinder.org server
+adjust_jupyter_config()
 
 app = Dash(__name__)
 

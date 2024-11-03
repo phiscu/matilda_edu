@@ -344,6 +344,10 @@ plot_ci_indicators(var = 'potential_aridity', dic = matilda_indicators, plot_typ
 
 # %%
 from dash import Dash, dcc, html, Input, Output
+from tools.helpers import adjust_jupyter_config
+
+# retrieve server information to find out whether it's running locally or on mybinder.org server
+adjust_jupyter_config()
 
 app = Dash(__name__)
 
@@ -397,4 +401,5 @@ for i in range(4):
     )
 # Combine the dropdown menus and figures into a single layout
 app.layout = html.Div(dropdowns_and_figures)
-app.run()  # Turn off reloader inside Jupyter
+app.run()                         # -> opens Dash inline
+#app.run(jupyter_mode='external')  # -> opens Dash in new browser tab
