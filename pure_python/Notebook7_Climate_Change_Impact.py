@@ -343,11 +343,13 @@ plot_ci_indicators(var = 'potential_aridity', dic = matilda_indicators, plot_typ
 # Finally, we can launch the interactive `Dash` app to analyze the climate change impacts.
 
 # %%
-from dash import Dash, dcc, html, Input, Output
 from tools.helpers import adjust_jupyter_config
 
 # retrieve server information to find out whether it's running locally or on mybinder.org server
 adjust_jupyter_config()
+
+# %%
+from dash import Dash, dcc, html, Input, Output
 
 app = Dash(__name__)
 
@@ -401,5 +403,8 @@ for i in range(4):
     )
 # Combine the dropdown menus and figures into a single layout
 app.layout = html.Div(dropdowns_and_figures)
-app.run()                         # -> opens Dash inline
-#app.run(jupyter_mode='external')  # -> opens Dash in new browser tab
+
+port = 8051
+app.run(port=port)                         # -> opens Dash inline
+#app.run(port=port, jupyter_mode="external")  # -> opens Dash in new browser tab
+

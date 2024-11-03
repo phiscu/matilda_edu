@@ -360,11 +360,13 @@ plot_ci_matilda('total_runoff', resample_freq='YE', show=True)
 # To make the full dataset more accessible, we can integrate these figures into an **interactive application** using [`ploty.Dash`](https://dash.plotly.com/). This launches a `Dash` server that updates the figures as you select variables and frequencies in the **dropdown menus**. To compare time series, you can align multiple figures in the same application. The demo application aligns three figures showing *total runoff, total precipitation* and *runoff_from_glaciers* by default directly in the output cell. If you want to display the complete application in a separate Jupyter tab, set `display_mode='tab'`.
 
 # %%
-from dash import Dash, dcc, html, Input, Output
 from tools.helpers import adjust_jupyter_config
 
 # retrieve server information to find out whether it's running locally or on mybinder.org server
 adjust_jupyter_config()
+
+# %%
+from dash import Dash, dcc, html, Input, Output
 
 app = Dash(__name__)
 
@@ -420,10 +422,12 @@ def matilda_dash(fig_count=4,
         )
     # Combine the dropdown menus and figures into a single layout
     app.layout = html.Div(dropdowns_and_figures)
-    app.run()
+    app.run(port=8050)
 
 
 # Application example:
 matilda_dash(fig_count=4,
              #default_vars=['total_runoff', 'total_precipitation', 'runoff_from_glaciers']
              )
+
+# %%
