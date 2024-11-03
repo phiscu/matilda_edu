@@ -36,10 +36,10 @@ dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
 
 print("Importing MATILDA scenarios...")
 # For size:
-# matilda_scenarios = parquet_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
+matilda_scenarios = parquet_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
 
 # For speed:
-matilda_scenarios = pickle_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
+# matilda_scenarios = pickle_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
 
 # %% [markdown]
 # This module calculates the following statistics for all ensemble members in annual resolution:
@@ -99,10 +99,20 @@ def calculate_indicators(dic, **kwargs):
     return out_dict
 
 print("Calculating Climate Change Indicators...")
-matilda_indicators = calculate_indicators(matilda_scenarios)
+matilda_indicators = calculate_indicators(matilda_scenarios, freq='D')
 print("Writing Indicators To File...")
 # dict_to_parquet(matilda_indicators, f"{dir_output}cmip6/adjusted/matilda_indicators_parquet")
 dict_to_pickle(matilda_indicators, f"{dir_output}cmip6/adjusted/matilda_indicators_pickle")
+
+# df = matilda_scenarios['SSP2']['CESM2']['model_output']
+# prec = df.prec_off_glaciers.resample('M').sum().values
+#
+# import numpy as np
+# prec2 = np.array(prec, dtype=np.float64)
+#
+# len(prec.shape)
+# if len(prec.shape) > 1:
+#     print('shit.')
 
 # %% [markdown]
 # Similar to the last notebook we write a function to **create customs dataframes for individual indicators** across all ensemble members...

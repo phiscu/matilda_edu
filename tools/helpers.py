@@ -263,8 +263,8 @@ def crop2wy(df, begin=10):
     pandas.DataFrame or None
         A new DataFrame containing only the rows that fall within a complete water year.
     """
-    cut_begin = pd.to_datetime(f'{begin}-{df.water_year[0]}', format='%m-%Y')
-    cut_end = pd.to_datetime(f'{begin}-{df.water_year[-1] - 1}', format='%m-%Y') - pd.DateOffset(days=1)
+    cut_begin = pd.to_datetime(f'{begin}-{df.water_year.iloc[0]}', format='%m-%Y')
+    cut_end = pd.to_datetime(f'{begin}-{df.water_year.iloc[-1] - 1}', format='%m-%Y') - pd.DateOffset(days=1)
     return df[cut_begin:cut_end].copy()
 
 

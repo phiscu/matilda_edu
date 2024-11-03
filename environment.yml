@@ -1,9 +1,9 @@
 # environment.yml
-name: matilda_edu_mat
+name: matilda_edu_mat12
 channels:
 - conda-forge
 dependencies:
-- python==3.12
+- python==3.11
 - numpy==1.26.4
 - geemap==0.35
 - pysheds==0.4
@@ -24,5 +24,5 @@ dependencies:
 - mpl-probscale==0.2.5
 - pip:
   - git+https://github.com/cryotools/matilda.git
-  - climate_indices==1.0.12
+  - climate_indices==2.0.1
   - hydroeval==0.1.0
