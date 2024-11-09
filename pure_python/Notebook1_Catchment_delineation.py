@@ -69,6 +69,7 @@ except Exception as e:
 import pandas as pd
 import configparser
 import ast
+import scienceplots
 
 # read local config.ini file
 config = configparser.ConfigParser()
@@ -219,6 +220,8 @@ print("Processing completed.")
 # %%
 import numpy as np
 import matplotlib.pyplot as plt
+
+plt.style.use(['science','no-latex'])
 
 #Define a function to plot the digital elevation model
 def plotFigure(data, label, cmap='Blues'):
