@@ -446,6 +446,8 @@ def cmip_plot_combined(data, target, title=None, precip=False, intv_sum='ME', in
         figure.tight_layout()
         figure.subplots_adjust(bottom=0.15, top=0.92)
         figure.suptitle(title, fontweight='bold')
+        if saveas is not None:
+            plt.savefig(dir_figures + saveas)
         if show:
             plt.show()
     else:
@@ -458,7 +460,7 @@ def cmip_plot_combined(data, target, title=None, precip=False, intv_sum='ME', in
         figure.subplots_adjust(bottom=0.15, top=0.92)
         figure.suptitle(title, fontweight='bold')
         if saveas is not None:
-            plt.savefig(dir_figures+saveas)
+            plt.savefig(dir_figures + saveas)
         if show:
             plt.show()
 
