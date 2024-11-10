@@ -67,8 +67,10 @@ except Exception as e:
 
 # %%
 import pandas as pd
+import numpy as np
 import configparser
 import ast
+import matplotlib.pyplot as plt
 import scienceplots
 
 # read local config.ini file
@@ -77,6 +79,7 @@ config.read('config.ini')
 
 # get file config from config.ini
 output_folder = config['FILE_SETTINGS']['DIR_OUTPUT']
+figures_folder = config['FILE_SETTINGS']['DIR_FIGURES']
 filename = output_folder + config['FILE_SETTINGS']['DEM_FILENAME']
 output_gpkg = output_folder + config['FILE_SETTINGS']['GPKG_NAME']
 
@@ -84,6 +87,10 @@ output_gpkg = output_folder + config['FILE_SETTINGS']['GPKG_NAME']
 dem_config = ast.literal_eval(config['CONFIG']['DEM'])
 y, x = ast.literal_eval(config['CONFIG']['COORDS'])
 show_map = config.getboolean('CONFIG','SHOW_MAP')
+
+# get style for matplotlib plots
+plt_style = ast.literal_eval(config['CONFIG']['PLOT_STYLE'])
+plt.style.use(plt_style)
 
 # print config data
 print(f'Used DEM: {dem_config[3]}')
@@ -218,11 +225,6 @@ print("Processing completed.")
 # Now let's have a look at the catchment area.
 
 # %%
-import numpy as np
-import matplotlib.pyplot as plt
-
-plt.style.use(['science','no-latex'])
-
 #Define a function to plot the digital elevation model
 def plotFigure(data, label, cmap='Blues'):
     plt.figure(figsize=(12,10))
@@ -232,16 +234,16 @@ def plotFigure(data, label, cmap='Blues'):
 
 demView = grid.view(dem, nodata=np.nan)
 plotFigure(demView,'Elevation in Meters',cmap='terrain')
+plt.savefig(figures_folder+'NB1_DEM_Catchment.png')
 plt.show()
 
 # %% [markdown]
 # For the following steps we need the catchment outline as a polygon. Thus, we convert the **raster to a polygon** and save both in a **geopackage** to the output folder. From these files, we can already calculate important **catchment statistics** needed for the glacio-hydrological model in Notebook 4.
 
 # %%
-from shapely.geometry import Polygon
-import pyproj
-from shapely.geometry import shape
+from shapely.geometry import Polygon, shape
 from shapely.ops import transform
+import pyproj
 
 # Create shapefile and save it
 shapes = grid.polygonize()
@@ -330,7 +332,7 @@ import geopandas as gpd
 
 # load catcment and RGI regions as DF
 catchment = gpd.read_file(output_gpkg, layer='catchment_orig')
-df_regions = gpd.read_file('https://www.glims.org/RGI/rgi60_files/00_rgi60_regions.zip')
+df_regions = gpd.read_file('https://www.glims.org/RGI/rgi60_files/00_rgi60_regions.zip', layer='00_rgi60_O1Regions')
 display(df_regions)
 
 # %% [markdown]
@@ -424,7 +426,7 @@ if rgi_region != None:
 
 # %% tags=["output_scroll"]
 # intersects selects too many. calculate percentage of glacier area that is within catchment
-rgi_catchment['rgi_area'] = rgi_catchment.to_crs(crs).area    
+rgi_catchment['rgi_area'] = rgi_catchment.to_crs(crs).area
     
 gdf_joined = gpd.overlay(catchment, rgi_catchment, how='union')
 gdf_joined['area_joined'] = gdf_joined.to_crs(crs).area
@@ -518,6 +520,7 @@ catchment_new.plot(color='tan',ax=ax)
 rgi_in_catchment.plot(color="white",edgecolor="black",ax=ax)
 plt.scatter(x, y, facecolor='blue', s=100)
 plt.title("Catchment Area with Pouring Point and Glaciers")
+plt.savefig(figures_folder+'NB1_Glaciers_Catchment.png')
 plt.show()
 
 # %% [markdown]
@@ -788,6 +791,7 @@ ax.set_ylabel("Elevation zone [m a.s.l.]")
 ax.get_legend().remove()
 plt.title("Initial Ice Distribution")
 plt.tight_layout()
+plt.savefig(figures_folder+'NB1_Glacier_Mass_Elevation.png')
 plt.show()
 
 # %% [markdown]
