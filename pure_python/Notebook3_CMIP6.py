@@ -52,7 +52,11 @@ config.read('config.ini')
 
 # get paths from config.ini
 dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
+dir_figures = config['FILE_SETTINGS']['DIR_FIGURES']
 output_gpkg = dir_output + config['FILE_SETTINGS']['GPKG_NAME']
+
+# get style for matplotlib plots
+plt_style = ast.literal_eval(config['CONFIG']['PLOT_STYLE'])
 
 # load catchment outline as target polygon
 catchment_new = gpd.read_file(output_gpkg, layer='catchment_new')
@@ -418,7 +422,7 @@ def cmip_plot(ax, df, target, title=None, precip=False, intv_sum='ME', intv_mean
     
 
 def cmip_plot_combined(data, target, title=None, precip=False, intv_sum='ME', intv_mean='10YE',
-                       target_label='Target', show=False):
+                       target_label='Target', show=False, saveas=None):
     """Combines multiple subplots of climate data in different scenarios before and after bias adjustment.
     Shows target data for comparison"""
 
@@ -448,6 +452,8 @@ def cmip_plot_combined(data, target, title=None, precip=False, intv_sum='ME', in
         figure.tight_layout()
         figure.subplots_adjust(bottom=0.15, top=0.92)
         figure.suptitle(title, fontweight='bold')
+        if saveas is not None:
+            plt.savefig(dir_figures+saveas)
         if show:
             plt.show()
 
@@ -458,8 +464,8 @@ def cmip_plot_combined(data, target, title=None, precip=False, intv_sum='ME', in
 # %%
 era5 = read_era5l(era5_file)
 
-cmip_plot_combined(data=ssp_tas_dict, target=era5, title='10y Mean of Air Temperature', target_label='ERA5-Land', show=True)
-cmip_plot_combined(data=ssp_pr_dict, target=era5, title='10y Mean of Monthly Precipitation', precip=True, target_label='ERA5-Land', show=True, intv_mean='10YE')
+cmip_plot_combined(data=ssp_tas_dict, target=era5, title='10y Mean of Air Temperature', target_label='ERA5-Land', show=True, saveas='NB3_CMIP6_Temp.png')
+cmip_plot_combined(data=ssp_pr_dict, target=era5, title='10y Mean of Monthly Precipitation', precip=True, target_label='ERA5-Land', show=True, intv_mean='10YE', saveas='NB3_CMIP6_Prec.png')
 
 # %% [markdown]
 # Apparently, some models have striking curves indicating unrealistic outliers or sudden jumps in the data. To clearly identify faulty time series, one option is to choose a qualitative approach by identifying the models using an interactive `plotly` plot. Here we can zoom and select/deselect curves as we like, to identify model names.
@@ -516,7 +522,7 @@ def df2long(df, intv_sum='ME', intv_mean='YE', precip=False):
 import seaborn as sns
 
 
-def vplots(before, after, target, target_label='Target', precip=False, show=False):
+def vplots(before, after, target, target_label='Target', precip=False, show=False, saveas=None):
     """Creates violin plots of the kernel density estimation for all models before and after bias adjustment."""
 
     period = slice('1979-01-01', '2022-12-31')
@@ -579,6 +585,8 @@ def vplots(before, after, target, target_label='Target', precip=False, show=Fals
                  fontweight='bold', fontsize=20)
     fig.tight_layout()
     fig.subplots_adjust(top=0.93)
+    if saveas is not None:
+        plt.savefig(dir_figures + saveas)
     if show:
         plt.show()
 
@@ -587,8 +595,8 @@ def vplots(before, after, target, target_label='Target', precip=False, show=Fals
 # Again, we run the plotting function for every variable individually.
 
 # %%
-vplots(tas_raw, tas_adjusted, era5, target_label='ERA5-Land', show=True)
-vplots(pr_raw, pr_adjusted, era5, target_label='ERA5-Land', precip=True, show=True)
+vplots(tas_raw, tas_adjusted, era5, target_label='ERA5-Land', show=True, saveas='NB3_vplot_Temp.png')
+vplots(pr_raw, pr_adjusted, era5, target_label='ERA5-Land', precip=True, show=True, saveas='NB3_vplot_Prec.png')
 
 
 # %% [markdown]
@@ -733,8 +741,8 @@ ssp_tas_dict = drop_model(filter.filtered_models, ssp_tas_dict)
 ssp_pr_dict = drop_model(filter.filtered_models, ssp_pr_dict)
 
 
-cmip_plot_combined(data=ssp_tas_dict, target=era5, title='10y Mean of Air Temperature', target_label='ERA5-Land', show=True)
-cmip_plot_combined(data=ssp_pr_dict, target=era5, title='10y Mean of Monthly Precipitation', precip=True, target_label='ERA5-Land', show=True, intv_mean='10YE')
+cmip_plot_combined(data=ssp_tas_dict, target=era5, title='10y Mean of Air Temperature', target_label='ERA5-Land', show=True, saveas='NB3_CMIP6_Temp_filtered.png')
+cmip_plot_combined(data=ssp_pr_dict, target=era5, title='10y Mean of Monthly Precipitation', precip=True, target_label='ERA5-Land', show=True, intv_mean='10YE', saveas='NB3_CMIP6_Prec_filtered.png')
 
 # %% [markdown]
 # ### Ensemble mean plots
@@ -749,7 +757,7 @@ import seaborn as sns
 from matplotlib.legend import Legend
 
 
-def cmip_plot_ensemble(cmip, target, precip=False, intv_sum='ME', intv_mean='YE', figsize=(10, 6), show=True):
+def cmip_plot_ensemble(cmip, target, precip=False, intv_sum='ME', intv_mean='YE', figsize=(10, 6), show=True, saveas=None):
     """
     Plots the multi-model mean of climate scenarios including the 90% confidence interval.
     Parameters
@@ -813,6 +821,8 @@ def cmip_plot_ensemble(cmip, target, precip=False, intv_sum='ME', intv_mean='YE'
 
     figure.tight_layout(rect=[0, 0.02, 1, 1])  # Make some room at the bottom
 
+    if saveas is not None:
+        plt.savefig(dir_figures+saveas)
     if show:
         plt.show()
     warnings.filterwarnings(action='always')
@@ -823,8 +833,8 @@ def cmip_plot_ensemble(cmip, target, precip=False, intv_sum='ME', intv_mean='YE'
 # With less lines in the plot, we can also reduce the resample frequency and show annual means.
 
 # %%
-cmip_plot_ensemble(ssp_tas_dict, era5['temp'], intv_mean='YE')
-cmip_plot_ensemble(ssp_pr_dict, era5['prec'], precip=True, intv_sum='ME', intv_mean='YE')
+cmip_plot_ensemble(ssp_tas_dict, era5['temp'], intv_mean='YE', saveas='NB3_CMIP6_Ensemble_Temp.png')
+cmip_plot_ensemble(ssp_pr_dict, era5['prec'], precip=True, intv_sum='ME', intv_mean='YE', saveas='NB3_CMIP6_Ensemble_Prec.png')
 
 # %% [markdown]
 # We can see that the SDM adjusts the range and mean of the target data while preserving the distribution and trend of the original data. However, the inter-model variance is slightly reduced for temperature and significantly increased for precipitation.
@@ -888,7 +898,7 @@ def prob_plot(original, target, corrected, ax, title=None, ylabel="Temperature [
     return fig
 
 
-def pp_matrix(original, target, corrected, scenario=None, nrow=7, ncol=5, precip=False, show=False):
+def pp_matrix(original, target, corrected, scenario=None, nrow=7, ncol=5, precip=False, show=False, saveas=None):
     """
     Arranges the prob_plots of all CMIP6 models in a matrix and adds the R² score.
 
@@ -951,6 +961,8 @@ def pp_matrix(original, target, corrected, scenario=None, nrow=7, ncol=5, precip
         fig.suptitle('Probability Plots of CMIP6 (' + scenario + ') and ERA5-Land ' + var_label +
                      ' (' + starty + '-' + endy + ')', fontweight='bold', fontsize=20)
     plt.subplots_adjust(top=0.93)
+    if saveas is not None:
+        plt.savefig(dir_figures+saveas)
     if show:
         plt.show()
 
@@ -959,8 +971,8 @@ def pp_matrix(original, target, corrected, scenario=None, nrow=7, ncol=5, precip
 # First we'll have a look at the temperature.
 
 # %%
-pp_matrix(ssp2_tas_raw, era5['temp'], ssp2_tas, scenario='SSP2', show=True)
-pp_matrix(ssp5_tas_raw, era5['temp'], ssp5_tas, scenario='SSP5', show=True)
+pp_matrix(ssp2_tas_raw, era5['temp'], ssp2_tas, scenario='SSP2', show=True, saveas='NB3_CMIP6_SSP2_probability_Temp.png')
+pp_matrix(ssp5_tas_raw, era5['temp'], ssp5_tas, scenario='SSP5', show=True, saveas='NB3_CMIP6_SSP5_probability_Temp.png')
 
 # %% [markdown]
 # We can see that the SDM worked very well for the temperature data, with high agreement between the target and adjusted data.
@@ -968,8 +980,8 @@ pp_matrix(ssp5_tas_raw, era5['temp'], ssp5_tas, scenario='SSP5', show=True)
 # Let's look at the probability curves for precipitation. Since the precipitation data is bounded at 0, but most days have very small values >0 mm, we resample the data to monthly sums to get an idea of the overall performance.
 
 # %%
-pp_matrix(ssp2_pr_raw, era5['prec'], ssp2_pr, precip=True, scenario='SSP2', show=True)
-pp_matrix(ssp5_pr_raw, era5['prec'], ssp5_pr, precip=True, scenario='SSP5', show=True)
+pp_matrix(ssp2_pr_raw, era5['prec'], ssp2_pr, precip=True, scenario='SSP2', show=True, saveas='NB3_CMIP6_SSP2_probability_Prec.png')
+pp_matrix(ssp5_pr_raw, era5['prec'], ssp5_pr, precip=True, scenario='SSP5', show=True, saveas='NB3_CMIP6_SSP5_probability_Prec.png')
 
 # %% [markdown]
 # Considering the complexity and heterogeneity of precipitation data, the performance of SDM is convincing. While the fitted data of most models deviate from the target data for low and very high values, the general distribution of monthly precipitation is well met. 
