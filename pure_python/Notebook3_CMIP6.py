@@ -396,6 +396,11 @@ ssp_pr_dict = {'SSP2_raw': ssp2_pr_raw, 'SSP2_adjusted': ssp2_pr, 'SSP5_raw': ss
 
 # %%
 import matplotlib.pyplot as plt
+import seaborn as sns
+import scienceplots
+
+# set style from config
+plt.style.use(plt_style)
 
 def cmip_plot(ax, df, target, title=None, precip=False, intv_sum='ME', intv_mean='10YE',
               target_label='Target', show_target_label=False):
@@ -519,8 +524,6 @@ def df2long(df, intv_sum='ME', intv_mean='YE', precip=False):
 # For comparison the `vplots()` function will arrange the plots in a similar grid as in the figures above.
 
 # %%
-import seaborn as sns
-
 
 def vplots(before, after, target, target_label='Target', precip=False, show=False, saveas=None):
     """Creates violin plots of the kernel density estimation for all models before and after bias adjustment."""
@@ -751,9 +754,7 @@ cmip_plot_combined(data=ssp_pr_dict, target=era5, title='10y Mean of Monthly Pre
 # As we now don't need to focus on individual models anymore, we can reduce the number of lines by only plotting the ensemble means with a 90% confidence interval.
 
 # %%
-import matplotlib.pyplot as plt
 import warnings
-import seaborn as sns
 from matplotlib.legend import Legend
 
 
@@ -844,7 +845,6 @@ cmip_plot_ensemble(ssp_pr_dict, era5['prec'], precip=True, intv_sum='ME', intv_m
 
 # %%
 import probscale
-import matplotlib.pyplot as plt
 
 def prob_plot(original, target, corrected, ax, title=None, ylabel="Temperature [K]", **kwargs):
     """
