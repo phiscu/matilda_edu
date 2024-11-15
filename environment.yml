@@ -1,7 +1,5 @@
 # environment.yml
 name: matilda_edu_mat
-channels:
-- conda-forge
 dependencies:
 - python==3.11
 - numpy==1.26.4
@@ -9,7 +7,6 @@ dependencies:
 - pysheds==0.4
 - hydroerr==1.24
 - geopandas==1.0.1
-#- xarray==2024.10.0
 - h5netcdf==1.4
 - retry==0.9.2
 - utm==0.7.0
@@ -28,3 +25,4 @@ dependencies:
   - git+https://github.com/cryotools/matilda.git
   - climate_indices==2.0.1
   - hydroeval==0.1.0
+  - xarray==2024.10.0
