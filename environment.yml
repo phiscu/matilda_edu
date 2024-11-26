@@ -1,5 +1,7 @@
 # environment.yml
 name: matilda_edu_mat
+channels:
+- conda-forge
 dependencies:
 - python==3.11
 - numpy==1.26.4
