@@ -86,12 +86,12 @@ param_dict = read_yaml(f"{dir_output}/parameters.yml")
 from tools.helpers import parquet_to_dict, pickle_to_dict
 
 # For size:
-# tas = parquet_to_dict(f"{dir_output}cmip6/adjusted/tas_parquet")
-# pr = parquet_to_dict(f"{dir_output}cmip6/adjusted/pr_parquet")
+tas = parquet_to_dict(f"{dir_output}cmip6/adjusted/tas_parquet")
+pr = parquet_to_dict(f"{dir_output}cmip6/adjusted/pr_parquet")
 
 ## For speed
-tas = pickle_to_dict(f"{dir_output}cmip6/adjusted/tas.pickle")
-pr = pickle_to_dict(f"{dir_output}cmip6/adjusted/pr.pickle")
+#tas = pickle_to_dict(f"{dir_output}cmip6/adjusted/tas.pickle")
+#pr = pickle_to_dict(f"{dir_output}cmip6/adjusted/pr.pickle")
 
 # %% [markdown]
 # Now we have to convert the individual climate projections into MATILDA input dataframes with the correct column names. We store these 2 x 31 MATILDA inputs in a nested dictionary again and save the file in a `parquet` (or `pickle`).
@@ -280,14 +280,22 @@ class MatildaBulkProcessor:
 
 
 matilda_bulk = MatildaBulkProcessor(scenarios, matilda_settings, param_dict)
-# matilda_scenarios = matilda_bulk.run_single_process()
-matilda_scenarios = matilda_bulk.run_multi_process(num_cores=4)
+matilda_scenarios = matilda_bulk.run_single_process()
+#matilda_scenarios = matilda_bulk.run_multi_process(num_cores=4)
 
 print("Storing MATILDA scenario outputs on disk...")
-# dict_to_parquet(matilda_scenarios, f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
-
-dict_to_pickle(matilda_scenarios, test_dir + 'adjusted/matilda_scenarios.pickle')
+dict_to_parquet(matilda_scenarios, f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
 
 
 # %% [markdown]
 # The results is a large nested dictionary with 62 x 2 dataframes of MATILDA outputs. To have a look at the results, continue with Notebook 6.
+
+# %%
+import shutil
+
+# refresh `output_download.zip` with data retrieved within this notebook
+shutil.make_archive('output_download', 'zip', 'output')
+print('Output folder can be download now (file output_download.zip)')
+
+# %%
+%reset -f

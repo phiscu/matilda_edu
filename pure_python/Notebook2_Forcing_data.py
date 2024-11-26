@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.16.4
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -34,10 +34,10 @@
 import ee
 
 try:
-    ee.Initialize()
+    ee.Initialize(project="matilda-edu-440707")
 except Exception as e:
     ee.Authenticate()         # authenticate when using GEE for the first time
-    ee.Initialize()
+    ee.Initialize(project="matilda-edu-440707")
 
 # %% [markdown]
 # ...and read some settings from the `config.ini` file:
@@ -59,9 +59,13 @@ config.read('config.ini')
 # get file config from config.ini
 dir_input = config['FILE_SETTINGS']['DIR_INPUT']
 dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
+dir_figures = config['FILE_SETTINGS']['DIR_FIGURES']
 output_gpkg = dir_output + config['FILE_SETTINGS']['GPKG_NAME']
 scenarios = config.getboolean('CONFIG', 'PROJECTIONS')
 show_map = config.getboolean('CONFIG','SHOW_MAP')
+
+# get style for matplotlib plots
+plt_style = ast.literal_eval(config['CONFIG']['PLOT_STYLE'])
 
 # %% [markdown]
 # We can now load the catchment outline from the previous notebook and convert it to a `ee.FeatureCollection` to use it in GEE.
@@ -294,6 +298,10 @@ display(df)
 # %%
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import scienceplots
+
+# set style from config
+plt.style.use(plt_style)
 
 axes = df.drop(['ts','temp'],axis=1).plot.line(x='dt', subplots=True, legend=False, figsize=(10,5),
                                                title='ERA5-Land Data for Target Catchment',
@@ -304,6 +312,7 @@ axes[1].set_xlabel("Date")
 axes[1].xaxis.set_minor_locator(mdates.YearLocator())
 plt.xlim(date_range)
 plt.tight_layout()
+plt.savefig(dir_figures+'NB2_ERA5_Temp_Prec.png')
 plt.show()
 
 # %% [markdown]
@@ -316,12 +325,18 @@ plt.show()
 df.to_csv(dir_output + 'ERA5L.csv',header=True,index=False)
 
 # %% [markdown]
-# ...and update the `settings.yml` file with the reference altitude of the ERA5-Land data (`ele_dat`).
+# ...and update the `settings.yml` file with the reference altitude of the ERA5-Land data (`ele_dat`) and refresh `output_download.zip` with newly acquired data.
 
 # %%
 from tools.helpers import update_yaml
-        
+import shutil
+
+# update settings file
 update_yaml(dir_output + 'settings.yml', {'ele_dat': float(ele_dat)})
+
+# refresh `output_download.zip` with data retrieved within this notebook
+shutil.make_archive('output_download', 'zip', 'output')
+print('Output folder can be download now (file output_download.zip)')
 
 # %%
 # %reset -f

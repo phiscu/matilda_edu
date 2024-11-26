@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.16.4
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -36,10 +36,10 @@ dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
 
 print("Importing MATILDA scenarios...")
 # For size:
-# matilda_scenarios = parquet_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
+matilda_scenarios = parquet_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
 
 # For speed:
-matilda_scenarios = pickle_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
+# matilda_scenarios = pickle_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
 
 # %% [markdown]
 # This module calculates the following statistics for all ensemble members in annual resolution:
@@ -103,6 +103,13 @@ matilda_indicators = calculate_indicators(matilda_scenarios)
 print("Writing Indicators To File...")
 # dict_to_parquet(matilda_indicators, f"{dir_output}cmip6/adjusted/matilda_indicators_parquet")
 dict_to_pickle(matilda_indicators, f"{dir_output}cmip6/adjusted/matilda_indicators_pickle")
+
+# %%
+import shutil
+
+# refresh `output_download.zip` with data retrieved within this notebook
+shutil.make_archive('output_download', 'zip', 'output')
+print('Output folder can be download now (file output_download.zip)')
 
 # %% [markdown]
 # Similar to the last notebook we write a function to **create customs dataframes for individual indicators** across all ensemble members...
@@ -336,13 +343,15 @@ plot_ci_indicators(var = 'potential_aridity', dic = matilda_indicators, plot_typ
 # Finally, we can launch the interactive `Dash` app to analyze the climate change impacts.
 
 # %%
-import dash
-from dash import dcc
-from dash import html
-from dash.dependencies import Input, Output
-import plotly.io as pio
-pio.renderers.default = "browser"
-app = dash.Dash()
+from tools.helpers import adjust_jupyter_config
+
+# retrieve server information to find out whether it's running locally or on mybinder.org server
+adjust_jupyter_config()
+
+# %%
+from dash import Dash, dcc, html, Input, Output
+
+app = Dash(__name__)
 
 # Create default variables for every figure
 default_vars = ['peak_day', 'melt_season_length', 'potential_aridity', 'spei12']
@@ -394,5 +403,8 @@ for i in range(4):
     )
 # Combine the dropdown menus and figures into a single layout
 app.layout = html.Div(dropdowns_and_figures)
-# Run the app
-app.run_server(debug=True, use_reloader=False, port=8051)  # Turn off reloader inside Jupyter
+
+port = 8051
+app.run(port=port)                         # -> opens Dash inline
+#app.run(port=port, jupyter_mode="external")  # -> opens Dash in new browser tab
+

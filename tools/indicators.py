@@ -323,7 +323,7 @@ def hydrological_signatures(df):
 
 
 # Drought indicators
-def drought_indicators(df, freq='M', dist='gamma'):
+def drought_indicators(df, freq='ME', dist='gamma'):
     """
     Calculate the climatic water balance, SPI (Standardized Precipitation Index), and
     SPEI (Standardized Precipitation Evapotranspiration Index) for 1, 3, 6, 12, and 24 months.
@@ -344,7 +344,7 @@ def drought_indicators(df, freq='M', dist='gamma'):
     Raises
     ------
     ValueError
-         If 'freq' is not 'D' or 'M'.
+         If 'freq' is not 'D' or 'ME'.
          If 'dist' is not 'pearson' or 'gamma'.
     Notes
     -----
@@ -357,8 +357,8 @@ def drought_indicators(df, freq='M', dist='gamma'):
     The calibration period for SPI and SPEI calculation is from 1981 to 2020.
     """
     # Check if frequency is valid
-    if freq != 'D' and freq != 'M':
-        raise ValueError("Invalid value for 'freq'. Choose either 'D' or 'M'.")
+    if freq != 'D' and freq != 'ME':
+        raise ValueError("Invalid value for 'freq'. Choose either 'D' or 'ME'.")
 
     # Resample precipitation and evaporation data based on frequency
     prec = df.prec_off_glaciers.resample(freq).sum().values
@@ -385,7 +385,7 @@ def drought_indicators(df, freq='M', dist='gamma'):
     # Set periodicity based on frequency
     if freq == 'D':
         periodicity = compute.Periodicity.daily
-    elif freq == 'M':
+    elif freq == 'ME':
         periodicity = compute.Periodicity.monthly
 
     # Set common parameters
