@@ -23,6 +23,7 @@ dependencies:
 - Fiona==1.10.1
 - spotpy==1.6.2
 - mpl-probscale==0.2.5
+- pip
 - pip:
   - git+https://github.com/cryotools/matilda.git
   - climate_indices==2.0.1
