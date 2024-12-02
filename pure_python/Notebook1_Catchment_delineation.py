@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.4
+#       jupytext_version: 1.14.5
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -624,7 +624,7 @@ import io
 cnt_thickness = 0
 file_names_thickness = []
 for idx, row in refs_thickness.iterrows():
-    content = myrepository.get_resource_file(row['ref'])    
+    content = myrepository.get_resource_file(row['ref'], row['file_extension'])    
     with ZipFile(io.BytesIO(content), 'r') as zipObj:
         # Get a list of all archived file names from the zip
         listOfFileNames = zipObj.namelist()
