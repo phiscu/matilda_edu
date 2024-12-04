@@ -16,70 +16,75 @@
 # # Introduction
 
 # %% [markdown]
-# Welcome to **MATILDA**, the Python workflow for Modeling Water Resources in Glacierized Catchments! In the following series of notebooks you will go all the way from data acquisition to the analysis of climate change impacts on your catchment. Every notebook tackles an individual step in the modeling workflow. 
+# Welcome to **MATILDA-Online**, the Python-based workflow for **Modeling Water Resources in Glacierized Catchments**! This book describes the comprehensive toolkit in detail and guides you step-by-step from data acquisition to analysis of climate change impacts on the selected catchment. Designed with flexibility and accessibility in mind, MATILDA integrates robust scientific models, public data sources, and user-friendly tools to make sophisticated glacio-hydrological modeling accessible to researchers, practitioners, and students alike.
 #
-# - [Notebook 1 - Catchment Delineation](Notebook1_Catchment_deliniation.ipynb) delineates your catchment and downloads all types of static data such as the digital elevation model, glacier outlines, and ice thickness.
+# The workflow is divided into a series of interactive notebooks, each focused on a specific component of the modeling process. These notebooks streamline complex tasks such as catchment delineation, data processing, model calibration, and climate scenario analysis, ensuring clarity and reproducibility at each step:
 #
-# - [Notebook 2 - Forcing data](Notebook2_Forcing_data.ipynb) downloads and processes ERA5-Land reanalysis data to calibrate the glacio-hydrological model.
+# - **[Notebook 1 - Catchment Delineation](Notebook1_Catchment_deliniation.ipynb):** Delineate your catchment and retrieve static geospatial data, including digital elevation models, glacier outlines, and ice thickness distributions.
+#   
+# - **[Notebook 2 - Forcing Data](Notebook2_Forcing_data.ipynb):** Acquire and process ERA5-Land reanalysis data, preparing inputs for glacio-hydrological model calibration.
 #
-# - [Notebook 3 - CMIP6](Notebook3_CMIP6.ipynb) downloads and processes CMIP6 climate model data for a historical period and two emission pathways until 2100.
+# - **[Notebook 3 - CMIP6 Climate Data](Notebook3_CMIP6.ipynb):** Download and process historical and future climate data from the Coupled Model Intercomparison Project Phase 6 (CMIP6) for two emission scenarios.
 #
-# - [Notebook 4 - MATILDA](Notebook4_MATILDA.ipynb) runs a glacio-hydrological model for your catchment with default parameters and guides you through the calibration process.
+# - **[Notebook 4 - MATILDA Model](Notebook4_MATILDA.ipynb):** Run the MATILDA model with default parameters and calibrate it based on mutiple objectives.
 #
-# - [Notebook 5 - MATILDA scenarios](Notebook5_MATILDA_scenarios.ipynb) uses your calibrated parameter set so run the model for all CMIP6 ensemble members.
+# - **[Notebook 5 - Scenario Simulations](Notebook5_MATILDA_scenarios.ipynb):** Apply your calibrated parameter set to run the model over all CMIP6 ensemble members for robust scenario-based analysis.
 #
-# - [Notebook 6 - Analysis](Notebook6_Analysis.ipynb) visualizes the ensemble output in interactive plots.
+# - **[Notebook 6 - Results Analysis](Notebook6_Analysis.ipynb):** Visualize model output in interactive plots, highlighting trends and uncertainties across ensemble simulations.
 #
-# - [Notebook 7 - Climate Change Indicators](Notebook7_Climate_Change_Impact.ipynb) calculates a set of  meteorological and hydrological indicators from your results and visualizes them in interactive figures.
+# - **[Notebook 7 - Climate Change Indicators](Notebook7_Climate_Change_Impact.ipynb):** Extract key meteorological and hydrological indicators of the impact of climate change on your watershed.
 #
-# **Note**: *Although all notebooks can be executed in a Binder, the model calibration is a resource intensive task that will be very slow on a single CPU. You can speed up the process by downloading the Notebook and your data, and running it on a local computer with more cores. Other options to reduce calibration time are outlined in Notebook 4.*
+# The workflow below is demonstrated using a sample site in the Tian Shan Mountains of Kyrgyzstan. To try the toolkit for yourself, simply click on the rocket icon in the toolbar above to launch an online environment hosted by [mybinder.org](https://mybinder.org/). There you can run any notebook with the sample data or upload your own and edit the config file accordingly. Note that while most of the workflow will work fine in the binder, calibrating the model is computationally intensive and will be slow to run on a single CPU. For a comprehensive calibration that takes full advantage of the [spotpy](https://spotpy.readthedocs.io/en/latest/) library, we recommend downloading the notebooks and running them on a local machine with multi-core processing capabilities. Additional options to reduce calibration time are described in Notebook 4.
 #
-# Have fun exploring!
+# Have fun exploring and happy modeling!
+#
+# ![flowchart](images/workflow_detailed_2024_-Full+legend.png)
 
 # %% [markdown]
-# ## Signing up for Google Earth Engine
+# ## Signing up for Google Earth Engine (GEE)
 
 # %% [markdown]
-# Much of the public data acquisition will be done using the [Google Earth Engine Python API](https://developers.google.com/earth-engine/tutorials/community/intro-to-python-api). This not only allows us to access an unique collection of public datasets but to "outsource" most of their preprocessing to Google servers. If you want to use this service, you need to sign up for an Earth Engine Account. You can do this with an existing Google Account or create a new one with any mail account.
+# Much of the public data acquisition will be done using the [Google Earth Engine Python API](https://developers.google.com/earth-engine/tutorials/community/intro-to-python-api). This not only allows us to access an unique collection of public datasets but to "outsource" most of their preprocessing to Google servers. Therefore, you require an Earth Engine Account to use this service. If you don't have one, sign up as follows.
 
 # %% [markdown]
-# 2. To start creating your account click on *Get Started* in the top right corner.
+# 1. To start visit the [Earth Engine website](https://earthengine.google.com/) and click on *Get Started* in the top right corner.
 #
 # ![enter image description here](https://i.postimg.cc/nzMyrSfG/start2.png)
 
 # %% [markdown]
-# 3. Log into your Google account or create one, if you don't have a Google account yet.
+# 2. Log into your Google account or create one using any email adress.
 #
 # ![enter image description here](https://i.postimg.cc/7YQqNzm6/sign-in-google.png)
 
 # %% [markdown]
-# 4. Once you signed into your Google account, you can register your first project. Click on *Register a Noncommercial or Commercial Cloud project*.
+# 3. Once you signed in you can register your first project. Click on *Register a Noncommercial or Commercial Cloud project*.
 #
 # ![](https://i.postimg.cc/hjqDdqM1/get-started.png)
 
 # %% [markdown]
-# 5. Next, choose how you want to use Earth Engine. Click on *Unpaid usage* and choose *Academia & Research*.
+# 4. Next, choose how you want to use Earth Engine. You may select *Unpaid usage* and *Academia & Research*.
 #
 # ![](https://i.postimg.cc/2y0rMLY0/for-academia.png)
 
 # %% [markdown]
-# 6. Now you have the option to create a new Google Cloud Project or to choose an existing Google Cloud Project. 
-# Create a new project by clicking on *Create a new Google Cloud Project*. Then you'll have to choose your organization, create a project ID and optionally choose a project name. Click on *CONTINUE TO SUMMARY*.
+# 5. Now you have the option to join an existing Google Cloud Project or create a new one. 
+# For the latter click on *Create a new Google Cloud Project*, and choose your organization, create a project ID and optionally choose a project name. Click on *CONTINUE TO SUMMARY* when finished.
 #
 # ![enter image description here](https://i.postimg.cc/pXd28CQ4/ID3.png)
 
 # %% [markdown]
-# 7. Before your project is registered you might be asked to accept the Terms of Services if you haven't done so already. 
-# Click on *Cloud Terms of Services*. You will be redirected to your Google account where you can accept the terms of services.
+# 6. Before your project is registered you might be asked to accept the Terms of Services if you haven't done so already. 
+# Click on *Cloud Terms of Services*. You will be redirected to your Google account where you can accept the terms.
 #
 # ![enter image description here](https://i.postimg.cc/Wb91fCbs/cloud-terms.png)
 
 # %% [markdown]
-# 8. Confirm your Cloud Project information by clicking on *CONFIRM AND CONTINUE*.
+# 7. Finally, confirm your Cloud Project information by clicking on *CONFIRM AND CONTINUE*.
+#
 # ![enter image description here](https://i.postimg.cc/L8n8dDnL/confirm.png)
 
 # %% [markdown]
-#
+# 8. The first cell of every notebook using GEE will check your authentication status. If it is the first time the GEE API is initialized, you will be asked to log in and select your GEE project.
 
 # %% [markdown]
-#
+# 9. You are now ready to start the MATILDA workflow with **[Notebook 1](Notebook1_Catchment_deliniation.ipynb)**.
