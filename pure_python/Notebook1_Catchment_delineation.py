@@ -5,14 +5,14 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.16.4
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
 
-# %% [raw]
+# %% [markdown]
 # # Catchment delineation
 
 # %% [markdown]
@@ -32,19 +32,7 @@
 # Let's start by importing the necessary packages and defining functions/constants.
 
 # %% [markdown]
-# First of all, the Google Earth Engine (GEE) access must be initialized. If this is the first time you run the notebook on this machine, you need to authenticate. When using <code>mybinder.org</code> you need to authenticate every time a new session has been launched. **Follow the instructions to log in to GEE, copy the generated token, and paste it into the input field to proceed**.
-#
-# Official Google Help Guide for <code>ee.Authenticate()</code>:
-#
-# > Prompts you to authorize access to Earth Engine via OAuth2.
-# >
-# > Directs you to a authentication page on the Code Editor server at code.earthengine.google.com/client-auth. You will need to pick a Cloud Project to hold your developer configuration (OAuth Client). This can be the same Cloud Project that you already use in the Code Editor, if you have not set up an OAuth client on the project already.
-# >
-# > The setup page also lets you choose to make the notebook access read-only. This is recommended if you are running a notebook with code that you didn't write and which may be malicious. Any operations which try to write data will fail.
-# >
-# > The credentials obtained by ee.Authenticate() will be written to a persistent token stored on the local machine. ee.Initialize() will automatically use the persistent credentials, if they exist. To use service account credentials
-# >
-# > Source: https://developers.google.com/earth-engine/apidocs/ee-authenticate
+# First of all, the Google Earth Engine (GEE) access must be initialized. If this is the first time you run the notebook on this machine, you need to authenticate. When using <code>mybinder.org</code> you need to authenticate every time a new session has been launched. Follow the instructions on screen or see the guide in &rarr; [Notebook 0](Notebook0_Introduction.ipynb#Authorize-access-for-Google-Earth-Engine).
 
 # %%
 import ee
@@ -795,7 +783,7 @@ plt.savefig(figures_folder+'NB1_Glacier_Mass_Elevation.png')
 plt.show()
 
 # %% [markdown]
-# Finally, we need the average glacier elevation Calculate average glacier elevation in meters above sea level.
+# Finally, we calculate the average glacier elevation in meters above sea level.
 
 # %%
 ele_glac = round(df_all.altitude.mean(), 2)
@@ -805,12 +793,12 @@ print(f'Average glacier elevation in the catchment: {ele_glac:.2f} m a.s.l.')
 # ## Store calculated values for other notebooks
 
 # %% [markdown]
-# Create a `settings.yml` and store the relevant catchment information. Those information will be used in later notebooks:
+# Create a `settings.yml` and store the relevant catchment information for the model setup:
 #
-# - **area_cat**: area of catchment in km²
-# - **ele_cat**: average elevation of catchment in m.a.s.l.
-# - **area_glac**: area of glacier in km²
-# - **ele_glac**: average elevation of glaciers in m.a.s.l.
+# - **area_cat**: area of the catchment in km²
+# - **ele_cat**: average elevation of the catchment in m.a.s.l.
+# - **area_glac**: glacier covered area as of 2000 in km²
+# - **ele_glac**: average elevation of glacier covered area in m.a.s.l.
 # - **lat**: latitude of catchment centroid
 
 # %%
@@ -829,11 +817,14 @@ print('Settings saved to file.')
 display(pd.DataFrame(settings.items(),columns=['Parameter','Value']).set_index('Parameter'))
 
 # %% [markdown]
-# ## Download Outputs
+# You can now continue with [Notebook 2](Notebook2_Forcing_data.ipynb) or ...
+
+# %% [markdown]
+# ## *Optional*: Download Outputs
 #
 # <div class="alert alert-block alert-info">
 # <b>Note:</b>
-#  The output folder is zipped at the end of each notebook and can be downloaded (file <code>output_download.zip</code>). This is especially useful if you want to use the binder environment again, but don't want to start from notebook #1.</div>
+#  The output folder is zipped at the end of each notebook and can be downloaded (file <code>output_download.zip</code>). This is especially useful if you want to use the binder environment again, but don't want to start over from Notebook 1.</div>
 #
 # <img src="images/download_output.png" width=300>
 #

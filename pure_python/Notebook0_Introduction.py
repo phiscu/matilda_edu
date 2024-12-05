@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.16.4
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -115,6 +115,26 @@
 # ![enter image description here](https://i.postimg.cc/ZnfQM9bG/enter-code.png)
 
 # %% [markdown] pycharm={"name": "#%% md\n"}
-# 5. You should get a message saying *Successfully saved authorization token.* You are now ready to continue with the MATILDA workflow. You may start with **[Notebook 1](Notebook1_Catchment_delineation.ipynb)**.
+# 6. You should get a message saying *Successfully saved authorization token.* You are now ready to start with the MATILDA workflow. Before we dive into data handling, let's have a look at ...
 
-# %%
+# %% [markdown]
+# ## The *config.ini* file
+
+# %% [markdown]
+# This file contains a list of essential information for the workflow and allows customization. If you want to try MATILDA-Online with the sample dataset, you don't need to edit the file. If you want to use your own data, replace the file with the discharge observation in the ```input/``` folder and adapt the reference coordinates accordingly.
+
+# %% [markdown]
+# 1. The first section ```[FILE_SETTINGS]``` allows you to **edit paths and file names for in- and outputs**. This can especially be useful if you model multiple catchments in the same copy of the repository.
+#
+# 2. In the section ```[CONFIG]``` you can ...
+#    - ... specify your **reference coordinates** (usually your gauging location) and select the calibration period. The latter should cover your observation period plus some years prior as spinoff.
+#    - ... change the **digital elevation model** that is used.
+#    - ... turn off **reprojection** of geographic datasets in the process.
+#    - ... disable the creation of **live maps**.
+#    - ... configure the **style of output figures**. More information on the available styles can be found in the **[SciencePlots manual](https://github.com/garrettj403/SciencePlots/wiki/Gallery)**.
+#
+# &nbsp;
+# 3. The last section ```[MEDIA_SERVER]``` holds credentials for the file access on a file repository of our university and should not be edited if you are not a university member and know what you're doing. The credentials only grant read access to glacier-related public data and are not of value to you.
+
+# %% [markdown]
+# With the ```config.ini``` set up, you may now start with **[Notebook 1](Notebook1_Catchment_delineation.ipynb)**.
