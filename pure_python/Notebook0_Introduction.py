@@ -20,7 +20,7 @@
 #
 # The workflow is divided into a series of interactive notebooks, each focused on a specific component of the modeling process. These notebooks streamline complex tasks such as catchment delineation, data processing, model calibration, and climate scenario analysis, ensuring clarity and reproducibility at each step:
 #
-# - **[Notebook 1 - Catchment Delineation](Notebook1_Catchment_deliniation.ipynb):** Delineate your catchment and retrieve static geospatial data, including digital elevation models, glacier outlines, and ice thickness distributions.
+# - **[Notebook 1 - Catchment Delineation](Notebook1_Catchment_delineation.ipynb):** Delineate your catchment and retrieve static geospatial data, including digital elevation models, glacier outlines, and ice thickness distributions.
 #   
 # - **[Notebook 2 - Forcing Data](Notebook2_Forcing_data.ipynb):** Acquire and process ERA5-Land reanalysis data, preparing inputs for glacio-hydrological model calibration.
 #
@@ -84,7 +84,37 @@
 # ![enter image description here](https://i.postimg.cc/L8n8dDnL/confirm.png)
 
 # %% [markdown]
-# 8. The first cell of every notebook using GEE will check your authentication status. If it is the first time the GEE API is initialized, you will be asked to log in and select your GEE project.
+# 8. The first cell of every notebook using GEE will check your authentication status. If it is the first time the GEE API is initialized, a hyperlink will be generated that brings you to a GEE log in page. There you need to ...
+
+# %% [markdown] pycharm={"name": "#%% md\n"}
+# ## Authorize access for Google Earth Engine
+
+# %% [markdown] pycharm={"name": "#%% md\n"}
+# 1. Choose your account and project and click on *GENERATE TOKEN.*
+#
+# ![enter image description here](images/nb0_gee_token_1.png)
+
+# %% [markdown] pycharm={"name": "#%% md\n"}
+# 2. If not done already, you will need to sign in to your Google Account. You'll get a security notification for unverified apps. Click *continue*.
+#
+# ![enter image description here](https://i.postimg.cc/8PzQmGk8/continue.png)  
+
+# %% [markdown] pycharm={"name": "#%% md\n"}
+# 3. Next, grant your Earth Engine Notebook Client access to your account and click *Continue*.
+#
+# ![enter image description here](images/nb0_gee_token_3.png)
 
 # %% [markdown]
-# 9. You are now ready to start the MATILDA workflow with **[Notebook 1](Notebook1_Catchment_deliniation.ipynb)**.
+# 4. Finally, copy the authorisation code ...
+#  
+# ![enter image description here](images/nb0_gee_token_4.png)
+
+# %% [markdown] pycharm={"name": "#%% md\n"}
+# 5. ... and paste it into the designated field in the notebook.
+#
+# ![enter image description here](https://i.postimg.cc/ZnfQM9bG/enter-code.png)
+
+# %% [markdown] pycharm={"name": "#%% md\n"}
+# 5. You should get a message saying *Successfully saved authorization token.* You are now ready to continue with the MATILDA workflow. You may start with **[Notebook 1](Notebook1_Catchment_delineation.ipynb)**.
+
+# %%
