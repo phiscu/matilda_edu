@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.16.4
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -202,27 +202,30 @@ best_summary = psample(df=era5, obs=obs, **psample_settings, **lim_dict)
 # <a id="param"></a>
 
 # %%
-param = {'lr_temp': -0.006472598,
-         'lr_prec': 0.00010296448,
-         'BETA': 4.625306,
-         'CET': 0.2875196,
-         'FC': 364.81818,
-         'K0': 0.28723368,
-         'K1': 0.015692418,
-         'K2': 0.004580627,
-         'LP': 0.587188,
-         'MAXBAS': 6.730105,
-         'PERC': 1.1140852,
-         'UZL': 198.82584,
-         'PCORR': 0.74768984,
-         'TT_snow': -1.3534238,
-         'TT_diff': 0.70977557,
-         'CFMAX_ice': 2.782649,
-         'CFMAX_rel': 1.2481626,
-         'SFCF': 0.879982,
-         'CWH': 0.0020890352,
-         'AG': 0.8640329,
-         'RFS': 0.21825151}
+param = {
+    'lr_temp': -0.006,
+    'lr_prec': 0.0015,
+    'BETA': 1.0,
+    'CET': 0,
+    'FC': 99.15976,
+    'K0': 0.01,
+    'K1': 0.01,
+    'K2': 0.15,
+    'LP': 0.998,
+    'MAXBAS': 2.0,
+    'PERC': 0.09232826,
+    'UZL': 126.411575,
+    'PCORR': 0.58,
+    'TT_snow': -1.44646,
+    'TT_diff': 0.76198,
+    'CFMAX_snow': 3.3677,
+    'CFMAX_rel': 1.2556936,
+    'SFCF': 1,
+    'CWH': 0.000117,
+    'AG': 0.54930484,
+    'CFR': 0.15
+}
+
 
 print('Calibrated parameter set:\n\n')
 for key in param.keys(): print(key + ': ' + str(param[key]))
@@ -480,4 +483,4 @@ shutil.make_archive('output_download', 'zip', 'output')
 print('Output folder can be download now (file output_download.zip)')
 
 # %%
-%reset -f
+# %reset -f

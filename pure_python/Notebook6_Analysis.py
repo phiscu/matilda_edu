@@ -39,12 +39,17 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
 
-print("Importing MATILDA scenarios...")
-# For size:
-matilda_scenarios = parquet_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
+# set the file format for storage
+compact_files = config.getboolean('CONFIG','COMPACT_FILES')
 
-# For speed:
-# matilda_scenarios = pickle_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
+print("Importing MATILDA scenarios...")
+
+if compact_files:
+    # For size:
+    matilda_scenarios = parquet_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
+else:
+    # For speed:
+    matilda_scenarios = pickle_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
 
 # %% [markdown]
 # At the moment, the structure of the ensemble output is as follows:

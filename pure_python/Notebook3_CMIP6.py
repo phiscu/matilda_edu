@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.16.4
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -57,6 +57,9 @@ output_gpkg = dir_output + config['FILE_SETTINGS']['GPKG_NAME']
 
 # get style for matplotlib plots
 plt_style = ast.literal_eval(config['CONFIG']['PLOT_STYLE'])
+
+# set the file format for storage
+compact_files = config.getboolean('CONFIG','COMPACT_FILES')
 
 # load catchment outline as target polygon
 catchment_new = gpd.read_file(output_gpkg, layer='catchment_new')
@@ -996,7 +999,7 @@ pp_matrix(ssp5_pr_raw, era5['prec'], ssp5_pr, precip=True, scenario='SSP5', show
 
 # %% [markdown]
 # <div class="alert alert-block alert-info">
-# <b>Note:</b> We provide two storage options: <code>pickle</code> files are fast to read and write, but take up more disk space. You can use them on your local machine. <code>parquet</code> files need less disk space but take longer to read and write. They should be your choice in the Binder.</div>
+# <b>Note:</b> In the config file you can choose between two storage options: <code>pickle</code> files are fast to read and write, but take up more disk space (<code>COMPACT_FILES = False</code>). You can use them on your local machine. <code>parquet</code> files need less disk space but take longer to read and write (<code>COMPACT_FILES = True</code>). They should be your choice in the Binder.</div>
 
 # %%
 ssp_tas_dict.keys()
@@ -1007,14 +1010,14 @@ from tools.helpers import dict_to_pickle, dict_to_parquet
 tas = {'SSP2': ssp_tas_dict['SSP2_adjusted'], 'SSP5': ssp_tas_dict['SSP5_adjusted']}
 pr = {'SSP2': ssp_pr_dict['SSP2_adjusted'], 'SSP5': ssp_pr_dict['SSP5_adjusted']}
 
-
-# For storage efficiency:
-dict_to_parquet(tas, cmip_dir + 'adjusted/tas_parquet')
-dict_to_parquet(pr, cmip_dir + 'adjusted/pr_parquet')
-
-# For speed:
-# dict_to_pickle(tas, cmip_dir + 'adjusted/tas.pickle')
-# dict_to_pickle(pr, cmip_dir + 'adjusted/pr.pickle')
+if compact_files:
+    # For storage efficiency:
+    dict_to_parquet(tas, cmip_dir + 'adjusted/tas_parquet')
+    dict_to_parquet(pr, cmip_dir + 'adjusted/pr_parquet')
+else:
+    # For speed:
+    dict_to_pickle(tas, cmip_dir + 'adjusted/tas.pickle')
+    dict_to_pickle(pr, cmip_dir + 'adjusted/pr.pickle')
 
 # %%
 import shutil
@@ -1024,4 +1027,4 @@ shutil.make_archive('output_download', 'zip', 'output')
 print('Output folder can be download now (file output_download.zip)')
 
 # %%
-%reset -f
+# %reset -f

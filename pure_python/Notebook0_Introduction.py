@@ -132,6 +132,8 @@
 #    - ... turn off **reprojection** of geographic datasets in the process.
 #    - ... disable the creation of **live maps**.
 #    - ... configure the **style of output figures**. More information on the available styles can be found in the **[SciencePlots manual](https://github.com/garrettj403/SciencePlots/wiki/Gallery)**.
+#    - ... choose between a faster (```.pickle```) and a more compact (```.parquet```) format for intermediate files.
+#    - ... define the number of available cores for computing. If you are in a Binder, leave this on 1. 
 #
 # &nbsp;
 # 3. The last section ```[MEDIA_SERVER]``` holds credentials for the file access on a file repository of our university and should not be edited if you are not a university member and know what you're doing. The credentials only grant read access to glacier-related public data and are not of value to you.

@@ -34,12 +34,17 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
 
-print("Importing MATILDA scenarios...")
-# For size:
-matilda_scenarios = parquet_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
+# set the file format for storage
+compact_files = config.getboolean('CONFIG','COMPACT_FILES')
 
-# For speed:
-# matilda_scenarios = pickle_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
+print("Importing MATILDA scenarios...")
+
+if compact_files:
+    # For size:
+    matilda_scenarios = parquet_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
+else:
+    # For speed:
+    matilda_scenarios = pickle_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
 
 # %% [markdown]
 # This module calculates the following statistics for all ensemble members in annual resolution:
@@ -101,8 +106,11 @@ def calculate_indicators(dic, **kwargs):
 print("Calculating Climate Change Indicators...")
 matilda_indicators = calculate_indicators(matilda_scenarios)
 print("Writing Indicators To File...")
-# dict_to_parquet(matilda_indicators, f"{dir_output}cmip6/adjusted/matilda_indicators_parquet")
-dict_to_pickle(matilda_indicators, f"{dir_output}cmip6/adjusted/matilda_indicators_pickle")
+
+if compact_files:
+    dict_to_parquet(matilda_indicators, f"{dir_output}cmip6/adjusted/matilda_indicators_parquet")
+else:
+    dict_to_pickle(matilda_indicators, f"{dir_output}cmip6/adjusted/matilda_indicators_pickle")
 
 # %%
 import shutil
