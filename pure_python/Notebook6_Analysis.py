@@ -372,6 +372,8 @@ adjust_jupyter_config()
 
 # %%
 from dash import Dash, dcc, html, Input, Output
+from jupyter_server import serverapp
+
 
 app = Dash(__name__)
 
@@ -427,7 +429,11 @@ def matilda_dash(fig_count=4,
         )
     # Combine the dropdown menus and figures into a single layout
     app.layout = html.Div(dropdowns_and_figures)
-    app.run(port=8050)
+    port = 8051
+    if list(serverapp.list_running_servers()) == []:
+        app.run(port=port, jupyter_mode="external")  # -> opens Dash in new browser tab
+    else:
+        app.run(port=port)  # -> opens Dash inline
 
 
 # Application example:

@@ -358,6 +358,7 @@ adjust_jupyter_config()
 
 # %%
 from dash import Dash, dcc, html, Input, Output
+from jupyter_server import serverapp
 
 app = Dash(__name__)
 
@@ -413,6 +414,8 @@ for i in range(4):
 app.layout = html.Div(dropdowns_and_figures)
 
 port = 8051
-app.run(port=port)                         # -> opens Dash inline
-#app.run(port=port, jupyter_mode="external")  # -> opens Dash in new browser tab
 
+if list(serverapp.list_running_servers()) == []:
+    app.run(port=port, jupyter_mode="external")  # -> opens Dash in new browser tab
+else:
+    app.run(port=port)  # -> opens Dash inline
