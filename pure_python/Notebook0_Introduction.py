@@ -126,14 +126,14 @@
 # %% [markdown]
 # 1. The first section ```[FILE_SETTINGS]``` allows you to **edit paths and file names for in- and outputs**. This can especially be useful if you model multiple catchments in the same copy of the repository.
 #
-# 2. In the section ```[CONFIG]``` you can ...
-#    - ... specify your **reference coordinates** (usually your gauging location) and select the calibration period. The latter should cover your observation period plus some years prior as spinoff.
-#    - ... change the **digital elevation model** that is used.
-#    - ... turn off **reprojection** of geographic datasets in the process.
-#    - ... disable the creation of **live maps**.
-#    - ... configure the **style of output figures**. More information on the available styles can be found in the **[SciencePlots manual](https://github.com/garrettj403/SciencePlots/wiki/Gallery)**.
+# 2. In the ``[CONFIG]`` section you can ...
+#    - ... specify your **reference coordinates** (usually your gauging station location) and select the calibration period. The latter should cover your observation period plus a few years before as a spin-off.
+#    - ... change the **digital elevation model** used.
+#    - ... choose whether to create scenario-based **projections** or just model the past.
+#    - ... disable the generation of **live maps**.
+#    - ... configure the **style of output figures**. More information about the available styles can be found in the **[SciencePlots manual](https://github.com/garrettj403/SciencePlots/wiki/Gallery)**.
 #    - ... choose between a faster (```.pickle```) and a more compact (```.parquet```) format for intermediate files.
-#    - ... define the number of available cores for computing. If you are in a Binder, leave this on 1. 
+#    - ... set the number of cores available for computation. If you are in a binder, leave this at 1.
 #
 # &nbsp;
 # 3. The last section ```[MEDIA_SERVER]``` holds credentials for the file access on a file repository of our university and should not be edited if you are not a university member and know what you're doing. The credentials only grant read access to glacier-related public data and are not of value to you.
