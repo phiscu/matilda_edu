@@ -88,7 +88,7 @@ print(f'Coordinates of discharge point: Lat {y}, Lon {x}')
 # ## Start GEE and download DEM
 
 # %% [markdown]
-# Once we are set up, we can start working with the data. Let's start with the **base map** if enabled in `config.ini`. The individual steps can be traced using the map since more and more layers will be added through the course of the notebook. <a id="map"></a>
+# Once we are set up, we can start working with the data. Let's start with the **base map**, if enabled in `config.ini`. The map can be used to follow the steps as more layers are added throughout the notebook. <a id="map"></a>
 
 # %%
 import geemap
