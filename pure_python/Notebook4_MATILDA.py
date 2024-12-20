@@ -281,7 +281,7 @@ for key in param.keys(): print(key + ': ' + str(param[key]))
 # Properly calibrated, the model shows a much better results.
 
 # %% tags=["output_scroll"]
-output_matilda = matilda_simulation(era5, obs, **settings, parameter_set=param)
+output_matilda = matilda_simulation(era5, obs, **settings, **param)
 
 # %% [markdown]
 # In addition to the standard plots we can explore the results interactive `ploty` plots. Go ahead and zoom as you like or select/deselect individual curves.
