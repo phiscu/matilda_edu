@@ -149,10 +149,31 @@ if show_map:
             print("Manually drawn box will be considered")
 
 # %% [markdown]
-# Now we can export the DEM as a `.tif` file for the selected extent to the output folder. Unfortunately there is a file size limit for GEE downloads. If your selected box is too big, please adjust the extent and try again.
+# Now we can export the DEM as a `.tif` file for the selected extent to the output folder. Depending on the size of the selected area, this might take a while for processing and downloading.
 
 # %%
-geemap.ee_export_image(image, filename=filename, scale=30, region=box, file_per_band=False)
+import xarray as xr
+
+try:
+    print('Get GEE data as Xarray...')
+    ic = ee.ImageCollection(image)
+    ds = xr.open_dataset(
+        ic,
+        engine='ee',
+        projection=ic.first().select(0).projection(),
+        geometry=box
+    )
+    
+    print('Prepare Xarray for GeoTiff conversion...')
+    ds_t = ds.isel(time=0).drop_vars("time").transpose()
+    ds_t.rio.set_spatial_dims("lon", "lat", inplace=True)
+
+    print('Save DEM as GeoTiff...')
+    ds_t.rio.to_raster(filename)
+    print('DEM successfully saved at', filename)
+except:
+    print('Error during Xarray routine. Try direct download from GEE...')
+    geemap.ee_export_image(image, filename=filename, scale=30, region=box, file_per_band=False)
 
 # %% [markdown]
 # ## Catchment deliniation
