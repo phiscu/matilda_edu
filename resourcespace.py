@@ -55,10 +55,14 @@ class ResourceSpace:
     #uses get_resource_path of the resourcespace API: https://www.resourcespace.com/knowledge-base/api/get_resource_path
     #ref: the id of the resource you want to get the content of or an array of resource ids
     #returns the content in bytes if the request was successful else None
-    def get_resource_file(self, ref):
-    
+    def get_resource_file(self, ref, ext=""):
+        
+        if(ext==""):
+            resource_data = self.get_resource_data(ref)
+            ext = resource_data["file_extension"];
+
         #generating query
-        query = 'function=get_resource_path&ref=' + str(ref) + '&getfilepath=false'
+        query = 'function=get_resource_path&ref=' + str(ref) + '&extension=' + str(ext)
         
         response = self.do_request(query)
 
@@ -75,6 +79,7 @@ class ResourceSpace:
             return response.content
         else:
             return None
+
     
 
     #colid: the id of the collection you want to get the resource ids from

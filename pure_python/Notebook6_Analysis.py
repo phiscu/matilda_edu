@@ -39,12 +39,17 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
 
-print("Importing MATILDA scenarios...")
-# For size:
-matilda_scenarios = parquet_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
+# set the file format for storage
+compact_files = config.getboolean('CONFIG','COMPACT_FILES')
 
-# For speed:
-# matilda_scenarios = pickle_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
+print("Importing MATILDA scenarios...")
+
+if compact_files:
+    # For size:
+    matilda_scenarios = parquet_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
+else:
+    # For speed:
+    matilda_scenarios = pickle_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
 
 # %% [markdown]
 # At the moment, the structure of the ensemble output is as follows:
@@ -367,6 +372,8 @@ adjust_jupyter_config()
 
 # %%
 from dash import Dash, dcc, html, Input, Output
+from jupyter_server import serverapp
+
 
 app = Dash(__name__)
 
@@ -422,7 +429,11 @@ def matilda_dash(fig_count=4,
         )
     # Combine the dropdown menus and figures into a single layout
     app.layout = html.Div(dropdowns_and_figures)
-    app.run(port=8050)
+    port = 8051
+    if list(serverapp.list_running_servers()) == []:
+        app.run(port=port, jupyter_mode="external")  # -> opens Dash in new browser tab
+    else:
+        app.run(port=port)  # -> opens Dash inline
 
 
 # Application example:

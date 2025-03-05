@@ -1,2 +1,5 @@
 output/*
 /.ipynb_checkpoints/
+matilda_edu_CLI.py
+/CLI/
+output_download.zip

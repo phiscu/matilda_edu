@@ -32,19 +32,7 @@
 # Let's start by importing the necessary packages and defining functions/constants.
 
 # %% [markdown]
-# First of all, the Google Earth Engine (GEE) access must be initialized. If this is the first time you run the notebook on this machine, you need to authenticate. When using <code>mybinder.org</code> you need to authenticate every time a new session has been launched. **Follow the instructions to log in to GEE, copy the generated token, and paste it into the input field to proceed**.
-#
-# Official Google Help Guide for <code>ee.Authenticate()</code>:
-#
-# > Prompts you to authorize access to Earth Engine via OAuth2.
-# >
-# > Directs you to a authentication page on the Code Editor server at code.earthengine.google.com/client-auth. You will need to pick a Cloud Project to hold your developer configuration (OAuth Client). This can be the same Cloud Project that you already use in the Code Editor, if you have not set up an OAuth client on the project already.
-# >
-# > The setup page also lets you choose to make the notebook access read-only. This is recommended if you are running a notebook with code that you didn't write and which may be malicious. Any operations which try to write data will fail.
-# >
-# > The credentials obtained by ee.Authenticate() will be written to a persistent token stored on the local machine. ee.Initialize() will automatically use the persistent credentials, if they exist. To use service account credentials
-# >
-# > Source: https://developers.google.com/earth-engine/apidocs/ee-authenticate
+# First of all, the Google Earth Engine (GEE) access must be initialized. If this is the first time you run the notebook on this machine, you need to authenticate. When using <code>mybinder.org</code> you need to authenticate every time a new session has been launched. Follow the instructions on screen or see the guide in &rarr; [Notebook 0](Notebook0_Introduction.ipynb#Authorize-access-for-Google-Earth-Engine).
 
 # %%
 import ee
@@ -100,7 +88,7 @@ print(f'Coordinates of discharge point: Lat {y}, Lon {x}')
 # ## Start GEE and download DEM
 
 # %% [markdown]
-# Once we are set up, we can start working with the data. Let's start with the **base map** if enabled in `config.ini`. The individual steps can be traced using the map since more and more layers will be added through the course of the notebook. <a id="map"></a>
+# Once we are set up, we can start working with the data. Let's start with the **base map**, if enabled in `config.ini`. The map can be used to follow the steps as more layers are added throughout the notebook. <a id="map"></a>
 
 # %%
 import geemap
@@ -161,10 +149,31 @@ if show_map:
             print("Manually drawn box will be considered")
 
 # %% [markdown]
-# Now we can export the DEM as a `.tif` file for the selected extent to the output folder. Unfortunately there is a file size limit for GEE downloads. If your selected box is too big, please adjust the extent and try again.
+# Now we can export the DEM as a `.tif` file for the selected extent to the output folder. Depending on the size of the selected area, this might take a while for processing and downloading.
 
 # %%
-geemap.ee_export_image(image, filename=filename, scale=30, region=box, file_per_band=False)
+import xarray as xr
+
+try:
+    print('Get GEE data as Xarray...')
+    ic = ee.ImageCollection(image)
+    ds = xr.open_dataset(
+        ic,
+        engine='ee',
+        projection=ic.first().select(0).projection(),
+        geometry=box
+    )
+    
+    print('Prepare Xarray for GeoTiff conversion...')
+    ds_t = ds.isel(time=0).drop_vars("time").transpose()
+    ds_t.rio.set_spatial_dims("lon", "lat", inplace=True)
+
+    print('Save DEM as GeoTiff...')
+    ds_t.rio.to_raster(filename)
+    print('DEM successfully saved at', filename)
+except:
+    print('Error during Xarray routine. Try direct download from GEE...')
+    geemap.ee_export_image(image, filename=filename, scale=30, region=box, file_per_band=False)
 
 # %% [markdown]
 # ## Catchment deliniation
@@ -624,7 +633,7 @@ import io
 cnt_thickness = 0
 file_names_thickness = []
 for idx, row in refs_thickness.iterrows():
-    content = myrepository.get_resource_file(row['ref'])    
+    content = myrepository.get_resource_file(row['ref'], row['file_extension'])    
     with ZipFile(io.BytesIO(content), 'r') as zipObj:
         # Get a list of all archived file names from the zip
         listOfFileNames = zipObj.namelist()
@@ -795,7 +804,7 @@ plt.savefig(figures_folder+'NB1_Glacier_Mass_Elevation.png')
 plt.show()
 
 # %% [markdown]
-# Finally, we need the average glacier elevation Calculate average glacier elevation in meters above sea level.
+# Finally, we calculate the average glacier elevation in meters above sea level.
 
 # %%
 ele_glac = round(df_all.altitude.mean(), 2)
@@ -805,12 +814,12 @@ print(f'Average glacier elevation in the catchment: {ele_glac:.2f} m a.s.l.')
 # ## Store calculated values for other notebooks
 
 # %% [markdown]
-# Create a `settings.yml` and store the relevant catchment information. Those information will be used in later notebooks:
+# Create a `settings.yml` and store the relevant catchment information for the model setup:
 #
-# - **area_cat**: area of catchment in km²
-# - **ele_cat**: average elevation of catchment in m.a.s.l.
-# - **area_glac**: area of glacier in km²
-# - **ele_glac**: average elevation of glaciers in m.a.s.l.
+# - **area_cat**: area of the catchment in km²
+# - **ele_cat**: average elevation of the catchment in m.a.s.l.
+# - **area_glac**: glacier covered area as of 2000 in km²
+# - **ele_glac**: average elevation of glacier covered area in m.a.s.l.
 # - **lat**: latitude of catchment centroid
 
 # %%
@@ -829,11 +838,14 @@ print('Settings saved to file.')
 display(pd.DataFrame(settings.items(),columns=['Parameter','Value']).set_index('Parameter'))
 
 # %% [markdown]
-# ## Download Outputs
+# You can now continue with [Notebook 2](Notebook2_Forcing_data.ipynb) or ...
+
+# %% [markdown]
+# ## *Optional*: Download Outputs
 #
 # <div class="alert alert-block alert-info">
 # <b>Note:</b>
-#  The output folder is zipped at the end of each notebook and can be downloaded (file <code>output_download.zip</code>). This is especially useful if you want to use the binder environment again, but don't want to start from notebook #1.</div>
+#  The output folder is zipped at the end of each notebook and can be downloaded (file <code>output_download.zip</code>). This is especially useful if you want to use the binder environment again, but don't want to start over from Notebook 1.</div>
 #
 # <img src="images/download_output.png" width=300>
 #

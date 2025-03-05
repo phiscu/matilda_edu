@@ -33,11 +33,12 @@
 # %%
 import ee
 
+# initialize GEE at the beginning of session
 try:
-    ee.Initialize(project="matilda-edu-440707")
+    ee.Initialize()
 except Exception as e:
     ee.Authenticate()         # authenticate when using GEE for the first time
-    ee.Initialize(project="matilda-edu-440707")
+    ee.Initialize()
 
 # %% [markdown]
 # ...and read some settings from the `config.ini` file:

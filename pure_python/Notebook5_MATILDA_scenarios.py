@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.16.4
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -41,13 +41,19 @@ config.read('config.ini')
 dir_input = config['FILE_SETTINGS']['DIR_INPUT']
 dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
 
+# set the file format for storage
+compact_files = config.getboolean('CONFIG','COMPACT_FILES')
+
+# get the number of available cores
+num_cores = int(config['CONFIG']['NUM_CORES'])
+
 print(f"Input path: '{dir_input}'")
 print(f"Output path: '{dir_output}'")
 
 
 # %% [markdown]
 # <div class="alert alert-block alert-info">
-# <b>Note:</b> We provide two storage options: <code>pickle</code> files are fast to read and write, but take up more disk space. You can use them on your local machine. <code>parquet</code> files are half the size but take longer to read and write. They should be your choice in the Binder.</div>
+# <b>Note:</b> Choose in the config between faster <code>pickle</code> files and smaller <code>parquet</code> files.</div>
 
 # %% [markdown]
 # To run MATILDA for a period in the future, we need to adapt the modeling period. Therefore, we read the `settings.yaml` to a ditionary and change the respective settings. We also turn off the plotting module to reduce processing time and add the glacier profile from its `.csv`.
@@ -78,20 +84,18 @@ param_dict = read_yaml(f"{dir_output}/parameters.yml")
 
 # %% [markdown]
 # ...and our forcing data.
-#
-# <div class="alert alert-block alert-info">
-# <b>Note:</b> Choose either <code>pickle</code> or <code>parquet</code> depending on what you used in Notebook 3.</div>
 
 # %%
 from tools.helpers import parquet_to_dict, pickle_to_dict
 
-# For size:
-tas = parquet_to_dict(f"{dir_output}cmip6/adjusted/tas_parquet")
-pr = parquet_to_dict(f"{dir_output}cmip6/adjusted/pr_parquet")
-
-## For speed
-#tas = pickle_to_dict(f"{dir_output}cmip6/adjusted/tas.pickle")
-#pr = pickle_to_dict(f"{dir_output}cmip6/adjusted/pr.pickle")
+if compact_files:
+    # For size:
+    tas = parquet_to_dict(f"{dir_output}cmip6/adjusted/tas_parquet")
+    pr = parquet_to_dict(f"{dir_output}cmip6/adjusted/pr_parquet")
+else:
+    # For speed
+    tas = pickle_to_dict(f"{dir_output}cmip6/adjusted/tas.pickle")
+    pr = pickle_to_dict(f"{dir_output}cmip6/adjusted/pr.pickle")
 
 # %% [markdown]
 # Now we have to convert the individual climate projections into MATILDA input dataframes with the correct column names. We store these 2 x 31 MATILDA inputs in a nested dictionary again and save the file in a `parquet` (or `pickle`).
@@ -136,15 +140,17 @@ def create_scenario_dict(tas: dict, pr: dict, scenario_nums: list) -> dict:
 scenarios = create_scenario_dict(tas, pr, [2, 5])
 
 print("Storing MATILDA scenario input dataframes on disk...")
-# dict_to_parquet(scenarios, f"{dir_output}cmip6/adjusted/matilda_scenario_input_parquet")
 
-dict_to_pickle(scenarios, f"{dir_output}cmip6/adjusted/matilda_scenario_input.pickle")
+if compact_files:
+    dict_to_parquet(scenarios, f"{dir_output}cmip6/adjusted/matilda_scenario_input_parquet")
+else:
+    dict_to_pickle(scenarios, f"{dir_output}cmip6/adjusted/matilda_scenario_input.pickle")
 
 # %% [markdown]
 # ## Running MATILDA for all climate projections
 
 # %% [markdown]
-# Now that we are set up we need to **run MATILDA for every CMIP6 model and both scenarios**. This adds up to **62 model runs at ~4s each** on a single core. So you can either start the bulk processor and have a break or download data and notebook to run it on more cores on a local computer.
+# Now that we are set up we need to **run MATILDA for every CMIP6 model and both scenarios**. This adds up to **62 model runs at ~4s each** on a single core. So you can either start the bulk processor and have a break or download the repo and change the config according to your available cores.
 #
 # <div class="alert alert-block alert-info">
 # <b>Note:</b> Don't be confused by the status bar. It only updates after one full scenario is processed.</div>
@@ -280,11 +286,17 @@ class MatildaBulkProcessor:
 
 
 matilda_bulk = MatildaBulkProcessor(scenarios, matilda_settings, param_dict)
-matilda_scenarios = matilda_bulk.run_single_process()
-#matilda_scenarios = matilda_bulk.run_multi_process(num_cores=4)
+if num_cores == 1:
+    matilda_scenarios = matilda_bulk.run_single_process()
+else:
+    matilda_scenarios = matilda_bulk.run_multi_process(num_cores=num_cores)
 
 print("Storing MATILDA scenario outputs on disk...")
-dict_to_parquet(matilda_scenarios, f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
+
+if compact_files:
+    dict_to_parquet(matilda_scenarios, f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
+else:
+    dict_to_pickle(matilda_scenarios, f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
 
 
 # %% [markdown]
@@ -298,4 +310,4 @@ shutil.make_archive('output_download', 'zip', 'output')
 print('Output folder can be download now (file output_download.zip)')
 
 # %%
-%reset -f
+# %reset -f

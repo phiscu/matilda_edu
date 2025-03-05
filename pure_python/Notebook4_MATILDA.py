@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.16.4
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -27,10 +27,10 @@
 # 4. ... and store the calibrated parameter set for the scenario runs in the next notebook.
 #
 #
-# We will use the glacio-hydrological modeling library [MATILDA] (https://github.com/cryotools/matilda), which has been developed for use in this workflow. It is based on the widely used [HBV hydrological model](https://www.cabdirect.org/cabdirect/abstract/19961904773), extended by a simple temperature-index melt model based roughly on the code of [Seguinot (2019)](https://zenodo.org/record/3467639). Glacier evolution over time is modeled using the &Delta;*h* approach following [Seibert et. al. (2018)](https://doi.org/10.5194/hess-22-2211-2018).
+# The framework for Modeling water resources in glacierized catchments [MATILDA] (https://github.com/cryotools/matilda) has been developed for use in this workflow and is published as a Python package. It is based on the widely used [HBV hydrological model](https://www.cabdirect.org/cabdirect/abstract/19961904773), extended by a simple temperature-index melt model based  on the code of [Seguinot (2019)](https://zenodo.org/record/3467639). Glacier evolution over time is modeled using a modified version of the &Delta;*h* approach following [Seibert et. al. (2018)](https://doi.org/10.5194/hess-22-2211-2018).
 
 # %% [markdown]
-# Let's start by importing some helper functions to work with `yaml` and `pickle` files and read required data from the config file.
+# As before we start by loading configurations such as the calibration period and some helper functions to work with  `yaml` files.
 
 
 # %%
@@ -50,7 +50,7 @@ date_range = ast.literal_eval(config['CONFIG']['DATE_RANGE'])
 print('MATILDA will be calibrated on the period ' + date_range[0] + ' to ' + date_range[1])
 
 # %% [markdown]
-# The model requires a minimum setup period of one year. By default, the first two years are considered setup. We derive the respective dates from  the defined time period accordingly.
+# Since HBV is a so-called 'bucket' model and all the buckets are empty in the first place we need to fill them in a setup period of minimum one year. If not specified, the first two years of the `DATE_RANGE` in the `config` are used for set up.
 
 # %%
 import pandas as pd
@@ -68,14 +68,14 @@ dates = {'set_up_start': date_range[0],
 for key in dates.keys(): print(key + ': ' + dates[key])
 
 # %% [markdown]
-# Many MATILDA parameters have been calculated in previous notebooks and stored in `settings.yaml`. We can easily add the modeling periods using a helper function. The calculated glacier profile from Notebook 1 can be imported as a `pandas DataFrame` and added to the settings dictionary as well.
+# Many MATILDA parameters have been calculated in previous notebooks and stored in `settings.yaml`. We can easily add the modeling periods using a helper function. The calculated glacier profile from Notebook 1 can be imported as a `pandas DataFrame` and added to the `settings` dictionary as well.
 #
 # Finally, we will also add some optional settings that control the aggregation frequency of the outputs, the choice of graphical outputs, and more.
 
 # %% tags=["output_scroll"]
 update_yaml(dir_output + 'settings.yml', dates)
 
-remaining_settings = {"freq": "M",               # aggregation level of model outputs (D, M, Y)
+remaining_settings = {"freq": "M",               # aggregation frequency of model outputs (D, M, Y)
                       "warn": False,             # show warnings of subpackages?
                       "plot_type": "all",        # interactive and/or non-interactive plots ('print', 'interactive', 'all')
                       "elev_rescaling": True}    # treat mean glacier elevation as constant or change with glacier evolution
@@ -93,7 +93,7 @@ for key in settings.keys(): print(key + ': ' + str(settings[key]))
 # ## Run MATILDA with default parameters
 
 # %% [markdown]
-# We will force MATILDA with the pre-processed ERA5-Land data from Notebook 2. Although MATILDA can run without calibration on observations, the results would have extreme uncertainties. Therefore, we recommend to use at least runoff observations for your selected point to evaluate the simulations against. Here, we load runoff observations for your example catchment from 1982 to 2020 (with gaps).
+# We will force MATILDA with the pre-processed ERA5-Land data from Notebook 2. Although MATILDA can run without calibration on observations, the results would have extreme uncertainties. Therefore, we recommend to use at least discharge observations for your selected point to evaluate the simulations against. Here, we load discharge observations for your example catchment. As you can see, we have meteorological forcing data since 1979 and discharge data since 1982. However, most of the glacier datasets used start in 2000/2001 and glaciers are a significant part of the water balance. In its current version, MATILDA is not able to extrapolate glacier cover, so we will only calibrate the model using data from 2000 onwards.
 
 # %% tags=["output_scroll"]
 era5 = pd.read_csv(dir_output + 'ERA5L.csv', usecols=['dt', 'temp', 'prec'])
@@ -112,7 +112,7 @@ print('Observations:')
 display(obs)
 
 # %% [markdown]
-# First, we run MATILDA with default parameters.
+# With all settings and input data in place, we can run MATILDA with **default parameters**.
 
 # %% tags=["output_scroll"]
 from matilda.core import matilda_simulation
@@ -120,30 +120,39 @@ from matilda.core import matilda_simulation
 output_matilda = matilda_simulation(era5, obs, **settings)
 
 # %% [markdown]
-# The result is obviously far from reality and largely overestimates runoff. Therefore, the model needs calibration.
+# The results are obviously far from reality and largely overestimate runoff. The **Kling-Gupta Efficiency coefficient ([KGE](https://doi.org/10.1029/2011WR010962))** rates the result as 0.36 with 1.0 being a perfect match with the observations. We can also see that the input precipitation is much higher than the total runoff. Clearly, **the model needs calibration**.
 
 # %% [markdown]
 # ## Calibrate MATILDA
 
 # %% [markdown]
-# To adjust all model parameters to the catchment characteristics, we will perform an automated calibration using the [Statistical Parameter Optimization Tool for Python](https://doi.org/10.1371/journal.pone.0145180). Since large uncertainties in the input data (especially precipitation) can lead to an overestimation of melt when the model is calibrated to the hydrograph only, we will additionally include glacier mass balance data for a multi-objective calibration.
+# In order to adjust the model parameters to the catchment characteristics, we will perform an **automated calibration**. The [MATILDA Python package](https://github.com/cryotools/matilda) contains a calibration module called *[matilda.mspot](https://github.com/cryotools/matilda/blob/master/matilda/mspot_glacier.py)* that makes extensive use of the Statistical Parameter Optimization Tool for Python ([SPOTPY](https://doi.org/10.1371/journal.pone.0145180)). As we have seen, there can be large uncertainties in the input data (especially precipitation). Simply tuning the model parameters to match the observed hydrograph may over- or underestimate other runoff contributors, such as glacier melt, to compensate for deficiencies in the precipitation data. Therefore, it is good practice to include additional data sets in a **multi-objective calibration**. In this workflow we will use:
+#
+# - remote sensing estimates of **glacier surface mass balance** (**SMB**) and ...
+#
+# - **snow water equivalent** (**SWE**) estimates from a dedicated snow reanalysis product.
+#
+# Unfortunately, both default datasets are **limited to High Mountain Asia (HMA)**. For study sites in other areas, please consult other sources and manually add the target values for calibration in the appropriate code cells. We are happy to include additional datasets as long as they are available online and can be integrated into the workflow.
 #
 # <div class="alert alert-block alert-info">
-# <b>Note:</b> Statistical parameter optimization (SPOT) algorithms require a large number of model runs, especially for large parameter sets. Both <i>mybinder.org</i> and <i>Google Colab</i> offer a maximum of two cores per user. One MATILDA run for 20 years takes roughly 3s on one core. Therefore, large optimization runs in an online environment will be slow and may require you to leave the respective browser tab in the foreground for hours. To speed things up, you can either...</div>
+# <b>Note:</b> Statistical parameter optimization (SPOT) algorithms require a high number of model runs, especially for large parameter sets. Both <i>mybinder.org</i> and <i>Google Colab</i> offer a maximum of two cores per user. One MATILDA calibration run for 20 years takes roughly 3s on one core. Therefore, large optimization runs in an online environment will be slow and may require you to leave the respective browser tab in the foreground for hours. To speed things up, you can either...</div>
 #
-# ... run this notebook locally on a computer with more cores (ideally a high performance cluster) or ...
+# ... run this notebook **locally on a computer with more cores** (ideally a high performance cluster) or ...
 #
-# ... reduce the number of calibration parameters using the global sensitivity. We will return to this topic later in this notebook.
+# ... **reduce the number of calibration parameters** based the global sensitivity. We will return to this topic later in this notebook.
 #
-# Here we will demonstrate the use of the SPOT functions and then continue with a parameter set from a large HPC optimization run. If you need assistance to implement the routine on your HPC consult the [SPOTPY documentation](https://spotpy.readthedocs.io/en/latest/Advanced_hints/#mpi-parallel-computing) and contact us if you run into problems.
+# For now, we will demonstrate how to use the SPOT features and then continue with a parameter set from a large HPC optimization run. If you need help implementing the routine on your HPC, consult the [SPOTPY documentation](https://spotpy.readthedocs.io/en/latest/Advanced_hints/#mpi-parallel-computing) and [contact us](https://github.com/phiscu/matilda_edu/issues/new) if you encounter problems.
 
 # %% [markdown]
-# ### Add glacier mass balance data
+# ### Glacier surface mass balance data
 
 # %% [markdown]
-# In addition to runoff we will use glacier mass balance as second calibration variable. [Shean et. al. 2020 ](https://doi.org/10.3389/feart.2019.00363) calculated robust geodetic mass balances for all glaciers in High Mountain Asia from 2000 to 2018. For this example (and all other catchments in HMA), we can use their data set so derive a target average annual mass balance in the calibration period. If your catchment is located outside HMA, you need to consult other sources.
+# There are various sources of SMB records but only remote sensing estimates provide data for (almost) all glaciers in the target catchment. [Shean et. al. 2020 ](https://doi.org/10.3389/feart.2019.00363) calculated geodetic mass balances for all glaciers in High Mountain Asia from 2000 to 2018. For this example (and all other catchments in HMA), we can use their data set so derive an average annual mass balance in the calibration period.
 #
-# We pick all individual mass balances that match the glacier IDs in our catchment and calculate the mean. In addition, we use the uncertainty measures listed in the dataset to derive an uncertainty range.
+# <div class="alert alert-block alert-info">
+# <b>Note:</b> As all remote sensing estimates the used dataset has significant uncertainties. A comparison to other datasets and the impact on the modeling results are discussed in the associated publication. </div>
+#
+# We pick all individual mass balances that match the glacier IDs in our catchment and calculate the catchment-wide mean. In addition, we use the uncertainty estimate provided in the dataset to derive an uncertainty range.
 
 # %%
 import pandas as pd
@@ -160,32 +169,60 @@ target_mb = [mean_mb - mean_sigma, mean_mb + mean_sigma]
 print('Target glacier mass balance for calibration: ' + str(mean_mb) + ' +-' + str(mean_sigma) + 'mm w.e.')
 
 # %% [markdown]
-# The MATILDA framework provides an interface to [SPOTPY](https://github.com/thouska/spotpy/). Here we will use the `psample()` function to run MATILDA with the same settings as before. To do this, we will remove redundant `settings` and add some new ones specific to the function. Be sure to choose the number of repetitions carefully.
+# ### Snow water equivalent
+
+# %% [markdown]
+# For snow cover estimates, we will use a specialized **snow reanalysis** dataset from [Liu et. al. 2021](https://doi.org/10.5067/HNAUGJQXSCVU). Details on the data can be found in the dataset documentation and the associated [publication](https://doi.org/10.1029/2022GL100082).
+# Unfortunately, access to the dataset requires a (free) registration at **NASA's EarthData** portal, which prevents a seamless integration. Also, the dataset consists of large files and requires some pre-processing that **could not be done in a Jupyter Notebook**. However, we provide you with the `SWEETR` tool, a **fully automated workflow** that you can run on your local computer to download, process, and aggregate the data. Please refer to the dedicated [Github repository](https://github.com/phiscu/hma_snow) for further instructions.
+
+# %% [markdown]
+# <img src="images/mean_swe_example.png" alt="Mean_SWE" width="400">
+
+# %% [markdown]
+# When you run the `SWEETR` tool with your catchment outline, it returns cropped raster files as the one shown above and, more importantly, a **timeseries of catchment-wide daily mean SWE** from 1999 to 2016. Just replace the `input/swe.csv` file with your result. Now we can load the timeseries as a dataframe.
+
+# %%
+swe = pd.read_csv(f'{dir_input}/swe.csv')
+
+# %% [markdown]
+# Along with the cropped SWE rasters the `SWEETR` tool creates binary masks for seasonal- and non-seasonal snow. Due to its strong signal in remote sensing data, seasonal snow can be better detected leading to more robust SWE estimates. However, the non-seasonal snow largely agrees with the glacierized area. Therefore, we will calibrate the snow routine by comparing the SWE of the ice-free sub-catchment with the seasonal snow of the reanalysis. Since the latter has a coarse resolution of 500 m, the excluded catchment area is a bit larger than the RGI glacier outlines (17.2% non-seasonal snow vs. 10.8% glacierized sub-catchment). Therefore, we use a scaling factor to account for this mismatch in the reference area.
+
+# %%
+glac_ratio = settings['area_glac'] / settings['area_cat']       # read glacieriezed and total area from the settings
+swe_area_sim = 1-glac_ratio
+swe_area_obs = 0.828            # 1 - non-seasonal snow / seasonal snow
+sf = swe_area_obs / swe_area_sim
+print('SWE scaling factor: ' + str(round(sf, 3)))
+
+# %% [markdown]
+# The MATILDA framework provides an interface for [SPOTPY](https://github.com/thouska/spotpy/). Here we will use the `psample()` function to run MATILDA with the same settings as before but varying parameters. To do this, we will remove redundant `settings` and add some new ones specific to the function. Be sure to choose the number of repetitions carefully.
 
 # %% tags=["output_scroll"]
 from tools.helpers import drop_keys
 
 psample_settings = drop_keys(settings, ['warn', 'plots', 'plot_type'])
 
-additional_settings = {'rep': 10,                            # Number of model runs. For advice check the documentation of the algorithms.
-                       'glacier_only': False,                 # True when calibrating a entirely glacierized catchment
-                       'obj_dir': 'maximize',                 # should your objective funtion be maximized (e.g. NSE) or minimized (e.g. RMSE)
-                       'target_mb': mean_mb,                     # Average annual glacier mass balance to target at
+additional_settings = {'rep': 10,                             # Number of model runs. For advice, check the documentation of the algorithms.
+                       'glacier_only': False,                 # True when calibrating an entirely glacierized catchment
+                       'obj_dir': 'maximize',                 # should your objective function be maximized (e.g. NSE) or minimized (e.g. RMSE)
+                       'target_mb': mean_mb,                  # Average annual glacier mass balance to target at
+                       'target_swe': swe,                     # Catchment-wide mean SWE timeseries of seasonal snow to calibrate the snow routine
+                       'swe_scaling': 0.928,                  # scaling factor for simulated SWE to account for reference area mismatch
                        'dbformat': None,                      # Write the results to a file ('csv', 'hdf5', 'ram', 'sql')
                        'output': None,                        # Choose where to store the files
                        'algorithm': 'lhs',                    # Choose algorithm (for parallelization: mc, lhs, fast, rope, sceua or demcz)
                        'dbname': 'era5_matilda_example',      # Choose name
                        
                        'parallel': False,                     # Distribute the calculation on multiple cores or not
-                      # 'cores': 20                           # Set number of cores when running parallel
+                      # 'cores': 20                           # Set number of cores when running in parallel
                       }
 psample_settings.update(additional_settings)
 
-print('Settings for calibration runs:\n\n')
+print('Settings for calibration runs:\n')
 for key in psample_settings.keys(): print(key + ': ' + str(psample_settings[key]))
 
 # %% [markdown]
-# With these settings we can start the `psample()` to run our model with various parameter combinations. The default parameter boundaries can be found in the MATILDA [parameter documentation](https://github.com/cryotools/matilda/blob/master/Parameters). If you want to narrow down the parameter space you can do that using the following syntax. Here, we define custom ranges for the temperature lapse rate and the precipitation correction factor.
+# With these settings we can start the `psample()` to run our model with various parameter combinations. The default parameter boundaries can be found in the MATILDA [parameter documentation](https://github.com/cryotools/matilda/tree/master?tab=readme-ov-file#parameter-list). If you want to narrow down the parameter space, you can do that using the following syntax. Here, we define custom ranges for the temperature lapse rate and the precipitation correction factor and run a short Latin Hypercube Sampling (LHS) as an example.
 
 # %% tags=["output_scroll"]
 from matilda.mspot_glacier import psample
@@ -195,40 +232,56 @@ lim_dict = {'lr_temp_lo': -0.007, 'lr_temp_up': -0.005, 'PCORR_lo': 0.5, 'PCORR_
 best_summary = psample(df=era5, obs=obs, **psample_settings, **lim_dict)
 
 # %% [markdown]
+# ## Process-based calibration
+
+# %% [markdown]
+# Every parameter governs a different aspect of the water balance, and not all parameters affect every calibration variable. Therefore, we propose an **iterative process-based calibration** approach where we calibrate parameters in order of their importance using different algorithms, objective functions, and calibration variables. Details on the calibration strategy can be found in the model publication which is currently under review. The individual steps will be implemented in the notebook soon.
+#
+# <img src="images/calibration_strategy.png" alt="calibration" width="300">
+#
+
+# %% [markdown]
 # ## Run MATILDA with calibrated parameters
 
 # %% [markdown]
-# The following parameter set was computed using an updated version of the Differential Evolution Markov Chain (DE-MCz) algorithm with 55k iterations on an HPC cluster. The parameters were optimized for runoff using the [Kling-Gupta model efficiency coefficient](https://doi.org/10.1016/j.jhydrol.2012.01.011) and the results were filtered to match the target mass balance range.
+# The following parameter set was computed applying the mentioned calibration strategy on an HPC cluster.
 # <a id="param"></a>
 
 # %%
-param = {'lr_temp': -0.006472598,
-         'lr_prec': 0.00010296448,
-         'BETA': 4.625306,
-         'CET': 0.2875196,
-         'FC': 364.81818,
-         'K0': 0.28723368,
-         'K1': 0.015692418,
-         'K2': 0.004580627,
-         'LP': 0.587188,
-         'MAXBAS': 6.730105,
-         'PERC': 1.1140852,
-         'UZL': 198.82584,
-         'PCORR': 0.74768984,
-         'TT_snow': -1.3534238,
-         'TT_diff': 0.70977557,
-         'CFMAX_ice': 2.782649,
-         'CFMAX_rel': 1.2481626,
-         'SFCF': 0.879982,
-         'CWH': 0.0020890352,
-         'AG': 0.8640329,
-         'RFS': 0.21825151}
+param = {
+    'RFS': 0.15,
+    'SFCF': 1,
+    'CET': 0,
+    'PCORR': 0.58,
+    'lr_temp': -0.006,
+    'lr_prec': 0.0015,
+    'TT_diff': 0.76198,
+    'TT_snow': -1.44646,
+    'CFMAX_snow': 3.3677,
+    'BETA': 1.0,
+    'FC': 99.15976,
+    'K0': 0.01,
+    'K1': 0.01,
+    'K2': 0.15,
+    'LP': 0.998,
+    'MAXBAS': 2.0,
+    'PERC': 0.09232826,
+    'UZL': 126.411575,
+    'CFMAX_rel': 1.2556936,
+    'CWH': 0.000117,
+    'AG': 0.54930484
+}
+
+
 
 print('Calibrated parameter set:\n\n')
 for key in param.keys(): print(key + ': ' + str(param[key]))
 
+# %% [markdown]
+# Properly calibrated, the model shows a much better results.
+
 # %% tags=["output_scroll"]
-output_matilda = matilda_simulation(era5, obs, **settings, parameter_set=param)
+output_matilda = matilda_simulation(era5, obs, **settings, **param)
 
 # %% [markdown]
 # In addition to the standard plots we can explore the results interactive `ploty` plots. Go ahead and zoom as you like or select/deselect individual curves.
@@ -480,4 +533,4 @@ shutil.make_archive('output_download', 'zip', 'output')
 print('Output folder can be download now (file output_download.zip)')
 
 # %%
-%reset -f
+# %reset -f
