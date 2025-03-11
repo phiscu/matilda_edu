@@ -475,7 +475,7 @@ indicator_vars = {
  'melt_season_length': ('Length of Melting Season', 'd'),
  'actual_aridity': ('Relative Change of Actual Aridity', '%'),
  'potential_aridity': ('Relative Change of Potential Aridity', '%'),
- 'dry_spell_days': ('Total Length of Dry Spells per year', 'd/a'),
+ 'dry_spell_days': ('Total Length of Dry Spells', 'd/a'),
  'qlf_freq': ('Frequency of Low-flow events', 'yr^-1'),
  'qlf_dur': ('Mean Duration of Low-flow events', 'd'),
  'qhf_freq': ('Frequency of High-flow events', 'yr^-1'),

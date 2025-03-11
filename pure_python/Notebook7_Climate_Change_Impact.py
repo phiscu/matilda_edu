@@ -328,8 +328,8 @@ def plot_ci_indicators(var, dic, plot_type='line', show=False):
     fig.update_layout(
         xaxis_title='Year',
         yaxis_title=indicator_vars[var][0] + ' [' + indicator_vars[var][1] + ']',
-        title={'text': '<b>' + indicator_vars[var][0] + '</b>', 'font': {'size': 28, 'color': 'darkblue', 'family': 'Arial'}},
-        legend={'font': {'size': 18, 'family': 'Arial'}},
+        title={'text': '<b>' + indicator_vars[var][0] + '</b>', 'font': {'size': 28, 'color': 'darkblue', 'family': 'Palatino'}},
+        legend={'font': {'size': 18, 'family': 'Palatino'}},
         hovermode='x',
         plot_bgcolor='rgba(255, 255, 255, 1)',  # Set the background color to white
         margin=dict(l=10, r=10, t=90, b=10),  # Adjust the margins to remove space around the plot
@@ -357,6 +357,10 @@ from tools.helpers import adjust_jupyter_config
 adjust_jupyter_config()
 
 # %%
+import matplotlib.font_manager as fm
+path_to_palatinottf = '/home/phillip/Downloads/Palatino.ttf'
+fm.fontManager.addfont(path_to_palatinottf)
+
 from dash import Dash, dcc, html, Input, Output
 from jupyter_server import serverapp
 
@@ -388,7 +392,7 @@ for i in range(4):
         options=[{'label': indicator_vars[var][0], 'value': var} for var in indicator_vars.keys()],
         value=default_vars[i],
         clearable=False,
-        style={'width': '400px', 'fontFamily': 'Arial', 'fontSize': 15}
+        style={'width': '400px', 'fontFamily': 'Palatino', 'fontSize': 15}
     )
     type_dropdown = dcc.Dropdown(
         id=f'type-dropdown-{i}',
@@ -413,9 +417,12 @@ for i in range(4):
 # Combine the dropdown menus and figures into a single layout
 app.layout = html.Div(dropdowns_and_figures)
 
-port = 8051
+port = 8052
+app.run(port=port, jupyter_mode="external")  # -> opens Dash in new browser tab
 
-if list(serverapp.list_running_servers()) == []:
-    app.run(port=port, jupyter_mode="external")  # -> opens Dash in new browser tab
-else:
-    app.run(port=port)  # -> opens Dash inline
+#if list(serverapp.list_running_servers()) == []:
+#    app.run(port=port, jupyter_mode="external")  # -> opens Dash in new browser tab
+#else:
+#    app.run(port=port)  # -> opens Dash inline
+
+# %%

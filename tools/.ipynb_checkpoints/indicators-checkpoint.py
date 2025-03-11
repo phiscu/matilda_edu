@@ -4,6 +4,8 @@ from climate_indices.indices import spei, spi, Distribution
 from climate_indices import compute, utils
 import pandas as pd
 import numpy as np
+import inspect
+
 
 def prec_minmax(df):
     """
@@ -321,10 +323,10 @@ def hydrological_signatures(df):
 
 
 # Drought indicators
-def drought_indicators(df, freq='M', dist='gamma'):
+def drought_indicators(df, freq='ME', dist='gamma'):
     """
     Calculate the climatic water balance, SPI (Standardized Precipitation Index), and
-    SPEI (Standardized Precipitation Evapotranspiration Index) for 1, 3, 6, 12, and 24 months..
+    SPEI (Standardized Precipitation Evapotranspiration Index) for 1, 3, 6, 12, and 24 months.
     Parameters
     ----------
     df : pandas.DataFrame
@@ -342,7 +344,7 @@ def drought_indicators(df, freq='M', dist='gamma'):
     Raises
     ------
     ValueError
-         If 'freq' is not 'D' or 'M'.
+         If 'freq' is not 'D' or 'ME'.
          If 'dist' is not 'pearson' or 'gamma'.
     Notes
     -----
@@ -352,11 +354,11 @@ def drought_indicators(df, freq='M', dist='gamma'):
     If 'freq' is 'D', the input data is transformed from Gregorian to a 366-day format for SPI and SPEI calculation,
     and then transformed back to Gregorian format for output.
     The default distribution for SPI and SPEI calculation is Gamma.
-    The calibration period for SPI and SPEI calculation is th full data range from 1981 to 2100.
+    The calibration period for SPI and SPEI calculation is from 1981 to 2020.
     """
     # Check if frequency is valid
-    if freq != 'D' and freq != 'M':
-        raise ValueError("Invalid value for 'freq'. Choose either 'D' or 'M'.")
+    if freq != 'D' and freq != 'ME':
+        raise ValueError("Invalid value for 'freq'. Choose either 'D' or 'ME'.")
 
     # Resample precipitation and evaporation data based on frequency
     prec = df.prec_off_glaciers.resample(freq).sum().values
@@ -383,7 +385,7 @@ def drought_indicators(df, freq='M', dist='gamma'):
     # Set periodicity based on frequency
     if freq == 'D':
         periodicity = compute.Periodicity.daily
-    elif freq == 'M':
+    elif freq == 'ME':
         periodicity = compute.Periodicity.monthly
 
     # Set common parameters
@@ -391,7 +393,7 @@ def drought_indicators(df, freq='M', dist='gamma'):
                      'periodicity': periodicity,
                      'data_start_year': 1981,
                      'calibration_year_initial': 1981,
-                     'calibration_year_final': 2100}
+                     'calibration_year_final': 2020}
 
     # Set parameters for SPEI calculation
     spei_params = {'precips_mm': prec,
@@ -423,7 +425,7 @@ def drought_indicators(df, freq='M', dist='gamma'):
 
 
 # Wrapper function
-import inspect
+
 def cc_indicators(df, **kwargs):
     """
     Apply a list of climate change indicator functions to output DataFrame of MATILDA and concatenate
@@ -473,7 +475,7 @@ indicator_vars = {
  'melt_season_length': ('Length of Melting Season', 'd'),
  'actual_aridity': ('Relative Change of Actual Aridity', '%'),
  'potential_aridity': ('Relative Change of Potential Aridity', '%'),
- 'dry_spell_days': ('Total Length of Dry Spells per year', 'd/a'),
+ 'dry_spell_days': ('Total Length of Dry Spells', 'd/a'),
  'qlf_freq': ('Frequency of Low-flow events', 'yr^-1'),
  'qlf_dur': ('Mean Duration of Low-flow events', 'd'),
  'qhf_freq': ('Frequency of High-flow events', 'yr^-1'),
