@@ -27,7 +27,7 @@
 # 4. ... and store the calibrated parameter set for the scenario runs in the next notebook.
 #
 #
-# The framework for Modeling water resources in glacierized catchments [MATILDA] (https://github.com/cryotools/matilda) has been developed for use in this workflow and is published as a Python package. It is based on the widely used [HBV hydrological model](https://www.cabdirect.org/cabdirect/abstract/19961904773), extended by a simple temperature-index melt model based  on the code of [Seguinot (2019)](https://zenodo.org/record/3467639). Glacier evolution over time is modeled using a modified version of the &Delta;*h* approach following [Seibert et. al. (2018)](https://doi.org/10.5194/hess-22-2211-2018).
+# The framework for Modeling water resources in glacierized catchments [MATILDA] (https://github.com/cryotools/matilda) has been developed for use in this workflow and is published as a Python package. It is based on the widely used [HBV hydrological model](https://www.cabdirect.org/cabdirect/abstract/19961904773), complemented by a temperature-index glacier melt model based on the code of [Seguinot (2019)](https://zenodo.org/record/3467639). Glacier evolution over time is simulated using a modified version of the &Delta;*h* approach following [Seibert et. al. (2018)](https://doi.org/10.5194/hess-22-2211-2018).
 
 # %% [markdown]
 # As before we start by loading configurations such as the calibration period and some helper functions to work with  `yaml` files.
@@ -135,13 +135,15 @@ output_matilda = matilda_simulation(era5, obs, **settings)
 # Unfortunately, both default datasets are **limited to High Mountain Asia (HMA)**. For study sites in other areas, please consult other sources and manually add the target values for calibration in the appropriate code cells. We are happy to include additional datasets as long as they are available online and can be integrated into the workflow.
 #
 # <div class="alert alert-block alert-info">
-# <b>Note:</b> Statistical parameter optimization (SPOT) algorithms require a high number of model runs, especially for large parameter sets. Both <i>mybinder.org</i> and <i>Google Colab</i> offer a maximum of two cores per user. One MATILDA calibration run for 20 years takes roughly 3s on one core. Therefore, large optimization runs in an online environment will be slow and may require you to leave the respective browser tab in the foreground for hours. To speed things up, you can either...</div>
+# <b>Note:</b> Statistical parameter optimization (SPOT) algorithms require a high number of model runs, especially for large parameter sets. Both <i>mybinder.org</i> and <i>Google Colab</i> offer a maximum of two cores per user. One MATILDA calibration run for 20 years takes roughly 3s on one core. Therefore, large optimization runs in an online environment will be slow and may require you to leave the respective browser tab in the foreground for hours. To speed things up, you can either:
 #
-# ... run this notebook **locally on a computer with more cores** (ideally a high performance cluster) or ...
+# <div style="margin-left: 20px; margin-top: 12px;">
+#     ... run this notebook <b>locally on a computer with more cores</b> (ideally a high performance cluster) or <br>
+#     ... <b>reduce the number of calibration parameters</b> based on global sensitivity. We will return to this topic <a href="#Sensitivity-Analysis-with-FAST">later in this notebook</a>.
+# </div>
+# </div>
 #
-# ... **reduce the number of calibration parameters** based the global sensitivity. We will return to this topic later in this notebook.
-#
-# For now, we will demonstrate how to use the SPOT features and then continue with a parameter set from a large HPC optimization run. If you need help implementing the routine on your HPC, consult the [SPOTPY documentation](https://spotpy.readthedocs.io/en/latest/Advanced_hints/#mpi-parallel-computing) and [contact us](https://github.com/phiscu/matilda_edu/issues/new) if you encounter problems.
+# For now, we will demonstrate how to use the SPOT features and then **continue with a parameter set from a large HPC optimization run**. If you need help implementing the routine on your HPC, consult the [SPOTPY documentation](https://spotpy.readthedocs.io/en/latest/Advanced_hints/#mpi-parallel-computing) and [contact us](https://github.com/phiscu/matilda_edu/issues/new) if you encounter problems.
 
 # %% [markdown]
 # ### Glacier surface mass balance data
@@ -152,7 +154,7 @@ output_matilda = matilda_simulation(era5, obs, **settings)
 # <div class="alert alert-block alert-info">
 # <b>Note:</b> As all remote sensing estimates the used dataset has significant uncertainties. A comparison to other datasets and the impact on the modeling results are discussed in the associated publication. </div>
 #
-# We pick all individual mass balances that match the glacier IDs in our catchment and calculate the catchment-wide mean. In addition, we use the uncertainty estimate provided in the dataset to derive an uncertainty range.
+# We pick all individual mass balance records that match the glacier IDs in our catchment and calculate the catchment-wide mean. In addition, we use the uncertainty estimate provided in the dataset to derive an uncertainty range.
 
 # %%
 import pandas as pd
@@ -204,14 +206,14 @@ psample_settings = drop_keys(settings, ['warn', 'plots', 'plot_type'])
 
 additional_settings = {'rep': 10,                             # Number of model runs. For advice, check the documentation of the algorithms.
                        'glacier_only': False,                 # True when calibrating an entirely glacierized catchment
-                       'obj_dir': 'maximize',                 # should your objective function be maximized (e.g. NSE) or minimized (e.g. RMSE)
+                       'obj_dir': 'maximize',                 # Maximize (e.g. NSE) or minimize (e.g. RMSE) the objective function 
                        'target_mb': mean_mb,                  # Average annual glacier mass balance to target at
                        'target_swe': swe,                     # Catchment-wide mean SWE timeseries of seasonal snow to calibrate the snow routine
                        'swe_scaling': 0.928,                  # scaling factor for simulated SWE to account for reference area mismatch
-                       'dbformat': None,                      # Write the results to a file ('csv', 'hdf5', 'ram', 'sql')
+                       'dbformat': None,                      # Write the results to a file ('csv', 'hdf5', 'ram', 'sql') or not ('None')
                        'output': None,                        # Choose where to store the files
-                       'algorithm': 'lhs',                    # Choose algorithm (for parallelization: mc, lhs, fast, rope, sceua or demcz)
-                       'dbname': 'era5_matilda_example',      # Choose name
+                       'algorithm': 'lhs',                    # Select the algorithm (for parallelization: mc, lhs, fast, rope, sceua or demcz)
+                       'dbname': 'era5_matilda_example',      # Name the database
                        
                        'parallel': False,                     # Distribute the calculation on multiple cores or not
                       # 'cores': 20                           # Set number of cores when running in parallel
@@ -222,7 +224,7 @@ print('Settings for calibration runs:\n')
 for key in psample_settings.keys(): print(key + ': ' + str(psample_settings[key]))
 
 # %% [markdown]
-# With these settings we can start the `psample()` to run our model with various parameter combinations. The default parameter boundaries can be found in the MATILDA [parameter documentation](https://github.com/cryotools/matilda/tree/master?tab=readme-ov-file#parameter-list). If you want to narrow down the parameter space, you can do that using the following syntax. Here, we define custom ranges for the temperature lapse rate and the precipitation correction factor and run a short Latin Hypercube Sampling (LHS) as an example.
+# With these settings we can start `psample()` to run our model with various parameter combinations. The default parameter boundaries can be found in the MATILDA [parameter documentation](https://github.com/cryotools/matilda/tree/master?tab=readme-ov-file#parameter-list). If you want to narrow down the parameter space, you can do that using the following syntax. Here, we define custom ranges for the temperature lapse rate and the precipitation correction factor and run a short Latin Hypercube Sampling (LHS) for demonstration.
 
 # %% tags=["output_scroll"]
 from matilda.mspot_glacier import psample
@@ -232,13 +234,141 @@ lim_dict = {'lr_temp_lo': -0.007, 'lr_temp_up': -0.005, 'PCORR_lo': 0.5, 'PCORR_
 best_summary = psample(df=era5, obs=obs, **psample_settings, **lim_dict)
 
 # %% [markdown]
+# In this example the function ran the model 10 times with different parameter sets and returned the one with the highest KGE score. It can be accessed from the results dictionary.
+
+# %%
+best_parameterset = best_summary['best_param']
+# Rounding all values for readability
+rounded_parameters = {key: round(value, 3) for key, value in best_parameterset.items()}
+print(rounded_parameters)
+
+# %% [markdown]
+# Of course, to properly cover the full parameter space you would need way more repetitions. However, a high number of samples and a high KGE score don't necessarily give you the parameter set that describes the features of your catchment the best. To find the parameter combination most suitable to simulate the processes governing streamflow, we propose to calibrate MATILDA in several steps.
+
+# %% [markdown]
 # ## Process-based calibration
 
 # %% [markdown]
-# Every parameter governs a different aspect of the water balance, and not all parameters affect every calibration variable. Therefore, we propose an **iterative process-based calibration** approach where we calibrate parameters in order of their importance using different algorithms, objective functions, and calibration variables. Details on the calibration strategy can be found in the model publication which is currently under review. The individual steps will be implemented in the notebook soon.
+# Every parameter governs a different aspect of the water balance, and not all parameters affect every calibration variable. Therefore, we propose an **iterative process-based calibration** approach where we calibrate parameters in order of their importance using different algorithms, objective functions, and calibration variables. Details on the calibration strategy can be found in the model publication which is currently under review. Here, we only provide code examples with 10 samples per step for demonstration purposes. For ideal number of samples please refer to the associated publication.
 #
 # <img src="images/calibration_strategy.png" alt="calibration" width="300">
 #
+
+# %% [markdown]
+# ### Step 1: Input correction
+
+# %% [markdown]
+# Three HBV parameters correct for errors in the input precipitation, snowfall, and evaporation data. They have by far the largest impact on simulated runoff and must be corrected first. The correction factors are primarily designed to correct for observational errors, such as undercatch of solid precipitation. The best way to determine these parameters depends on your study site and available observations. In this example, we 'turn off' the correction factors for snowfall (`SFCF=0`) and evaporation (`CET=0`), leaving the input data unchanged, to focus on the model's internal sensitivities rather than the input data sets. However, the ERA5-Land dataset overestimates precipitation frequency and amounts in mountainous regions. A comparison of the monthly summer precipitation (Apr-Sep) with the in-situ observations from 2008 to 2017 showed that ERA5-Land overestimates the total precipitation in the example catchment by more than 100% (`108±62%`). Since the precipitation correction factor (`PCORR`) was identified as the most influential parameter, we cannot avoid to carefully calibrate it to obtain realistic runoff rates.
+#
+# To constrain `PCORR`, we split the remaining 19 parameters into two subsets: (1) parameters governing the water balance, and (2) those controlling runoff timing, with the latter set to default values. The results can then be filtered sequentially based on thresholds for $MAE_{smb}$, $KGE_{swe}$, and subsequently $KGE_{r}$. `PCORR` was set to the mean value of the posterior distribution for subsequent calibration steps.
+#
+# <div style="margin-left: 20px; margin-top: 12px;">
+#     (1) parameters governing the water balance, and<br>
+#     (2) those controlling runoff timing,
+# </div>
+
+# %% [markdown]
+# First, we edit the settings to write results to a `.csv` file and run random sampling for the parameter subset governing the runoff amount while fixing all other parameters.
+
+# %%
+# Edit the settings to write results in a .csv file
+psample_settings['dbformat'] = 'csv'
+psample_settings['output'] = dir_output
+psample_settings['dbname'] = 'calib_step1'
+
+# Run random sampling
+step1_summary = psample(
+            df=era5, obs=obs, **psample_settings,
+			fix_param=['SFCF', 'CET', 'FC', 'K0', 'K1', 'K2', 'MAXBAS', 'PERC', 'UZL', 'CWH', 'AG', 'LP', 'CFR'],    # fixed on defaults
+			fix_val={'SFCF': 1, 'CET': 0}                                                                            # fixed on specific values
+		       )
+
+# %% [markdown]
+# Next, we load the samples from the `.csv` file and can apply appropriate filters to the data.
+
+# %%
+step1_samples = pd.read_csv(f"{dir_output}calib_step1.csv")
+
+step1_samples = step1_samples.drop(['chain'], axis=1)
+step1_samples.columns = ['KGE_Runoff', 'MAE_SMB', 'KGE_SWE'] + list(step1_samples.columns[3:])
+step1_samples.columns = step1_samples.columns.str.replace('par', '')
+
+# Apply appropriate filters
+#step1_samples = step1_samples[step1_samples['KGE_Runoff'] > 0.5]
+#step1_samples = step1_samples[step1_samples['MAE_SMB'] < 100]
+#step1_samples = step1_samples[step1_samples['KGE_SWE'] > 0.8]
+
+print(step1_samples)
+
+# %% [markdown]
+# We then plot the posterior distributions for each parameter. *Note: For very few samples they are likely to look very similar.*
+
+# %%
+import matplotlib.pyplot as plt
+import seaborn as sns
+from matplotlib.ticker import FuncFormatter
+
+# Create a 2x4 matrix of subplots
+fig, axs = plt.subplots(2, 4, figsize=(15, 7))
+
+# Plot posterior distributions for each parameter in the matrix of subplots
+for i, parameter in enumerate(step1_samples.columns[3:]):  # Exclude the first two columns
+    row = i // 4
+    col = i % 4
+    sns.kdeplot(step1_samples[parameter], fill=True, ax=axs[row, col])
+    axs[row, col].set_xlabel(None)
+    axs[row, col].set_ylabel('Density')
+    axs[row, col].set_title(f'{parameter}', fontweight='bold', fontsize=14)
+    if parameter in [step1_samples.columns[3], step1_samples.columns[4]]:
+        def format_ticks(x, _):
+            return '{:.0f}e-4'.format(x * 10000)  # Adjust multiplier here for desired scientific notation
+        axs[row, col].xaxis.set_major_formatter(FuncFormatter(format_ticks))
+    # Add vertical lines for mean, mean ± standard deviation
+    mean_val = step1_samples[parameter].mean()
+    std_val = step1_samples[parameter].std()
+    axs[row, col].axvline(mean_val, color='red', linestyle='--', label='Mean')
+
+plt.tight_layout()
+plt.show()
+
+# %% [markdown]
+# Finally, we calculate the mean and standard deviation for each parameter and write the results to a table.
+
+# %%
+# Calculate mean and standard deviation for each column (excluding first two and last column)
+stats_dict = {}
+for col in step1_samples.columns[2:]:
+    mean = step1_samples[col].mean()
+    std = step1_samples[col].std()
+    stats_dict[col + "_mean"] = round(mean, 5)
+    stats_dict[col + "_stddev"] = round(std, 5)
+
+# Write to table
+table_step1_samples = []
+for col in step1_samples.columns[:]:
+    mean = step1_samples[col].mean()
+    std = step1_samples[col].std()
+    table_step1_samples.append([round(mean, 5), round(std, 5)])
+
+table_df = pd.DataFrame(table_step1_samples, columns=['Mean', 'Stdv'], index=step1_samples.columns)
+print(table_df)
+
+# %% [markdown]
+# With an appropriate number of samples, these values will give you a good idea of the parameter distribution. In our example study, we'll fix `PCORR` and few insensitive parameters (`lr_temp`, `lr_prec`, `RFS`; see the <a href="#Sensitivity-Analysis-with-FAST">Sensitivity Section</a> for details) on their mean values and use the standard deviation of the other parameters to define the bounds for subsequent calibration steps.
+
+# %% [markdown]
+# ### Step 2: Snow routine calibration
+
+# %%
+
+# %%
+best_summary = psample(
+                df=era5, obs=obs, **psample_settings,
+		        fix_param=['PCORR', 'SFCF', 'CET', 'lr_temp', 'lr_prec', 'K0', 'LP', 'MAXBAS', 'CFMAX_rel', 'RFS', 'FC', 'K1', 'K2', 'PERC', 'UZL', 'CWH', 'AG', 'BETA'],
+		        fix_val={'PCORR': 0.58, 'SFCF': 1, 'CET': 0, 'lr_temp': -0.0061, 'lr_prec': 0.0015, 'RFS': 0.15},
+		       )
+
+# %%
 
 # %% [markdown]
 # ## Run MATILDA with calibrated parameters
@@ -272,8 +402,6 @@ param = {
     'AG': 0.54930484
 }
 
-
-
 print('Calibrated parameter set:\n\n')
 for key in param.keys(): print(key + ': ' + str(param[key]))
 
@@ -297,7 +425,7 @@ output_matilda[10].show()
 
 
 # %% [markdown]
-# ## Reducing the parameter space - Sensitivity analysis with FAST
+# ## Sensitivity Analysis with FAST
 
 # %% [markdown]
 # To reduce the computation time of the calibration procedure, we need to reduce the number of parameters to be optimized. Therefore, we will perform a global sensitivity analysis to identify the most important parameters and set the others to default values. The algorithm of choice will be the [Fourier Amplitude Sensitivity Test (FAST)](https://www.tandfonline.com/doi/abs/10.1080/00401706.1999.10485594) available through the [SPOTPY](https://github.com/thouska/spotpy/blob/master/src/spotpy/algorithms/fast.py) library. As before, we will show the general procedure with a few iterations, but display results from extensive runs on a HPC. You can use the results as a guide for your parameter choices, but keep in mind that they are highly correlated with your catchment properties, such as elevation range and glacier coverage.
