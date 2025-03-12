@@ -126,9 +126,10 @@
 # %% [markdown]
 # 1. The first section ```[FILE_SETTINGS]``` allows you to **edit paths and file names for in- and outputs**. This can especially be useful if you model multiple catchments in the same copy of the repository.
 #
-# 2. In the ``[CONFIG]`` section you can ...
+# 2. In the ```[CONFIG]``` section you can ...
 #    - ... specify your **reference coordinates** (usually your gauging station location) and select the calibration period. The latter should cover your observation period plus a few years before as a spin-off.
 #    - ... change the **digital elevation model** used.
+#    - ... choose download option from GEE (direct download or via ```xarray```).
 #    - ... choose whether to create scenario-based **projections** or just model the past.
 #    - ... disable the generation of **live maps**.
 #    - ... configure the **style of output figures**. More information about the available styles can be found in the **[SciencePlots manual](https://github.com/garrettj403/SciencePlots/wiki/Gallery)**.
