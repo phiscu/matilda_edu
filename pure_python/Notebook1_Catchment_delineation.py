@@ -39,10 +39,10 @@ import ee
 
 # initialize GEE at the beginning of session
 try:
-    ee.Initialize()
+    ee.Initialize(project='matilda-edu')
 except Exception as e:
-    ee.Authenticate()         # authenticate when using GEE for the first time
-    ee.Initialize()
+    ee.Authenticate()  # authenticate when using GEE for the first time
+    ee.Initialize(project='matilda-edu')
 
 # %% [markdown]
 # Now we will read some settings from the `config.ini` file:
@@ -74,7 +74,7 @@ output_gpkg = output_folder + config['FILE_SETTINGS']['GPKG_NAME']
 # get used GEE DEM, coords and other settings
 dem_config = ast.literal_eval(config['CONFIG']['DEM'])
 y, x = ast.literal_eval(config['CONFIG']['COORDS'])
-show_map = config.getboolean('CONFIG','SHOW_MAP')
+show_map = config.getboolean('CONFIG', 'SHOW_MAP')
 
 # get style for matplotlib plots
 plt_style = ast.literal_eval(config['CONFIG']['PLOT_STYLE'])
@@ -109,11 +109,11 @@ elif dem_config[0] == 'ImageCollection':
     image = ee.ImageCollection(dem_config[1]).select(dem_config[2]).mosaic()
 
 if show_map:
-    srtm_vis = { 'bands': dem_config[2],
-                 'min': 0,
-                 'max': 6000,
-                'palette': ['000000', '478FCD', '86C58E', 'AFC35E', '8F7131','B78D4F', 'E2B8A6', 'FFFFFF']
-               }
+    srtm_vis = {'bands': dem_config[2],
+                'min': 0,
+                'max': 6000,
+                'palette': ['000000', '478FCD', '86C58E', 'AFC35E', '8F7131', 'B78D4F', 'E2B8A6', 'FFFFFF']
+                }
 
     Map.addLayer(image, srtm_vis, dem_config[3], True, 0.7)
 
@@ -124,12 +124,12 @@ if show_map:
 #     <b>Note:</b> Please check whether the default box covers your research area. Alternatively, you can adjust the box manually. <b>The catchment area will be cropped if the selected box is too small.</b></div>
 
 # %%
-point = ee.Geometry.Point(x,y)
+point = ee.Geometry.Point(x, y)
 box = point.buffer(40000).bounds()
 
 if show_map:
-    Map.addLayer(point,{'color': 'blue'},'Discharge Point')
-    Map.addLayer(box,{'color': 'grey'},'Catchment Area', True, 0.7)
+    Map.addLayer(point, {'color': 'blue'}, 'Discharge Point')
+    Map.addLayer(box, {'color': 'grey'}, 'Catchment Area', True, 0.7)
     Map.centerObject(box, zoom=9)
 
 # %% [markdown]
@@ -149,10 +149,38 @@ if show_map:
             print("Manually drawn box will be considered")
 
 # %% [markdown]
-# Now we can export the DEM as a `.tif` file for the selected extent to the output folder. Unfortunately there is a file size limit for GEE downloads. If your selected box is too big, please adjust the extent and try again.
+# Now we can export the DEM as a `.tif` file for the selected extent to the output folder. Depending on the size of the selected area, this might take a while for processing and downloading.
 
 # %%
-geemap.ee_export_image(image, filename=filename, scale=30, region=box, file_per_band=False)
+import xarray as xr
+
+download_xr = config.getboolean('CONFIG', 'GEE_DOWNLOAD_XR')
+
+if download_xr:
+    # new method using Xarray (supports larger areas)
+    try:
+        print('Get GEE data as Xarray...')
+        ic = ee.ImageCollection(image)
+        ds = xr.open_dataset(
+            ic,
+            engine='ee',
+            projection=ic.first().select(0).projection(),
+            geometry=box
+        )
+
+        print('Prepare Xarray for GeoTiff conversion...')
+        ds_t = ds.isel(time=0).drop_vars("time").transpose()
+        ds_t.rio.set_spatial_dims("lon", "lat", inplace=True)
+
+        print('Save DEM as GeoTiff...')
+        ds_t.rio.to_raster(filename)
+        print('DEM successfully saved at', filename)
+    except:
+        print('Error during Xarray routine. Try direct download from GEE...')
+        geemap.ee_export_image(image, filename=filename, scale=30, region=box, file_per_band=False)
+else:
+    # old method using GEE API to download .tif directly
+    geemap.ee_export_image(image, filename=filename, scale=30, region=box, file_per_band=False)
 
 # %% [markdown]
 # ## Catchment deliniation
@@ -189,12 +217,12 @@ print("Resolve flats in DEM...")
 inflated_dem = grid.resolve_flats(flooded_dem)
 
 # Specify directional mapping
-#N    NE    E    SE    S    SW    W    NW
+# N    NE    E    SE    S    SW    W    NW
 dirmap = (64, 128, 1, 2, 4, 8, 16, 32)
 # Compute flow directions
 print("Compute flow directions...")
 fdir = grid.flowdir(inflated_dem, dirmap=dirmap)
-#catch = grid.catchment(x=x, y=y, fdir=fdir, dirmap=dirmap, xytype='coordinate')
+# catch = grid.catchment(x=x, y=y, fdir=fdir, dirmap=dirmap, xytype='coordinate')
 # Compute accumulation
 print("Compute accumulation...")
 acc = grid.accumulation(fdir)
@@ -209,20 +237,22 @@ grid.clip_to(catch)
 clipped_catch = grid.view(catch)
 print("Processing completed.")
 
+
 # %% [markdown]
 # Now let's have a look at the catchment area.
 
 # %%
-#Define a function to plot the digital elevation model
+# Define a function to plot the digital elevation model
 def plotFigure(data, label, cmap='Blues'):
-    plt.figure(figsize=(12,10))
+    plt.figure(figsize=(12, 10))
     plt.imshow(data, extent=grid.extent, cmap=cmap)
     plt.colorbar(label=label)
     plt.grid()
 
+
 demView = grid.view(dem, nodata=np.nan)
-plotFigure(demView,'Elevation in Meters',cmap='terrain')
-plt.savefig(figures_folder+'NB1_DEM_Catchment.png')
+plotFigure(demView, 'Elevation in Meters', cmap='terrain')
+plt.savefig(figures_folder + 'NB1_DEM_Catchment.png')
 plt.show()
 
 # %% [markdown]
@@ -244,7 +274,7 @@ schema = {
 catchment_shape = {}
 layer_name = 'catchment_orig'
 with fiona.open(output_gpkg, 'w',
-                #driver='ESRI Shapefile',#
+                # driver='ESRI Shapefile',#
                 driver='GPKG',
                 layer=layer_name,
                 crs=grid.crs.srs,
@@ -254,14 +284,14 @@ with fiona.open(output_gpkg, 'w',
         catchment_shape = shape
         rec = {}
         rec['geometry'] = shape
-        rec['properties'] = {'LABEL' : str(value)}
+        rec['properties'] = {'LABEL': str(value)}
         rec['id'] = str(i)
         c.write(rec)
-        i += 1 
+        i += 1
 
 print(f"Layer '{layer_name}' added to GeoPackage '{output_gpkg}'\n")
-        
-catchment_bounds = [int(np.nanmin(demView)),int(np.nanmax(demView))]
+
+catchment_bounds = [int(np.nanmin(demView)), int(np.nanmax(demView))]
 ele_cat = float(np.nanmean(demView))
 print(f"Catchment elevation ranges from {catchment_bounds[0]} m to {catchment_bounds[1]} m.a.s.l.")
 print(f"Mean catchment elevation is {ele_cat:.2f} m.a.s.l.")
@@ -274,7 +304,7 @@ catchment = ee.Geometry.Polygon(catchment_shape['coordinates'])
 if show_map:
     Map.addLayer(catchment, {}, 'Catchment')
 
-catchment_area = catchment.area().divide(1000*1000).getInfo()
+catchment_area = catchment.area().divide(1000 * 1000).getInfo()
 print(f"Catchment area is {catchment_area:.2f} km²")
 
 # %% [markdown]
@@ -302,9 +332,9 @@ print(f"Catchment area is {catchment_area:.2f} km²")
 # > Source: https://www.glims.org/RGI/
 
 # %% [markdown]
-# The RGI dataset is divided into 19 so called *first-order regions*. 
+# The RGI dataset is divided into 19 so called *first-order regions*.
 #
-# > RGI regions were developed under only three constraints: that they should resemble commonly recognized glacier domains, that together they should contain all of the world’s glaciers, and that their boundaries should be simple and readily recognizable on a map of the world. 
+# > RGI regions were developed under only three constraints: that they should resemble commonly recognized glacier domains, that together they should contain all of the world’s glaciers, and that their boundaries should be simple and readily recognizable on a map of the world.
 # >
 # > Source: [Pfeffer et.al. 2014](https://doi.org/10.3189/2014jog13j176)
 #
@@ -334,13 +364,13 @@ utm_zone = utm.from_latlon(y, x)
 print(f"UTM zone '{utm_zone[2]}', band '{utm_zone[3]}'")
 
 # get CRS based on UTM
-crs = CRS.from_dict({'proj':'utm', 'zone':utm_zone[2], 'south':False})
+crs = CRS.from_dict({'proj': 'utm', 'zone': utm_zone[2], 'south': False})
 
 catchment_area = catchment.to_crs(crs).area[0] / 1000 / 1000
 print(f"Catchment area (projected) is {catchment_area:.2f} km²")
 
 # %% [markdown]
-# Now we can perform a spatial join between the catchment outline and the RGI regions. If the catchment contains any glaciers, the corresponding RGI region is determined in this step. 
+# Now we can perform a spatial join between the catchment outline and the RGI regions. If the catchment contains any glaciers, the corresponding RGI region is determined in this step.
 
 # %%
 df_regions = df_regions.set_crs('EPSG:4326', allow_override=True)
@@ -363,7 +393,7 @@ else:
 #
 # <div class="alert alert-block alert-info">
 # <b>Note:</b>
-#  Depending on the region and bandwidth, this might take 1 min or longer.</div> 
+#  Depending on the region and bandwidth, this might take 1 min or longer.</div>
 
 # %%
 # %%time
@@ -382,7 +412,6 @@ if rgi_region != None:
     pattern = re.compile(r'href="([^"]+\.zip)"')
     file_links = pattern.findall(html_content)
 
-
     for file in file_links:
         splits = file.split("_")
         if splits[0] != str(rgi_region):
@@ -394,7 +423,7 @@ if rgi_region != None:
 
         # read zip into dataframe
         print('Loading shapefiles...')
-        path = f"simplecache::{url+file}"
+        path = f"simplecache::{url + file}"
         print('Path:', path)
         with fsspec.open(path) as file:
             rgi = gpd.read_file(file)
@@ -405,7 +434,7 @@ if rgi_region != None:
 
         # check whether catchment intersects with glaciers of region
         print('Perform spatial join...')
-        rgi_catchment = gpd.sjoin(rgi,catchment,how='inner',predicate='intersects')
+        rgi_catchment = gpd.sjoin(rgi, catchment, how='inner', predicate='intersects')
         if len(rgi_catchment.index) > 0:
             print(f'{len(rgi_catchment.index)} outlines loaded from RGI Region {regionname}\n')
 
@@ -415,7 +444,7 @@ if rgi_region != None:
 # %% tags=["output_scroll"]
 # intersects selects too many. calculate percentage of glacier area that is within catchment
 rgi_catchment['rgi_area'] = rgi_catchment.to_crs(crs).area
-    
+
 gdf_joined = gpd.overlay(catchment, rgi_catchment, how='union')
 gdf_joined['area_joined'] = gdf_joined.to_crs(crs).area
 gdf_joined['share_of_area'] = (gdf_joined['area_joined'] / gdf_joined['rgi_area'] * 100)
@@ -424,7 +453,7 @@ results = (gdf_joined
            .groupby(['RGIId', 'LABEL_1'])
            .agg({'share_of_area': 'sum'}))
 
-display(results.sort_values(['share_of_area'],ascending=False))
+display(results.sort_values(['share_of_area'], ascending=False))
 
 # %% [markdown]
 # Now we can **filter** based on the percentage of shared area. After that the catchment area will be adjusted as follows:
@@ -449,6 +478,7 @@ print(f'Number of excluded glacier outlines (overlap < 50%): {len(rgi_out_catchm
 
 # %% tags=["output_scroll"]
 from pathlib import Path
+
 Path(output_folder + 'RGI').mkdir(parents=True, exist_ok=True)
 
 glacier_ids = pd.DataFrame(rgi_in_catchment)
@@ -463,8 +493,8 @@ display(glacier_ids)
 catchment_new['area'] = catchment_new.to_crs(crs)['geometry'].area
 area_glac = rgi_in_catchment.to_crs(crs)['geometry'].area
 
-area_glac = area_glac.sum()/1000000
-area_cat = catchment_new.iloc[0]['area']/1000000
+area_glac = area_glac.sum() / 1000000
+area_cat = catchment_new.iloc[0]['area'] / 1000000
 cat_cent = catchment_new.to_crs(crs).centroid
 lat = cat_cent.to_crs('EPSG:4326').y[0]
 
@@ -504,11 +534,11 @@ if show_map:
 
 # %%
 fig, ax = plt.subplots()
-catchment_new.plot(color='tan',ax=ax)
-rgi_in_catchment.plot(color="white",edgecolor="black",ax=ax)
+catchment_new.plot(color='tan', ax=ax)
+rgi_in_catchment.plot(color="white", edgecolor="black", ax=ax)
 plt.scatter(x, y, facecolor='blue', s=100)
 plt.title("Catchment Area with Pouring Point and Glaciers")
-plt.savefig(figures_folder+'NB1_Glaciers_Catchment.png')
+plt.savefig(figures_folder + 'NB1_Glaciers_Catchment.png')
 plt.show()
 
 # %% [markdown]
@@ -516,7 +546,7 @@ plt.show()
 
 # %%
 ele_cat = image.reduceRegion(ee.Reducer.mean(),
-                          geometry=c_new).getInfo()[dem_config[2]] 
+                             geometry=c_new).getInfo()[dem_config[2]]
 print(f"Mean catchment elevation (adjusted) is {ele_cat:.2f} m a.s.l.")
 
 
@@ -544,9 +574,9 @@ print(f"Mean catchment elevation (adjusted) is {ele_cat:.2f} m a.s.l.")
 # The published repository contains...
 #
 # > (a) the **ice thickness distribution** of individual glaciers,<br/>
-# > (b) global grids at various resolutions with **summary-information about glacier number, area, and volume**, and<br/> 
+# > (b) global grids at various resolutions with **summary-information about glacier number, area, and volume**, and<br/>
 # > (c) the **digital elevation models** of the glacier surfaces used to produce the estimates.
-# > 
+# >
 # > Nomenclature for glaciers and regions follows the Randolph Glacier Inventory (RGI) version 6.0.
 # >
 # > Source: Farinotti et.al. 2019 - [README](https://www.research-collection.ethz.ch/bitstream/handle/20.500.11850/315707/README.txt)
@@ -564,7 +594,7 @@ def getArchiveNames(row):
     return f'ice_thickness_{region}_{id}', f'dem_surface_DEM_{region}_{id}'
 
 
-# determine relevant .zip files for derived RGI IDs 
+# determine relevant .zip files for derived RGI IDs
 df_rgiids = pd.DataFrame(rgi_in_catchment['RGIId'].sort_values())
 df_rgiids[['thickness', 'dem']] = df_rgiids.apply(getArchiveNames, axis=1, result_type='expand')
 zips_thickness = df_rgiids['thickness'].drop_duplicates()
@@ -579,7 +609,7 @@ print(f'DEM archives:\t\t{zips_dem.tolist()}')
 # %%
 from resourcespace import ResourceSpace
 
-# use guest credentials to access media server 
+# use guest credentials to access media server
 api_base_url = config['MEDIA_SERVER']['api_base_url']
 private_key = config['MEDIA_SERVER']['private_key']
 user = config['MEDIA_SERVER']['user']
@@ -587,10 +617,11 @@ user = config['MEDIA_SERVER']['user']
 myrepository = ResourceSpace(api_base_url, user, private_key)
 
 # get resource IDs for each .zip file
-refs_thickness = pd.DataFrame(myrepository.get_collection_resources(12))[['ref', 'file_size', 'file_extension', 'field8']]
+refs_thickness = pd.DataFrame(myrepository.get_collection_resources(12))[
+    ['ref', 'file_size', 'file_extension', 'field8']]
 refs_dem = pd.DataFrame(myrepository.get_collection_resources(21))[['ref', 'file_size', 'file_extension', 'field8']]
 
-# reduce list of resources two required zip files 
+# reduce list of resources two required zip files
 refs_thickness = pd.merge(zips_thickness, refs_thickness, left_on='thickness', right_on='field8')
 refs_dem = pd.merge(zips_dem, refs_dem, left_on='dem', right_on='field8')
 
@@ -612,7 +643,7 @@ import io
 cnt_thickness = 0
 file_names_thickness = []
 for idx, row in refs_thickness.iterrows():
-    content = myrepository.get_resource_file(row['ref'], row['file_extension'])    
+    content = myrepository.get_resource_file(row['ref'], row['file_extension'])
     with ZipFile(io.BytesIO(content), 'r') as zipObj:
         # Get a list of all archived file names from the zip
         listOfFileNames = zipObj.namelist()
@@ -620,11 +651,11 @@ for idx, row in refs_thickness.iterrows():
             filename = rgiid + '_thickness.tif'
             if filename in listOfFileNames:
                 cnt_thickness += 1
-                zipObj.extract(filename, output_folder+'RGI')
+                zipObj.extract(filename, output_folder + 'RGI')
                 file_names_thickness.append(filename)
             else:
                 print(f'File not found: {filename}')
-                
+
 print(f'{cnt_thickness} files have been extracted (ice thickness)')
 
 # %% [markdown]
@@ -635,20 +666,20 @@ print(f'{cnt_thickness} files have been extracted (ice thickness)')
 
 cnt_dem = 0
 file_names_dem = []
-for idx,row in refs_dem.iterrows():   
-    content = myrepository.get_resource_file(row['ref'])    
+for idx, row in refs_dem.iterrows():
+    content = myrepository.get_resource_file(row['ref'])
     with ZipFile(io.BytesIO(content), 'r') as zipObj:
         # Get a list of all archived file names from the zip
         listOfFileNames = zipObj.namelist()
-        for rgiid in df_rgiids.loc[df_rgiids['dem']==row['field8']]['RGIId']:
+        for rgiid in df_rgiids.loc[df_rgiids['dem'] == row['field8']]['RGIId']:
             filename = f"surface_DEM_{rgiid}.tif"
             if filename in listOfFileNames:
                 cnt_dem += 1
-                zipObj.extract(filename, output_folder+'RGI')
+                zipObj.extract(filename, output_folder + 'RGI')
                 file_names_dem.append(filename)
             else:
                 print(f'File not found: {filename}')
-                
+
 print(f'{cnt_dem} files have been extracted (DEM)')
 
 # %% [markdown]
@@ -690,13 +721,13 @@ else:
             # Read arrays
             for file in file_list:
                 src = gdal.Open(file)
-                geotransform = src.GetGeoTransform() # Could be done more elegantly outside the for loop
+                geotransform = src.GetGeoTransform()  # Could be done more elegantly outside the for loop
                 projection = src.GetProjectionRef()
                 array_list.append(src.ReadAsArray())
                 pixelSizeX = geotransform[1]
-                pixelSizeY =-geotransform[5]                
+                pixelSizeY = -geotransform[5]
                 src = None
-            
+
             df = pd.DataFrame()
             df['thickness'] = array_list[0].flatten()
             df['altitude'] = array_list[1].flatten()
@@ -716,27 +747,27 @@ print("Value pairs created")
 # %%
 if len(df_all) > 0:
     df_all = df_all.loc[df_all['thickness'] > 0]
-    df_all.sort_values(by=['altitude'],inplace=True)
-    
+    df_all.sort_values(by=['altitude'], inplace=True)
+
     # get min/max altitude considering catchment and all glaciers
-    alt_min = 10*int(min(catchment_bounds[0],df_all['altitude'].min())/10)
-    alt_max = max(catchment_bounds[1],df_all['altitude'].max())+10
-        
+    alt_min = 10 * int(min(catchment_bounds[0], df_all['altitude'].min()) / 10)
+    alt_max = max(catchment_bounds[1], df_all['altitude'].max()) + 10
+
     # create bins in 10m steps
-    bins = np.arange(alt_min, df_all['altitude'].max()+10, 10)
-    
+    bins = np.arange(alt_min, df_all['altitude'].max() + 10, 10)
+
     # aggregate per bin and do some math
     df_agg = df_all.groupby(pd.cut(df_all['altitude'], bins))['thickness'].agg(count='size', mean='mean').reset_index()
     df_agg['Elevation'] = df_agg['altitude'].apply(lambda x: x.left).astype(int)
-    df_agg['Area'] = df_agg['count']*pixelSizeX*pixelSizeY / catchment_new.iloc[0]['area']
-    df_agg['WE'] = df_agg['mean']*0.908*1000
-    df_agg['EleZone'] = df_agg['Elevation'].apply(lambda x: 100*int(x/100))
-    
+    df_agg['Area'] = df_agg['count'] * pixelSizeX * pixelSizeY / catchment_new.iloc[0]['area']
+    df_agg['WE'] = df_agg['mean'] * 0.908 * 1000
+    df_agg['EleZone'] = df_agg['Elevation'].apply(lambda x: 100 * int(x / 100))
+
     # delete empty elevation bands but keep at least one entry per elevation zone
-    df_agg=pd.concat([df_agg.loc[df_agg['count']>0],
-                      df_agg.loc[df_agg['count']==0].drop_duplicates(['EleZone'],keep='first')]
-                    ).sort_index()
-    
+    df_agg = pd.concat([df_agg.loc[df_agg['count'] > 0],
+                        df_agg.loc[df_agg['count'] == 0].drop_duplicates(['EleZone'], keep='first')]
+                       ).sort_index()
+
     df_agg.drop(['altitude', 'count', 'mean'], axis=1, inplace=True)
     df_agg = df_agg.replace(np.nan, 0)
     df_agg.to_csv(output_folder + 'glacier_profile.csv', header=True, index=False)
@@ -753,14 +784,14 @@ steps = 20
 # get elevation range where glaciers are present
 we_range = df_agg.loc[df_agg['WE'] > 0]['Elevation']
 we_range.min() // steps * steps
-plt_zones = pd.Series(range(int(we_range.min() // steps * steps), 
-                            int(we_range.max() // steps * steps + steps), 
+plt_zones = pd.Series(range(int(we_range.min() // steps * steps),
+                            int(we_range.max() // steps * steps + steps),
                             steps), name='EleZone').to_frame().set_index('EleZone')
 
 # calculate glacier mass and aggregate glacier profile to defined elevation steps
 plt_data = df_agg.copy()
 plt_data['EleZone'] = plt_data['Elevation'].apply(lambda x: int(x // steps * steps))
-plt_data['Mass'] = plt_data['Area'] * catchment_new.iloc[0]['area'] * plt_data['WE'] * 1e-9 # mass in Mt
+plt_data['Mass'] = plt_data['Area'] * catchment_new.iloc[0]['area'] * plt_data['WE'] * 1e-9  # mass in Mt
 plt_data = plt_data.drop(['Area', 'WE'], axis=1).groupby('EleZone').sum().reset_index().set_index('EleZone')
 plt_data = plt_zones.join(plt_data)
 display(plt_data)
@@ -771,15 +802,15 @@ display(plt_data)
 # %%
 import matplotlib.ticker as ticker
 
-fig, ax = plt.subplots(figsize=(4,5))
+fig, ax = plt.subplots(figsize=(4, 5))
 plt_data.plot.barh(y='Mass', ax=ax)
 ax.set_xlabel("Glacier mass [Mt]")
-ax.set_yticks(ax.get_yticks()[::int(100/steps)])
+ax.set_yticks(ax.get_yticks()[::int(100 / steps)])
 ax.set_ylabel("Elevation zone [m a.s.l.]")
 ax.get_legend().remove()
 plt.title("Initial Ice Distribution")
 plt.tight_layout()
-plt.savefig(figures_folder+'NB1_Glacier_Mass_Elevation.png')
+plt.savefig(figures_folder + 'NB1_Glacier_Mass_Elevation.png')
 plt.show()
 
 # %% [markdown]
@@ -809,12 +840,12 @@ settings = {'area_cat': float(area_cat),
             'area_glac': float(area_glac),
             'ele_glac': float(ele_glac),
             'lat': float(lat)
-           }
+            }
 with open(output_folder + 'settings.yml', 'w') as f:
     yaml.safe_dump(settings, f)
 
 print('Settings saved to file.')
-display(pd.DataFrame(settings.items(),columns=['Parameter','Value']).set_index('Parameter'))
+display(pd.DataFrame(settings.items(), columns=['Parameter', 'Value']).set_index('Parameter'))
 
 # %% [markdown]
 # You can now continue with [Notebook 2](Notebook2_Forcing_data.ipynb) or ...
@@ -834,7 +865,5 @@ import shutil
 shutil.make_archive('output_download', 'zip', 'output')
 print('Output folder can be download now (file output_download.zip)')
 
-
 # %%
 # %reset -f
-
