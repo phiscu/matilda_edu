@@ -204,7 +204,7 @@ from tools.helpers import drop_keys
 
 psample_settings = drop_keys(settings, ['warn', 'plots', 'plot_type'])
 
-additional_settings = {'rep': 10,                             # Number of model runs. For advice, check the documentation of the algorithms.
+additional_settings = {'rep': 5,                             # Number of model runs. For advice, check the documentation of the algorithms.
                        'glacier_only': False,                 # True when calibrating an entirely glacierized catchment
                        'obj_dir': 'maximize',                 # Maximize (e.g. NSE) or minimize (e.g. RMSE) the objective function 
                        'target_mb': mean_mb,                  # Average annual glacier mass balance to target at
@@ -296,7 +296,7 @@ step1_samples.columns = step1_samples.columns.str.replace('par', '')
 # Apply appropriate filters
 #step1_samples = step1_samples[step1_samples['KGE_Runoff'] > 0.5]
 #step1_samples = step1_samples[step1_samples['MAE_SMB'] < 100]
-#step1_samples = step1_samples[step1_samples['KGE_SWE'] > 0.8]
+#step1_samples = step1_samples[step1_samples['KGE_SWE'] > 0.7]
 
 print(step1_samples)
 
@@ -335,7 +335,7 @@ plt.show()
 # Finally, we calculate the mean and standard deviation for each parameter and write the results to a table.
 
 # %%
-# Calculate mean and standard deviation for each column (excluding first two and last column)
+# Calculate mean and standard deviation for each column
 stats_dict = {}
 for col in step1_samples.columns[2:]:
     mean = step1_samples[col].mean()
@@ -351,30 +351,249 @@ for col in step1_samples.columns[:]:
     table_step1_samples.append([round(mean, 5), round(std, 5)])
 
 table_df = pd.DataFrame(table_step1_samples, columns=['Mean', 'Stdv'], index=step1_samples.columns)
-print(table_df)
+print(table_df[3:])
 
 # %% [markdown]
-# With an appropriate number of samples, these values will give you a good idea of the parameter distribution. In our example study, we'll fix `PCORR` and few insensitive parameters (`lr_temp`, `lr_prec`, `RFS`; see the <a href="#Sensitivity-Analysis-with-FAST">Sensitivity Section</a> for details) on their mean values and use the standard deviation of the other parameters to define the bounds for subsequent calibration steps.
+# With an appropriate number of samples, these values will give you a good idea of the parameter distribution. In our example study, we'll fix `PCORR` and few insensitive parameters (`lr_temp`, `lr_prec`; see the <a href="#Sensitivity-Analysis-with-FAST">Sensitivity Section</a> for details) on their mean values and use the standard deviation of the other parameters to define the bounds for subsequent calibration steps. The insensitive refreezing parameter `CFR` is fixed on it's default value (0.15).
 
 # %% [markdown]
 # ### Step 2: Snow routine calibration
 
-# %%
+# %% [markdown]
+# Three of the remaining parameters control the snow routine: `TT_snow`, `TT_diff`, and `CFMAX_snow`. These parameters affect how snow accumulation and melting are simulated, making them critical for high mountain catchments. We repeat the procedure of step 1, but additionally fix all previously calibrated parameters. The results can then be filtered based on **$KGE_{swe}$**. As before, the selected snow routine parameters are set to the mean of the posterior distribution for use in subsequent calibration steps.
 
 # %%
-best_summary = psample(
+import os
+print(os.getcwd())
+
+# %%
+# New database name
+psample_settings['dbname'] = 'calib_step2'
+
+# Running LHS with only three open parameters
+step1_summary = psample(
                 df=era5, obs=obs, **psample_settings,
-		        fix_param=['PCORR', 'SFCF', 'CET', 'lr_temp', 'lr_prec', 'K0', 'LP', 'MAXBAS', 'CFMAX_rel', 'RFS', 'FC', 'K1', 'K2', 'PERC', 'UZL', 'CWH', 'AG', 'BETA'],
-		        fix_val={'PCORR': 0.58, 'SFCF': 1, 'CET': 0, 'lr_temp': -0.0061, 'lr_prec': 0.0015, 'RFS': 0.15},
+		        fix_param=['PCORR', 'SFCF', 'CET', 'lr_temp', 'lr_prec', 'K0', 'LP', 'MAXBAS', 'CFMAX_rel', 'CFR', 'FC', 'K1', 'K2', 'PERC', 'UZL', 'CWH', 'AG', 'BETA'],
+		        fix_val={'PCORR': 0.58, 'SFCF': 1, 'CET': 0, 'lr_temp': -0.0061, 'lr_prec': 0.0015, 'CFR': 0.15},
 		       )
 
+# Reading the samples from file
+step2_samples = pd.read_csv(f"{dir_output}calib_step2.csv")
+step2_samples = step2_samples.drop(['chain'], axis=1)
+step2_samples.columns = ['KGE_Runoff', 'MAE_SMB', 'KGE_SWE'] + list(step2_samples.columns[3:])
+step2_samples.columns = step2_samples.columns.str.replace('par', '')
+
+# Apply appropriate filters
+#step2_samples = step2_samples[step2_samples['KGE_SWE'] > 0.8]
+
+# Create a 1x3 matrix of subplots
+fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+# Plot posterior distributions for each parameter in the matrix of subplots
+for i, parameter in enumerate(step2_samples.columns[3:6]):  # Exclude the first two columns
+    sns.kdeplot(step2_samples[parameter], shade=True, ax=axs[i])
+    axs[i].set_xlabel(None)
+    axs[i].set_ylabel('Density')
+    axs[i].set_title(f'{parameter}', fontweight='bold', fontsize=14)
+    # Add vertical lines for mean, mean ± standard deviation
+    mean_val = step2_samples[parameter].mean()
+    std_val = step2_samples[parameter].std()
+    axs[i].axvline(mean_val, color='red', linestyle='--', label='Mean')
+    axs[i].axvline(mean_val - std_val, color='blue', linestyle='--', label='Mean - SD')
+    axs[i].axvline(mean_val + std_val, color='blue', linestyle='--', label='Mean + SD')
+plt.tight_layout()
+plt.show()
+
+# Calculate mean and standard deviation for each parameter
+stats_dict = {}
+for col in step2_samples.columns[2:]:
+    mean = step2_samples[col].mean()
+    std = step2_samples[col].std()
+    stats_dict[col + "_mean"] = round(mean, 5)
+    stats_dict[col + "_stddev"] = round(std, 5)
+
+# Write to table
+table_step2_samples = []
+for col in step2_samples.columns[:]:
+    mean = step2_samples[col].mean()
+    std = step2_samples[col].std()
+    table_step2_samples.append([round(mean, 5), round(std, 5)])
+
+table_df = pd.DataFrame(table_step2_samples, columns=['Mean', 'Stdv'], index=step2_samples.columns)
+
+# Show calibrated values
+print('\nCalibrated values:')
+print(table_df[3:])
+
+# %% [markdown]
+# ### Step 3: Glacier routine calibration
+#
+
+# %% [markdown]
+# Since we already calibrated the snow routine, there is only one parameter left that controls glacier evolution: the ice melt rate `CFMAX_ice`. Since the melt rate for ice is higher than the one for snow due to differences in albedo, the parameter is calculated from the snow melt rate using a factor `CFMAX_rel`. We will therefore calibrate this factor instead of `CFMAX_ice` directly.
+#
+# As before, we draw stratified random samples using the LHS algorithm and filter for a mean absolute error ($\text{MAE}$) threshold around the target SMB. To account for the large uncertainties in the remote sensing estimates for the SMB, we don't fix the ice melt rate but constrain it to a range that lies with the uncertainty band of the dataset.
+
 # %%
+import os
+print(os.getcwd())
+
+# %%
+# New database name
+psample_settings['dbname'] = 'calib_step3'
+
+# Running LHS with only one open parameter
+step3_summary = psample(
+                        df=era5, obs=obs, **psample_settings,
+                        fix_param=['PCORR', 'SFCF', 'CET', 'lr_temp', 'lr_prec', 'K0', 'LP', 'MAXBAS', 'CFR', 'FC', 'K1', 'K2', 'PERC', 'UZL', 'CWH', 'AG', 'BETA', 'TT_snow', 'TT_diff', 'CFMAX_snow'],
+                        fix_val={'PCORR': 0.58, 'SFCF': 1, 'CET': 0, 'lr_temp': -0.0061, 'lr_prec': 0.0015, 'CFR': 0.15, 'TT_snow': -1.45, 'TT_diff': 0.76, 'CFMAX_snow': 3.37}
+)
+
+# Reading the samples from file
+step3_samples = pd.read_csv(f"{dir_output}calib_step3.csv")
+step3_samples = step3_samples.drop(['chain'], axis=1)
+step3_samples.columns = ['KGE_Runoff', 'MAE_SMB', 'KGE_SWE'] + list(step3_samples.columns[3:])
+step3_samples.columns = step3_samples.columns.str.replace('par', '')
+
+# Apply appropriate filters
+#step3_samples = step3_samples[step3_samples['MAE_SMB'] < 100
+
+# Use the range of values that meet the target SMB range as bound for the next calibration steps
+print('\nCalibrated values:')
+print(f"CFMAX_rel lower bound: {step3_samples['CFMAX_rel'].min()}\nCFMAX_rel upper bound: {step3_samples['CFMAX_rel'].max()}")
+
+# %% [markdown]
+# ### Step 4: Soil and routing routine calibration
+#
+
+# %% [markdown]
+# In the last step we calibrate the remaining 11 parameters controlling the soil, response, and routing routines all at once. Since this leads to a large parameter space, we apply the Differential Evolution Markov Chain algorithm (DEMCz) algorithm. This technique is more efficient at finding global optima than other Monte Carlo Markov Chain (MCMC) algorithms and does not require prior distribution information.
+#
+# However, the algorithm is sensitive to informal likelihood functions such as the $\text{KGE}$. To mitigate this problem, we use an adapted version based on the gamma-distribution (`loglike_kge`).
+
+# %%
+from matilda.mspot_glacier import loglike_kge
+
+# New database name
+psample_settings['dbname'] = 'calib_step4'
+
+# Change algorithm
+psample_settings['algorithm'] = 'demcz'
+
+# The algorithm needs a minimum sample size to run through
+psample_settings['rep'] = 30
+
+# Running DEMCz with 11 open parameters
+step4_summary = psample(
+                df=era5, obs=obs, **psample_settings,
+                # obj_func=loglike_kge,
+                # Optional arguments specific to the algorithm. Use for large sample sizes only!
+#		        demcz_args={'burnIn': 500, 'thin': 1, 'convergenceCriteria': 0.8},
+		        fix_param=['PCORR', 'SFCF', 'CET', 'CFR', 'lr_temp', 'lr_prec', 'TT_diff', 'TT_snow', 'CFMAX_snow'],
+		        fix_val={
+				    # Fix:
+				    'CFR': 0.15,
+				    'SFCF': 1,
+				    'CET': 0,
+
+				    # Step 1:
+				    'PCORR': 0.58,
+				    'lr_temp': -0.006,
+				    'lr_prec': 0.0015,
+
+				    # Step 2:
+				    'TT_diff': 0.76198,
+				    'TT_snow': -1.44646,
+				    'CFMAX_snow': 3.3677
+				},
+                    # Step 3:
+                    CFMAX_rel_lo=1.2000372,
+                    CFMAX_rel_up=1.5314099
+)
+
+# %%
+# Reading the samples from file
+step4_samples = pd.read_csv(f"{dir_output}calib_step4.csv")
+step4_samples = step4_samples.drop(['chain'], axis=1)
+step4_samples.columns = ['KGE_Runoff', 'MAE_SMB', 'KGE_SWE'] + list(step4_samples.columns[3:])
+
+# Apply appropriate filters
+# data = data[data['KGE_Runoff'] > 800]            # loglike_KGE values rough equivalents: 700 =~0.85    max. 895 =~0.87
+# data = data[data['MAE_SMB'] < 50]
+
+# %% [markdown]
+# We can now plot the posterior distribution of all 11 parameters and the calibration variables.
+
+# %%
+# Create a 3x5 matrix of subplots
+fig, axs = plt.subplots(3, 5, figsize=(20, 16))
+
+# Plot posterior distributions for each parameter in the matrix of subplots
+for i, parameter in enumerate(step4_samples.columns[:-1]):  # Exclude the 'chain' column
+    row = i // 5
+    col = i % 5
+    sns.kdeplot(step4_samples[parameter], shade=True, ax=axs[row, col])
+    axs[row, col].set_xlabel(parameter)
+    axs[row, col].set_ylabel('Density')
+    axs[row, col].set_title(f'Posterior Distribution of {parameter}')
+
+plt.tight_layout()
+plt.show()
+
+# %% [markdown]
+# Depending on your sample size and filter criteria, there might still be a large number of possible parameter sets. To identify the best sample, you can either apply further criteria (e.g. seasonal $\text{KGE}$ scores) or use visual methods.
+
+# %%
+import plotly.graph_objects as go
+custom_text = [f'Index: {index}<br>KGE_Runoff: {KGE_Runoff}<br>MAE_SMB: {MAE_SMB}' for (index, KGE_Runoff, MAE_SMB) in
+               zip(step4_samples.index, step4_samples['KGE_Runoff'], step4_samples['MAE_SMB'])]
+
+# Create a 2D scatter plot with custom text
+fig = go.Figure(data=go.Scatter(
+    x=step4_samples['KGE_Runoff'],
+    y=step4_samples['MAE_SMB'],
+    mode='markers',
+    text=custom_text, # Assign custom text to each step4_samples point
+    hoverinfo='text',  # Show custom text when hovering
+))
+
+# Update layout
+fig.update_layout(
+    xaxis_title='Kling-Gupta-Efficiency score',
+    yaxis_title='MAE of mean annual SMB',
+    #title='2D Scatter Plot of like1 and like2 with parPCORR Color Ramp',
+    margin=dict(l=0, r=0, b=0, t=40)  # Adjust margins for better visualization
+)
+
+# Show the plot
+fig.show()
+
+
+# %% [markdown]
+# When you identified the best run, you can get the respective parameter set using the index number (e.g run number 10).
+
+# %%
+# Select ID of your best run
+best = step4_samples[step4_samples.index == 10]                     # change accordingly
+
+# Filter columns with the prefix 'par'
+par_columns = [col for col in best.columns if col.startswith('par')]
+
+# Create a dictionary with keys as column names without the 'par' prefix
+parameters = {col.replace('par', ''): best[col].values[0] for col in par_columns}
+
+# Print the dictionary
+print(parameters)
+
+# %% [markdown]
+# Together with your parameter values from previous steps, this is your calibrated parameter set you can use to run the projections.
+#
+# This incremental calibration allows linking the parameters to the processes simulated instead of randomly fitting them to match the measured discharge. However, uncertainties in the calibration data still allow for a wide range of potential scenarios. For a detailed discussion please refer to the associated publication.
 
 # %% [markdown]
 # ## Run MATILDA with calibrated parameters
 
 # %% [markdown]
-# The following parameter set was computed applying the mentioned calibration strategy on an HPC cluster.
+# The following parameter set was computed applying the mentioned calibration strategy on an HPC cluster with large sample sizes for every step.
 # <a id="param"></a>
 
 # %%
