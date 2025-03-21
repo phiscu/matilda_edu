@@ -27,7 +27,7 @@
 # %% [markdown]
 # We start by importing and initializing the Google Earth Engine packages again.
 
-# %%
+# %% jupyter={"source_hidden": true}
 import ee
 import geemap
 import numpy as np
@@ -36,12 +36,12 @@ try:
     ee.Initialize()
 except Exception as e:
     ee.Authenticate()
-    ee.Initialize()
+    ee.Initialize(project='matilda-edu')
 
 # %% [markdown]
 # The next cell reads the output directory location and the catchment outline as target polygon.
 
-# %%
+# %% jupyter={"source_hidden": true}
 import configparser
 import ast
 import geopandas as gpd
@@ -56,7 +56,7 @@ dir_figures = config['FILE_SETTINGS']['DIR_FIGURES']
 output_gpkg = dir_output + config['FILE_SETTINGS']['GPKG_NAME']
 
 # get style for matplotlib plots
-plt_style = ast.literal_eval(config['CONFIG']['PLOT_STYLE'])
+# plt_style = ast.literal_eval(config['CONFIG']['PLOT_STYLE'])
 
 # set the file format for storage
 compact_files = config.getboolean('CONFIG','COMPACT_FILES')
@@ -74,7 +74,7 @@ cmip_dir = dir_output + 'cmip6/'
 # We are going to create a class that does it all in one go. The `buildFeauture()` function requests daily catchment-wide averages of all available CMIP6 models for individual years. All years requested are stored in an `ee.ImageCollection` by `getResult()`. To provide the best basis for bias adjustment a large overlap of reanalysis and scenario data is recommended. By default, the `CMIPDownloader` class requests everything between the earliest available date from ERA5-Land (1979) and the latest available date from CMIP6 (2100). The `download()` function then starts a given number of parallel requests, each downloading a single year and storing them in CSV files.
 #
 
-# %%
+# %% jupyter={"source_hidden": true}
 import concurrent.futures
 import os
 import requests
@@ -192,7 +192,7 @@ class CMIPDownloader:
 # %% [markdown]
 # We can now define a target location and start the download for both desired variables individually. We choose a moderate number of requests to avoid kernel "hickups". The download time depends on the number of parallel processes, the traffic on GEE servers, and other mysterious factors. If you run this notebook in a Binder it usually doesn't take more than 5 min for both downloads to finish.
 
-# %%
+# %% jupyter={"source_hidden": true}
 downloader_t = CMIPDownloader(var='tas', starty=1979, endy=2100, shape=catchment, processes=30, dir=cmip_dir)
 downloader_t.download()
 downloader_p = CMIPDownloader(var='pr', starty=1979, endy=2100, shape=catchment, processes=30, dir=cmip_dir)
@@ -207,7 +207,7 @@ downloader_p.download()
 # %% [markdown]
 # The following class will read all downloaded CSV files and concatenate them to a single file per scenario. It further checks for consistency and drops models not available for individual years or scenarios.
 
-# %%
+# %% jupyter={"source_hidden": true}
 import pandas as pd
 
 class CMIPProcessor:
@@ -317,13 +317,13 @@ ssp2_pr_raw, ssp5_pr_raw = processor_p.get_results()
 # %% [markdown]
 # Let's have a look. We can see that our scenario dataset now contains 33 CMIP6 models in alphabetical order.
 
-# %% tags=["output_scroll"]
+# %% jupyter={"source_hidden": true} tags=["output_scroll"]
 print(ssp2_tas_raw.info())
 
 # %% [markdown]
 # If we want to check which models failed the consistency check of the `CMIPProcessor` we can use its `dropped_models` attribute.
 
-# %%
+# %% jupyter={"source_hidden": true}
 print(processor_t.dropped_models)
 
 # %% [markdown]
@@ -333,7 +333,7 @@ print(processor_t.dropped_models)
 # Due to the coarse resolution of global climate models (GCMs) and the extensive correction of reanalysis data there is substantial bias between the two datasets. To force a glacio-hydrological model calibrated on reanalysis data with climate scenarios this bias needs to be adressed. We will use a method developed by [Switanek et.al. (2017)](https://doi.org/10.5194/hess-21-2649-2017) called Scaled Distribution Mapping (SDM) to correct for bias while preserving trends and the likelihood of meteorological events in the raw GCM data. The method has been implemented in the [`bias_correction`](https://github.com/pankajkarman/bias_correction) Python library by [Pankaj Kumar](https://pankajkarman.github.io/).
 # We will first create a function to read our reanalysis CSV. The `adjust_bias()` function will then loop over all models and adjust them to the reanalysis data in the overlap period (1979 to 2022).
 
-# %%
+# %% jupyter={"source_hidden": true}
 from bias_correction import BiasCorrection
 
 def read_era5l(file):
@@ -370,7 +370,7 @@ def adjust_bias(predictand, predictor, method='normal_mapping'):
 # %% [markdown]
 # The function is applied to every variable and scenario separately. The `bias_adjustment` library offers a normal and a gamma distribution as basis for the SDM. As the distribution of the ERA5-Land precipitation data is actually closer to normal distribution capped at 0 mm, we use the `normal_mapping` method for both variables.
 
-# %%
+# %% jupyter={"source_hidden": true}
 era5_file = dir_output + 'ERA5L.csv'
 
 ssp2_tas = adjust_bias(predictand=ssp2_tas_raw, predictor=era5_file)
@@ -387,7 +387,7 @@ ssp5_pr = adjust_bias(predictand=ssp5_pr_raw, predictor=era5_file)
 # %% [markdown]
 # First, we store our raw and adjusted data in dictionaries.
 
-# %%
+# %% jupyter={"source_hidden": true}
 ssp_tas_dict = {'SSP2_raw': ssp2_tas_raw, 'SSP2_adjusted': ssp2_tas, 'SSP5_raw': ssp5_tas_raw, 'SSP5_adjusted': ssp5_tas}
 ssp_pr_dict = {'SSP2_raw': ssp2_pr_raw, 'SSP2_adjusted': ssp2_pr, 'SSP5_raw': ssp5_pr_raw, 'SSP5_adjusted': ssp5_pr}
 
@@ -397,13 +397,13 @@ ssp_pr_dict = {'SSP2_raw': ssp2_pr_raw, 'SSP2_adjusted': ssp2_pr, 'SSP5_raw': ss
 # %% [markdown]
 # ### Time series
 
-# %%
+# %% jupyter={"source_hidden": true}
 import matplotlib.pyplot as plt
 import seaborn as sns
 import scienceplots
 
 # set style from config
-plt.style.use(plt_style)
+#plt.style.use(plt_style)
 
 def cmip_plot(ax, df, target, title=None, precip=False, intv_sum='ME', intv_mean='10YE',
               target_label='Target', show_target_label=False):
@@ -471,7 +471,7 @@ def cmip_plot_combined(data, target, title=None, precip=False, intv_sum='ME', in
 # %% [markdown]
 # By default temperature data is resampled to 10y means (`intv_mean='10YE'`), precipitation data is shown in 10y (`intv_mean='10YE'`) means of monthly sums (`intv_sum='ME'`). You can adapt this as you please by specifying the respective arguments.
 
-# %%
+# %% jupyter={"source_hidden": true}
 era5 = read_era5l(era5_file)
 
 cmip_plot_combined(data=ssp_tas_dict, target=era5, title='10y Mean of Air Temperature', target_label='ERA5-Land', show=True, saveas='NB3_CMIP6_Temp.png')
@@ -480,7 +480,7 @@ cmip_plot_combined(data=ssp_pr_dict, target=era5, title='10y Mean of Monthly Pre
 # %% [markdown]
 # Apparently, some models have striking curves indicating unrealistic outliers or sudden jumps in the data. To clearly identify faulty time series, one option is to choose a qualitative approach by identifying the models using an interactive `plotly` plot. Here we can zoom and select/deselect curves as we like, to identify model names.
 
-# %%
+# %% jupyter={"source_hidden": true}
 import plotly.express as px
 
 fig = px.line(ssp5_tas_raw.resample('10YE', closed='left', label='left').mean())
@@ -495,7 +495,7 @@ fig.show()
 #
 # First we have to rearrange our input dictionaries a little bit. 
 
-# %%
+# %% jupyter={"source_hidden": true}
 def dict_filter(dictionary, filter_string):
     """Returns a dict with all elements of the input dict that contain a filter string in their keys."""
     return {key.split('_')[0]: value for key, value in dictionary.items() if filter_string in key}
@@ -515,11 +515,11 @@ def df2long(df, intv_sum='ME', intv_mean='YE', precip=False):
     """Resamples dataframes and converts them into long format to be passed to seaborn.lineplot()."""
 
     if precip:
-        df = df.resample(intv_sum).sum().resample(intv_mean).mean()
+        df = df.resample(intv_sum).sum().resample(intv_mean, label='left').mean()
         df = df.reset_index()
         df = df.melt('TIMESTAMP', var_name='model', value_name='prec')
     else:
-        df = df.resample(intv_mean).mean()
+        df = df.resample(intv_mean, label='left').mean()
         df = df.reset_index()
         df = df.melt('TIMESTAMP', var_name='model', value_name='temp')
     return df
@@ -528,7 +528,7 @@ def df2long(df, intv_sum='ME', intv_mean='YE', precip=False):
 # %% [markdown]
 # For comparison the `vplots()` function will arrange the plots in a similar grid as in the figures above.
 
-# %%
+# %% jupyter={"source_hidden": true}
 
 def vplots(before, after, target, target_label='Target', precip=False, show=False, saveas=None):
     """Creates violin plots of the kernel density estimation for all models before and after bias adjustment."""
@@ -602,7 +602,7 @@ def vplots(before, after, target, target_label='Target', precip=False, show=Fals
 # %% [markdown]
 # Again, we run the plotting function for every variable individually.
 
-# %%
+# %% jupyter={"source_hidden": true}
 vplots(tas_raw, tas_adjusted, era5, target_label='ERA5-Land', show=True, saveas='NB3_vplot_Temp.png')
 vplots(pr_raw, pr_adjusted, era5, target_label='ERA5-Land', precip=True, show=True, saveas='NB3_vplot_Prec.png')
 
@@ -613,7 +613,7 @@ vplots(pr_raw, pr_adjusted, era5, target_label='ERA5-Land', precip=True, show=Tr
 # %% [markdown]
 # Alternatively, we can create some helper functions to remove respective models automatically and combine them in a handy class. 
 
-# %%
+# %% jupyter={"source_hidden": true}
 class DataFilter:
     def __init__(self, df, zscore_threshold=3, resampling_rate=None, prec=False, jump_threshold=5):
         self.df = df
@@ -699,7 +699,7 @@ class DataFilter:
 #
 # Here, we also use the `resampling_rate` parameter to resample the data to annual means (`'YE'`) before running the checks.
 
-# %%
+# %% jupyter={"source_hidden": true}
 filter = DataFilter(ssp5_tas_raw, zscore_threshold=3, jump_threshold=5, resampling_rate='YE')
 
 print('Models with temperature outliers: ' + str(filter.outliers))
@@ -710,7 +710,7 @@ print('Models with either one or both: ' + str(filter.filtered_models))
 # %% [markdown]
 # The identified columns can then be removed from the CMIP6 ensemble dataset using another helper function.
 
-# %%
+# %% jupyter={"source_hidden": true}
 def drop_model(col_names, dict_or_df):
     """
     Drop columns with given names from either a dictionary of dataframes
@@ -744,7 +744,7 @@ def drop_model(col_names, dict_or_df):
 # %% [markdown]
 # We run the `drop_model()` function on the dictionaries of all variables and run `cmip_plot_combined()` again to check the result.
 
-# %%
+# %% jupyter={"source_hidden": true}
 ssp_tas_dict = drop_model(filter.filtered_models, ssp_tas_dict)
 ssp_pr_dict = drop_model(filter.filtered_models, ssp_pr_dict)
 
@@ -761,9 +761,14 @@ cmip_plot_combined(data=ssp_pr_dict, target=era5, title='10y Mean of Monthly Pre
 # %%
 import warnings
 from matplotlib.legend import Legend
+sns.set_style("white")
+plt.rcParams['axes.linewidth'] = 1.0
+plt.rcParams['text.usetex'] = True
 
 
-def cmip_plot_ensemble(cmip, target, precip=False, intv_sum='ME', intv_mean='YE', figsize=(10, 6), show=True, saveas=None):
+
+
+def cmip_plot_ensemble(cmip, target, precip=False, intv_sum='ME', intv_mean='YE', figsize=(8, 6), show=True, saveas=None):
     """
     Plots the multi-model mean of climate scenarios including the 90% confidence interval.
     Parameters
@@ -780,53 +785,54 @@ def cmip_plot_ensemble(cmip, target, precip=False, intv_sum='ME', intv_mean='YE'
     intv_mean: str
         Interval for the mean of temperature data or precipitation sums. Default is annual ('YE').
     figsize: tuple
-        Figure size for the plot. Default is (10,6).
+        Figure size for the plot. Default is (8,6).
     show: bool
         If True, show the resulting plot. If False, do not show it. Default is True.
     """
 
     warnings.filterwarnings(action='ignore')
-    figure, axis = plt.subplots(figsize=figsize)
+    figure, axis = plt.subplots(figsize=figsize, constrained_layout=True)
 
     # Define color palette
     colors = ['darkorange', 'orange', 'darkblue', 'dodgerblue']
     # create a new dictionary with the same keys but new values from the list
     col_dict = {key: value for key, value in zip(cmip.keys(), colors)}
+    
+    #figure.tight_layout(rect=[0, 0.02, 1, 0.95])  # Make some room at the bottom
 
     if precip:
         for i in cmip.keys():
             df = df2long(cmip[i], intv_sum=intv_sum, intv_mean=intv_mean, precip=True)
             sns.lineplot(data=df, x='TIMESTAMP', y='prec', color=col_dict[i])
-        axis.set(xlabel='Year', ylabel='Mean Precipitation [mm]')
-        if intv_sum=='M':
-            figure.suptitle('Mean Monthly Precipitation', fontweight='bold')
-        elif intv_sum=='Y':
-            figure.suptitle('Mean Annual Precipitation', fontweight='bold')
+        axis.set(xlabel=None, ylabel='[mm]')
+        if intv_sum=='ME':
+            figure.suptitle('Mean Monthly Precipitation', fontweight='bold', fontsize=16)
+        elif intv_sum=='YE':
+            figure.suptitle('Mean Annual Precipitation', fontweight='bold', fontsize=16)
         target_plot = axis.plot(target.resample(intv_sum).sum().resample(intv_mean).mean(), linewidth=1.5, c='black',
                              label='ERA5', linestyle='dashed')
     else:
         for i in cmip.keys():
             df = df2long(cmip[i], intv_mean=intv_mean)
             sns.lineplot(data=df, x='TIMESTAMP', y='temp', color=col_dict[i])
-        axis.set(xlabel='Year', ylabel='Mean Air Temperature [K]')
-        if intv_mean=='10Y':
-            figure.suptitle('Mean 10y Air Temperature', fontweight='bold')
-        elif intv_mean == 'Y':
-            figure.suptitle('Mean Annual Air Temperature', fontweight='bold')
-        elif intv_mean == 'M':
-            figure.suptitle('Mean Monthly Air Temperature', fontweight='bold')
+        axis.set(xlabel=None, ylabel='[K]')
+        if intv_mean=='10YE':
+            figure.suptitle('Mean 10y Air Temperature', fontweight='bold', fontsize=16)
+        elif intv_mean == 'YE':
+            figure.suptitle('Mean Annual Air Temperature', fontweight='bold', fontsize=16)
+        elif intv_mean == 'ME':
+            figure.suptitle('Mean Monthly Air Temperature', fontweight='bold', fontsize=16)
         target_plot = axis.plot(target.resample(intv_mean).mean(), linewidth=1.5, c='black',
                          label='ERA5', linestyle='dashed')
-    axis.legend(['SSP2_raw', '_ci1', 'SSP2_adjusted', '_ci2', 'SSP5_raw', '_ci3', 'SSP5_adjusted', '_ci4'],
-                loc="upper center", bbox_to_anchor=(0.43, -0.15), ncol=4,
+    axis.legend(['SSP2 raw', '_ci1', 'SSP2 adjusted', '_ci2', 'SSP5 raw', '_ci3', 'SSP5 adjusted', '_ci4'],
+                loc="upper center", bbox_to_anchor=(0.39, -0.14), ncol=4,
                 frameon=False)  # First legend --> Workaround as seaborn lists CIs in legend
-    leg = Legend(axis, target_plot, ['ERA5L'], loc='upper center', bbox_to_anchor=(0.83, -0.15), ncol=1,
+    leg = Legend(axis, target_plot, ['ERA5L'], loc='upper center', bbox_to_anchor=(0.89, -0.14), ncol=1,
                  frameon=False)  # Second legend (ERA5)
     axis.add_artist(leg)
-    plt.grid()
-
-    figure.tight_layout(rect=[0, 0.02, 1, 1])  # Make some room at the bottom
-
+    axis.grid(True, linestyle='--', alpha=0.7)  # Dashed lines with transparency
+    axis.margins(x=0.001)
+    
     if saveas is not None:
         plt.savefig(dir_figures+saveas)
     if show:
@@ -848,7 +854,7 @@ cmip_plot_ensemble(ssp_pr_dict, era5['prec'], precip=True, intv_sum='ME', intv_m
 # %% [markdown]
 # Last but not least, we will have a closer look at the performance of the bias adjustment. To do that, we will create probability plots for all models comparing original, target, and adjusted data with each other and a standard normal distribution. The `prob_plot` function creates such a plot for an individual model and scenario. The `pp_matrix` function loops the `prob_plot` function over all models in a `DataFrame` and arranges them in a matrix.
 
-# %%
+# %% jupyter={"source_hidden": true}
 import probscale
 
 def prob_plot(original, target, corrected, ax, title=None, ylabel="Temperature [K]", **kwargs):
@@ -975,7 +981,7 @@ def pp_matrix(original, target, corrected, scenario=None, nrow=7, ncol=5, precip
 # %% [markdown]
 # First we'll have a look at the temperature.
 
-# %%
+# %% jupyter={"source_hidden": true}
 pp_matrix(ssp2_tas_raw, era5['temp'], ssp2_tas, scenario='SSP2', show=True, saveas='NB3_CMIP6_SSP2_probability_Temp.png')
 pp_matrix(ssp5_tas_raw, era5['temp'], ssp5_tas, scenario='SSP5', show=True, saveas='NB3_CMIP6_SSP5_probability_Temp.png')
 
@@ -984,7 +990,7 @@ pp_matrix(ssp5_tas_raw, era5['temp'], ssp5_tas, scenario='SSP5', show=True, save
 #
 # Let's look at the probability curves for precipitation. Since the precipitation data is bounded at 0, but most days have very small values >0 mm, we resample the data to monthly sums to get an idea of the overall performance.
 
-# %%
+# %% jupyter={"source_hidden": true}
 pp_matrix(ssp2_pr_raw, era5['prec'], ssp2_pr, precip=True, scenario='SSP2', show=True, saveas='NB3_CMIP6_SSP2_probability_Prec.png')
 pp_matrix(ssp5_pr_raw, era5['prec'], ssp5_pr, precip=True, scenario='SSP5', show=True, saveas='NB3_CMIP6_SSP5_probability_Prec.png')
 
@@ -1001,10 +1007,10 @@ pp_matrix(ssp5_pr_raw, era5['prec'], ssp5_pr, precip=True, scenario='SSP5', show
 # <div class="alert alert-block alert-info">
 # <b>Note:</b> In the config file you can choose between two storage options: <code>pickle</code> files are fast to read and write, but take up more disk space (<code>COMPACT_FILES = False</code>). You can use them on your local machine. <code>parquet</code> files need less disk space but take longer to read and write (<code>COMPACT_FILES = True</code>). They should be your choice in the Binder.</div>
 
-# %%
+# %% jupyter={"source_hidden": true}
 ssp_tas_dict.keys()
 
-# %%
+# %% jupyter={"source_hidden": true}
 from tools.helpers import dict_to_pickle, dict_to_parquet
 
 tas = {'SSP2': ssp_tas_dict['SSP2_adjusted'], 'SSP5': ssp_tas_dict['SSP5_adjusted']}
@@ -1019,12 +1025,12 @@ else:
     dict_to_pickle(tas, cmip_dir + 'adjusted/tas.pickle')
     dict_to_pickle(pr, cmip_dir + 'adjusted/pr.pickle')
 
-# %%
+# %% jupyter={"source_hidden": true}
 import shutil
 
 # refresh `output_download.zip` with data retrieved within this notebook
 shutil.make_archive('output_download', 'zip', 'output')
 print('Output folder can be download now (file output_download.zip)')
 
-# %%
-# %reset -f
+# %% jupyter={"source_hidden": true}
+# #%reset -f
