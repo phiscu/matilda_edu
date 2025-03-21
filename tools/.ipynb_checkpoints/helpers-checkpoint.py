@@ -29,18 +29,32 @@ def read_yaml(file_path):
 def write_yaml(data, file_path):
     """
     Write a dictionary to a YAML file.
+    Ensures all values are in standard Python types before writing.
+    
     Parameters
     ----------
     data : dict
         The dictionary to write to a YAML file.
     file_path : str
         The path of the file where the YAML data shall be stored.
+    
     Returns
     -------
     None
     """
+
+    # Convert non-standard types (like numpy.float64) to standard Python types
+    for key in data:
+        value = data[key]
+        if isinstance(value, np.float64):
+            data[key] = float(value)  # Convert to native Python float
+        elif isinstance(value, np.int64):
+            data[key] = int(value)  # Convert to native Python int
+
     with open(file_path, 'w') as f:
         yaml.safe_dump(data, f)
+
+    print(f"Data successfully written to YAML at {file_path}")
 
 
 def update_yaml(file_path, new_items):
@@ -59,8 +73,8 @@ def update_yaml(file_path, new_items):
     data = read_yaml(file_path)
     data.update(new_items)
     write_yaml(data, file_path)
-   
-    
+
+
 def pickle_to_dict(file_path):
     """
     Loads a dictionary from a pickle file at a specified file path.
@@ -99,7 +113,6 @@ def dict_to_pickle(dic, target_path):
     with open(target_path, 'wb') as f:
         pickle.dump(dic, f)
 
-    
 
 def drop_keys(dic, keys_to_drop):
     """Removes specified keys from a dictionary.
@@ -149,7 +162,7 @@ def parquet_to_dict(directory_path: str, pbar: bool = True) -> dict:
             k = file_name[:-len(".parquet")]
             dictionary[k] = pd.read_parquet(file_path)
     return dictionary
- 
+
 
 def dict_to_parquet(dictionary: dict, directory_path: str, pbar: bool = True) -> None:
     """
@@ -179,39 +192,43 @@ def dict_to_parquet(dictionary: dict, directory_path: str, pbar: bool = True) ->
 
 
 matilda_vars = {
- 'avg_temp_catchment': ('Mean Catchment Temperature', '°C'),
- 'avg_temp_glaciers': ('Mean Temperature of Glacierized Area', '°C'),
- 'evap_off_glaciers': ('Off-glacier Evaporation', 'mm w.e.'),
- 'prec_off_glaciers': ('Off-glacier Precipitation', 'mm w.e.'),
- 'prec_on_glaciers': ('On-glacier Precipitation', 'mm w.e.'),
- 'rain_off_glaciers': ('Off-glacier Rain', 'mm w.e.'),
- 'snow_off_glaciers': ('Off-glacier Snow', 'mm w.e.'),
- 'rain_on_glaciers': ('On-glacier Rain', 'mm w.e.'),
- 'snow_on_glaciers': ('On-glacier Snow', 'mm w.e.'),
- 'snowpack_off_glaciers': ('Off-glacier Snowpack', 'mm w.e.'),
- 'soil_moisture': ('Soil Moisture', 'mm w.e.'),
- 'upper_groundwater': ('Upper Groundwater', 'mm w.e.'),
- 'lower_groundwater': ('Lower Groundwater', 'mm w.e.'),
- 'melt_off_glaciers': ('Off-glacier Melt', 'mm w.e.'),
- 'melt_on_glaciers': ('On-glacier Melt', 'mm w.e.'),
- 'ice_melt_on_glaciers': ('On-glacier Ice Melt', 'mm w.e.'),
- 'snow_melt_on_glaciers': ('On-glacier Snow Melt', 'mm w.e.'),
- 'refreezing_ice': ('Refreezing Ice', 'mm w.e.'),
- 'refreezing_snow': ('Refreezing Snow', 'mm w.e.'),
- 'total_refreezing': ('Total Refreezing', 'mm w.e.'),
- 'SMB': ('Glacier Surface Mass Balance', 'mm w.e.'),
- 'actual_evaporation': ('Mean Actual Evaporation', 'mm w.e.'),
- 'total_precipitation': ('Mean Total Precipitation', 'mm w.e.'),
- 'total_melt': ('Total Melt', 'mm w.e.'),
- 'runoff_without_glaciers': ('Runoff without Glaciers', 'mm w.e.'),
- 'runoff_from_glaciers': ('Runoff from Glaciers', 'mm w.e.'),
- 'total_runoff': ('Total Runoff', 'mm w.e.'),
- 'glacier_area': ('Glacier Area', 'km²'),
- 'glacier_elev': ('Mean Glacier Elevation', 'm.a.s.l.'),
- 'smb_water_year': ('Surface Mass Balance of the Hydrological Year', 'mm w.e.'),
- 'smb_scaled': ('Area-scaled Surface Mass Balance', 'mm w.e.'),
- 'smb_scaled_capped': ('Surface Mass Balance Capped at 0', 'mm w.e.'),
- 'smb_scaled_capped_cum': ('Cumulative Surface Mass Balance Capped at 0', 'mm w.e.')
+    'avg_temp_catchment': ('Mean Catchment Temperature', '°C'),
+    'avg_temp_glaciers': ('Mean Temperature of Glacierized Area', '°C'),
+    'evap_off_glaciers': ('Off-glacier Evaporation', 'mm w.e.'),
+    'prec_off_glaciers': ('Off-glacier Precipitation', 'mm w.e.'),
+    'prec_on_glaciers': ('On-glacier Precipitation', 'mm w.e.'),
+    'rain_off_glaciers': ('Off-glacier Rain', 'mm w.e.'),
+    'snow_off_glaciers': ('Off-glacier Snow', 'mm w.e.'),
+    'rain_on_glaciers': ('On-glacier Rain', 'mm w.e.'),
+    'snow_on_glaciers': ('On-glacier Snow', 'mm w.e.'),
+    'snowpack_off_glaciers': ('Off-glacier Snowpack', 'mm w.e.'),
+    'soil_moisture': ('Soil Moisture', 'mm w.e.'),
+    'upper_groundwater': ('Upper Groundwater', 'mm w.e.'),
+    'lower_groundwater': ('Lower Groundwater', 'mm w.e.'),
+    'melt_off_glaciers': ('Off-glacier Melt', 'mm w.e.'),
+    'melt_on_glaciers': ('On-glacier Melt', 'mm w.e.'),
+    'ice_melt_on_glaciers': ('On-glacier Ice Melt', 'mm w.e.'),
+    'snow_melt_on_glaciers': ('On-glacier Snow Melt', 'mm w.e.'),
+    'refreezing_ice': ('Refreezing Ice', 'mm w.e.'),
+    'refreezing_snow': ('Refreezing Snow', 'mm w.e.'),
+    'total_refreezing': ('Total Refreezing', 'mm w.e.'),
+    'SMB': ('Glacier Surface Mass Balance', 'mm w.e.'),
+    'actual_evaporation': ('Mean Actual Evaporation', 'mm w.e.'),
+    'total_precipitation': ('Mean Total Precipitation', 'mm w.e.'),
+    'total_melt': ('Total Melt', 'mm w.e.'),
+    'runoff_without_glaciers': ('Runoff without Glaciers', 'mm w.e.'),
+    'runoff_from_glaciers': ('Runoff from Glaciers', 'mm w.e.'),
+    'total_runoff': ('Total Runoff', 'mm w.e.'),
+    'glacier_area': ('Glacier Area', 'km²'),
+    'glacier_elev': ('Mean Glacier Elevation', 'm.a.s.l.'),
+    'smb_water_year': ('Surface Mass Balance of the Hydrological Year', 'mm w.e.'),
+    'smb_scaled': ('Area-scaled Surface Mass Balance', 'mm w.e.'),
+    'smb_scaled_capped': ('Surface Mass Balance Capped at 0', 'mm w.e.'),
+    'smb_scaled_capped_cum': ('Cumulative Surface Mass Balance Capped at 0', 'mm w.e.'),
+    'glacier_melt_perc': ('Melted Glacier Fraction', '%'),
+    'glacier_mass_mmwe': ('Glacier Mass', 'mm w.e.'),
+    'glacier_vol_m3': ('Glacier Volume', 'm³'),
+    'glacier_vol_perc': ('Fraction of Initial Glacier Volume (2000)', '-')
 }
 
 
@@ -246,8 +263,8 @@ def crop2wy(df, begin=10):
     pandas.DataFrame or None
         A new DataFrame containing only the rows that fall within a complete water year.
     """
-    cut_begin = pd.to_datetime(f'{begin}-{df.water_year[0]}', format='%m-%Y')
-    cut_end = pd.to_datetime(f'{begin}-{df.water_year[-1]-1}', format='%m-%Y') - pd.DateOffset(days=1)
+    cut_begin = pd.to_datetime(f'{begin}-{df.water_year.iloc[0]}', format='%m-%Y')
+    cut_end = pd.to_datetime(f'{begin}-{df.water_year.iloc[-1] - 1}', format='%m-%Y') - pd.DateOffset(days=1)
     return df[cut_begin:cut_end].copy()
 
 
@@ -268,3 +285,150 @@ def hydrologicalize(df, begin_of_water_year=10):
     df_new = df.copy()
     df_new['water_year'] = water_year(df_new, begin_of_water_year)
     return crop2wy(df_new, begin_of_water_year)
+
+
+def adjust_jupyter_config():
+    from jupyter_server import serverapp
+    from dash._jupyter import _jupyter_config
+    import os
+
+    js = list(serverapp.list_running_servers())[0]
+
+    if js['hostname'] == 'localhost':
+        print('JupyterLab seems to run on local machine.')
+    else:
+        base = js['base_url']
+        if base.split('/')[1] == 'binder':
+            print('JupyterLab seems to run on binder server.')
+
+            # start updating jupyter server config
+            # official docu: https://dash.plotly.com/dash-in-jupyter
+            # however, due to problems of jupyterlab v4 a work-around must be implemented
+            # see: https://github.com/plotly/dash/issues/2804
+            # and: https://github.com/plotly/dash/issues/2998
+            # solution inspired by: https://github.com/mthiboust/jupyterlab-retrieve-base-url/tree/main
+            conf = {'type': 'base_url_response',
+                    'server_url': 'https://notebooks.gesis.org',
+                    'base_subpath': os.getenv('JUPYTERHUB_SERVICE_PREFIX'),
+                    'frontend': 'jupyterlab'}
+
+            _jupyter_config.update(conf)
+            print('Jupyter config has been updated to run Dash!')
+        else:
+            print('JupyterLab seems to run on unsupported environment.')
+
+
+class DataFilter:
+    def __init__(self, df, zscore_threshold=3, resampling_rate=None, prec=False, jump_threshold=5):
+        self.df = df
+        self.zscore_threshold = zscore_threshold
+        self.resampling_rate = resampling_rate
+        self.prec = prec
+        self.jump_threshold = jump_threshold
+        self.filter_all()
+
+
+    def check_outliers(self):
+        """
+        A function for filtering a pandas dataframe for columns with obvious outliers
+        and dropping them based on a z-score threshold.
+
+        Returns
+        -------
+        models : list
+            A list of columns identified as having outliers.
+        """
+        # Resample if rate specified
+        if self.resampling_rate is not None:
+            if self.prec:
+                self.df = self.df.resample(self.resampling_rate).sum()
+            else:
+                self.df = self.df.resample(self.resampling_rate).mean()
+
+        # Calculate z-scores for each column
+        z_scores = pd.DataFrame((self.df - self.df.mean()) / self.df.std())
+
+        # Identify columns with at least one outlier (|z-score| > threshold)
+        cols_with_outliers = z_scores.abs().apply(lambda x: any(x > self.zscore_threshold))
+        self.outliers = list(self.df.columns[cols_with_outliers])
+
+        # Return the list of columns with outliers
+        return self.outliers
+
+    def check_jumps(self):
+        """
+        A function for checking a pandas dataframe for columns with sudden jumps or drops
+        and returning a list of the columns that have them.
+
+        Returns
+        -------
+        jumps : list
+            A list of columns identified as having sudden jumps or drops.
+        """
+        cols = self.df.columns
+        jumps = []
+
+        for col in cols:
+            diff = self.df[col].diff()
+            if (abs(diff) > self.jump_threshold).any():
+                jumps.append(col)
+
+        self.jumps = jumps
+        return self.jumps
+
+    def filter_all(self):
+        """
+        A function for filtering a dataframe for columns with obvious outliers
+        or sudden jumps or drops in temperature, and returning a list of the
+        columns that have been filtered using either or both methods.
+
+        Returns
+        -------
+        filtered_models : list
+            A list of columns identified as having outliers or sudden jumps/drops in temperature.
+        """
+        self.check_outliers()
+        self.check_jumps()
+        self.filtered_models = list(set(self.outliers) | set(self.jumps))
+        return self.filtered_models
+
+
+def drop_model(col_names, dict_or_df):
+    """
+    Drop columns with given names from either a dictionary of dataframes
+    or a single dataframe.
+    Parameters
+    ----------
+    col_names : list of str
+        The list of model names to drop.
+    dict_or_df : dict of pandas.DataFrame or pandas.DataFrame
+        If a dict of dataframes, all dataframes in the dict will be edited.
+        If a single dataframe, only that dataframe will be edited.
+    Returns
+    -------
+    dict_of_dfs : dict of pandas.DataFrame or pandas.DataFrame
+        The updated dictionary of dataframes or dataframe with dropped columns.
+    """
+    if isinstance(dict_or_df, dict):
+        # loop through the dictionary and edit each dataframe
+        for key in dict_or_df.keys():
+            if all(col_name in dict_or_df[key].columns for col_name in col_names):
+                dict_or_df[key] = dict_or_df[key].drop(columns=col_names)
+        return dict_or_df
+    elif isinstance(dict_or_df, pd.DataFrame):
+        # edit the single dataframe
+        if all(col_name in dict_or_df.columns for col_name in col_names):
+            return dict_or_df.drop(columns=col_names)
+    else:
+        raise TypeError('Input must be a dictionary or a dataframe')
+
+
+def read_era5l(file):
+    """Reads ERA5-Land data, drops redundant columns, and adds DatetimeIndex.
+    Resamples the dataframe to reduce the DatetimeIndex to daily resolution."""
+    
+    return pd.read_csv(file, **{
+        'usecols':      ['temp', 'prec', 'dt'],
+        'index_col':    'dt',
+        'parse_dates':  ['dt']}).resample('D').agg({'temp': 'mean', 'prec': 'sum'})
+    

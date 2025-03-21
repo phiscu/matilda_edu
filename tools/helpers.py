@@ -316,3 +316,119 @@ def adjust_jupyter_config():
             print('Jupyter config has been updated to run Dash!')
         else:
             print('JupyterLab seems to run on unsupported environment.')
+
+
+class DataFilter:
+    def __init__(self, df, zscore_threshold=3, resampling_rate=None, prec=False, jump_threshold=5):
+        self.df = df
+        self.zscore_threshold = zscore_threshold
+        self.resampling_rate = resampling_rate
+        self.prec = prec
+        self.jump_threshold = jump_threshold
+        self.filter_all()
+
+
+    def check_outliers(self):
+        """
+        A function for filtering a pandas dataframe for columns with obvious outliers
+        and dropping them based on a z-score threshold.
+
+        Returns
+        -------
+        models : list
+            A list of columns identified as having outliers.
+        """
+        # Resample if rate specified
+        if self.resampling_rate is not None:
+            if self.prec:
+                self.df = self.df.resample(self.resampling_rate).sum()
+            else:
+                self.df = self.df.resample(self.resampling_rate).mean()
+
+        # Calculate z-scores for each column
+        z_scores = pd.DataFrame((self.df - self.df.mean()) / self.df.std())
+
+        # Identify columns with at least one outlier (|z-score| > threshold)
+        cols_with_outliers = z_scores.abs().apply(lambda x: any(x > self.zscore_threshold))
+        self.outliers = list(self.df.columns[cols_with_outliers])
+
+        # Return the list of columns with outliers
+        return self.outliers
+
+    def check_jumps(self):
+        """
+        A function for checking a pandas dataframe for columns with sudden jumps or drops
+        and returning a list of the columns that have them.
+
+        Returns
+        -------
+        jumps : list
+            A list of columns identified as having sudden jumps or drops.
+        """
+        cols = self.df.columns
+        jumps = []
+
+        for col in cols:
+            diff = self.df[col].diff()
+            if (abs(diff) > self.jump_threshold).any():
+                jumps.append(col)
+
+        self.jumps = jumps
+        return self.jumps
+
+    def filter_all(self):
+        """
+        A function for filtering a dataframe for columns with obvious outliers
+        or sudden jumps or drops in temperature, and returning a list of the
+        columns that have been filtered using either or both methods.
+
+        Returns
+        -------
+        filtered_models : list
+            A list of columns identified as having outliers or sudden jumps/drops in temperature.
+        """
+        self.check_outliers()
+        self.check_jumps()
+        self.filtered_models = list(set(self.outliers) | set(self.jumps))
+        return self.filtered_models
+
+
+def drop_model(col_names, dict_or_df):
+    """
+    Drop columns with given names from either a dictionary of dataframes
+    or a single dataframe.
+    Parameters
+    ----------
+    col_names : list of str
+        The list of model names to drop.
+    dict_or_df : dict of pandas.DataFrame or pandas.DataFrame
+        If a dict of dataframes, all dataframes in the dict will be edited.
+        If a single dataframe, only that dataframe will be edited.
+    Returns
+    -------
+    dict_of_dfs : dict of pandas.DataFrame or pandas.DataFrame
+        The updated dictionary of dataframes or dataframe with dropped columns.
+    """
+    if isinstance(dict_or_df, dict):
+        # loop through the dictionary and edit each dataframe
+        for key in dict_or_df.keys():
+            if all(col_name in dict_or_df[key].columns for col_name in col_names):
+                dict_or_df[key] = dict_or_df[key].drop(columns=col_names)
+        return dict_or_df
+    elif isinstance(dict_or_df, pd.DataFrame):
+        # edit the single dataframe
+        if all(col_name in dict_or_df.columns for col_name in col_names):
+            return dict_or_df.drop(columns=col_names)
+    else:
+        raise TypeError('Input must be a dictionary or a dataframe')
+
+
+def read_era5l(file):
+    """Reads ERA5-Land data, drops redundant columns, and adds DatetimeIndex.
+    Resamples the dataframe to reduce the DatetimeIndex to daily resolution."""
+    
+    return pd.read_csv(file, **{
+        'usecols':      ['temp', 'prec', 'dt'],
+        'index_col':    'dt',
+        'parse_dates':  ['dt']}).resample('D').agg({'temp': 'mean', 'prec': 'sum'})
+    
