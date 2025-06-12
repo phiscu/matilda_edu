@@ -598,7 +598,7 @@ print(parameters)
 
 # %%
 param = {
-    'RFS': 0.15,
+    'CFR': 0.15,
     'SFCF': 1,
     'CET': 0,
     'PCORR': 0.58,
