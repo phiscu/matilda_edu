@@ -67,8 +67,10 @@
 # ![](https://i.postimg.cc/2y0rMLY0/for-academia.png)
 
 # %% [markdown]
-# 5. Now you have the option to join an existing Google Cloud Project or create a new one. 
+# <a id="step-5">5. </a>Now you have the option to join an existing **Google Cloud Project** or create a new one.
 # For the latter click on *Create a new Google Cloud Project*, and choose your organization, create a project ID and optionally choose a project name. Click on *CONTINUE TO SUMMARY* when finished.
+#
+#
 #
 # ![enter image description here](https://i.postimg.cc/pXd28CQ4/ID3.png)
 
@@ -121,12 +123,13 @@
 # ## The *config.ini* file
 
 # %% [markdown]
-# This file contains a list of essential information for the workflow and allows customization. If you want to try MATILDA-Online with the sample dataset, you don't need to edit the file. If you want to use your own data, replace the file with the discharge observation in the ```input/``` folder and adapt the reference coordinates accordingly.
+# This file contains a list of essential information for the workflow and allows customization. If you want to try MATILDA-Online with the sample dataset, you only need to edit the entry ```CLOUD_PROJECT``` and change it to your projects name from <a href="#step-5">Step 5</a>.  If you want to use your own data, replace the file with the discharge observation in the ```input/``` folder and adapt the reference coordinates accordingly.
 
 # %% [markdown]
 # 1. The first section ```[FILE_SETTINGS]``` allows you to **edit paths and file names for in- and outputs**. This can especially be useful if you model multiple catchments in the same copy of the repository.
 #
 # 2. In the ```[CONFIG]``` section you can ...
+#    - ... specify your **Google Cloud project**. This information is **mandatory** to use the GEE in the workflow. The current project ```matilda-edu``` is set up for demonstration purposes and is not publicly accessible.
 #    - ... specify your **reference coordinates** (usually your gauging station location) and select the calibration period. The latter should cover your observation period plus a few years before as a spin-off.
 #    - ... change the **digital elevation model** used.
 #    - ... choose download option from GEE (direct download or via ```xarray```).

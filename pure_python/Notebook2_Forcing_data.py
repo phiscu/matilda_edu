@@ -28,21 +28,9 @@
 # > Source: [GEE Data Catalog](https://developers.google.com/earth-engine/datasets/catalog/ECMWF_ERA5_LAND_DAILY_RAW#description)
 
 # %% [markdown]
-# To get started we **initialize** the GEE API again...
-
-# %%
-import ee
-
-# initialize GEE at the beginning of session
-try:
-    ee.Initialize()
-except Exception as e:
-    ee.Authenticate()         # authenticate when using GEE for the first time
-    ee.Initialize(project='matilda-edu')
-
-# %% [markdown]
-# ...and read some settings from the `config.ini` file:
+# To get started we read some settings from the `config.ini` file again:
 #
+# - **cloud project** name for the GEE access
 # - **input/output folders** for data imports and downloads
 # - **filenames** (DEM, GeoPackage)
 # - include future **projections** or not
@@ -58,6 +46,7 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 
 # get file config from config.ini
+cloud_project = config['CONFIG']['CLOUD_PROJECT']
 dir_input = config['FILE_SETTINGS']['DIR_INPUT']
 dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
 dir_figures = config['FILE_SETTINGS']['DIR_FIGURES']
@@ -67,6 +56,18 @@ show_map = config.getboolean('CONFIG','SHOW_MAP')
 
 # get style for matplotlib plots
 plt_style = ast.literal_eval(config['CONFIG']['PLOT_STYLE'])
+
+# %% [markdown]
+# ...and **initialize** the GEE API.
+
+# %%
+import ee
+
+try:
+    ee.Initialize(project=cloud_project)
+except Exception as e:
+    ee.Authenticate()
+    ee.Initialize(project=cloud_project)
 
 # %% [markdown]
 # We can now load the catchment outline from the previous notebook and convert it to a `ee.FeatureCollection` to use it in GEE.

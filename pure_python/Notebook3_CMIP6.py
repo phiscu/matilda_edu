@@ -25,26 +25,15 @@
 # The [NEX-GDDP-CMIP6 dataset](https://www.nature.com/articles/s41597-022-01393-4) we are going to use has been downscaled to 27830 m resolution by the [NASA Climate Analytics Group](https://www.nature.com/articles/s41597-022-01393-4) and is available in two [Shared Socio-Economic Pathways](https://unfccc.int/sites/default/files/part1_iiasa_rogelj_ssp_poster.pdf) (SSP2 and SSP5). It is available via [Google Earth Engine](https://developers.google.com/earth-engine/datasets/catalog/NASA_GDDP-CMIP6#bands) which makes it subsettable on the server side and the download relatively light-weight.
 
 # %% [markdown]
-# We start by importing and initializing the Google Earth Engine packages again.
-
-# %%
-import ee
-import geemap
-import numpy as np
-
-try:
-    ee.Initialize()
-except Exception as e:
-    ee.Authenticate()
-    ee.Initialize(project='matilda-edu')
-
-# %% [markdown]
-# The next cell reads the output directory location and the catchment outline as target polygon.
+# We start by reading the config and initializing the Google Earth Engine access again.
 
 # %%
 import configparser
 import ast
 import geopandas as gpd
+import ee
+import geemap
+import numpy as np
 
 # read local config.ini file
 config = configparser.ConfigParser()
@@ -61,6 +50,20 @@ output_gpkg = dir_output + config['FILE_SETTINGS']['GPKG_NAME']
 # set the file format for storage
 compact_files = config.getboolean('CONFIG','COMPACT_FILES')
 
+# read cloud-project
+cloud_project = config['CONFIG']['CLOUD_PROJECT']
+
+# initialize GEE
+try:
+    ee.Initialize(project=cloud_project)
+except Exception as e:
+    ee.Authenticate()
+    ee.Initialize(project=cloud_project)
+
+# %% [markdown]
+# The next cell reads the output directory location and the catchment outline as target polygon.
+
+# %%
 # load catchment outline as target polygon
 catchment_new = gpd.read_file(output_gpkg, layer='catchment_new')
 catchment = geemap.geopandas_to_ee(catchment_new)

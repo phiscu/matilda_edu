@@ -16,7 +16,7 @@
 # # Catchment delineation
 
 # %% [markdown]
-# We start our workflow by downloading all the static data we need. In this notebook we will
+# We start our workflow by downloading all the static data we need. In this notebook we will...
 #
 # 1. ...download a **Digital Elevation Model** (DEM) for hydrologic applications,
 #
@@ -26,27 +26,11 @@
 #
 # 4. ...create a glacier profile based on elevation zones.
 #
-# The DEM will be downloaded from Google Earth Engine (GEE). The default is the [MERIT DEM] (https://developers.google.com/earth-engine/datasets/catalog/MERIT_DEM_v1_0_3), but you can use any DEM available in the *Google Earth Engine Data Catalog* (https://developers.google.com/earth-engine/datasets/catalog) by specifying it in the `config.ini` file.
 
 # %% [markdown]
-# Let's start by importing the necessary packages and defining functions/constants.
-
-# %% [markdown]
-# First of all, the Google Earth Engine (GEE) access must be initialized. If this is the first time you run the notebook on this machine, you need to authenticate. When using <code>mybinder.org</code> you need to authenticate every time a new session has been launched. Follow the instructions on screen or see the guide in &rarr; [Notebook 0](Notebook0_Introduction.ipynb#Authorize-access-for-Google-Earth-Engine).
-
-# %%
-import ee
-
-# initialize GEE at the beginning of session
-try:
-    ee.Initialize(project='matilda-edu')
-except Exception as e:
-    ee.Authenticate()  # authenticate when using GEE for the first time
-    ee.Initialize(project='matilda-edu')
-
-# %% [markdown]
-# Now we will read some settings from the `config.ini` file:
+# First of all, we will read some settings from the `config.ini` file:
 #
+# - **cloud project** name for the GEE access
 # - **input/output** folders for data imports and downloads
 # - **filenames** (DEM, GeoPackage)
 # - **coordinates** of the defined "pouring" point (Lat/Long)
@@ -66,6 +50,7 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 
 # get file config from config.ini
+cloud_project = config['CONFIG']['CLOUD_PROJECT']
 output_folder = config['FILE_SETTINGS']['DIR_OUTPUT']
 figures_folder = config['FILE_SETTINGS']['DIR_FIGURES']
 filename = output_folder + config['FILE_SETTINGS']['DEM_FILENAME']
@@ -81,8 +66,30 @@ plt_style = ast.literal_eval(config['CONFIG']['PLOT_STYLE'])
 plt.style.use(plt_style)
 
 # print config data
-print(f'Used DEM: {dem_config[3]}')
+print(f'Google Cloud Project : {cloud_project}')
+print(f'DEM to download: {dem_config[3]}')
 print(f'Coordinates of discharge point: Lat {y}, Lon {x}')
+
+# %% [markdown]
+# Now, the Google Earth Engine (GEE) access can be initialized. If this is the first time you run the notebook on this machine, you need to authenticate. When using <code>mybinder.org</code> you need to authenticate every time a new session has been launched. Follow the instructions on screen or see the guide in &rarr; [Notebook 0](Notebook0_Introduction.ipynb#Authorize-access-for-Google-Earth-Engine).
+#
+# <div class="alert alert-block alert-info">
+#     <b>Note:</b> In order to make this work, the default cloud project in the <code>config.ini</code> 
+#     needs to be changed to your own. See the instructions in 
+#     <a href="Notebook0_Introduction.ipynb#signing-up-for-google-earth-engine-gee">Notebook 0</a>, step 5
+#     for details.
+# </div>
+#
+
+# %%
+import ee
+
+# initialize GEE at the beginning of session
+try:
+    ee.Initialize(project=cloud_project)
+except Exception as e:
+    ee.Authenticate()  # authenticate when using GEE for the first time
+    ee.Initialize(project=cloud_project)
 
 # %% [markdown]
 # ## Start GEE and download DEM
@@ -100,7 +107,8 @@ else:
     print("Map view disabled in config.ini")
 
 # %% [markdown]
-# Now we can add the DEM from the GEE catalog and add it as a new layer to the map.
+# Now we can download the DEM from the GEE catalog and add it as a new layer to the map. The default is the [MERIT DEM] (https://developers.google.com/earth-engine/datasets/catalog/MERIT_DEM_v1_0_3), but you can use any DEM available in the *Google Earth Engine Data Catalog* (https://developers.google.com/earth-engine/datasets/catalog) by specifying it in the `config.ini` file.
+#
 
 # %%
 if dem_config[0] == 'Image':
