@@ -1,13 +1,23 @@
 import pandas as pd
 import configparser
+from scipy import stats
+import numpy as np
 from tools.helpers import parquet_to_dict, read_yaml, pickle_to_dict
-
 import matplotlib.pyplot as plt
 import warnings
 import seaborn as sns
 import datetime as dt
 import matplotlib.dates as mdates
 from matplotlib.patches import Rectangle
+import scienceplots
+import matplotlib as mpl
+
+mpl.rcParams.update({
+    "text.usetex": True,
+    "font.family": "serif",            # or 'sans-serif', 'monospace', etc.
+    "font.serif": ["Computer Modern"], # default LaTeX serif font
+})
+
 
 ###
 """
@@ -91,36 +101,13 @@ df_era5 = pd.read_csv(dir_output + 'ERA5L.csv', **{
         'index_col':    'dt',
         'parse_dates':  ['dt']}).resample('D').agg({'temp': 'mean', 'prec': 'sum'})
 
-
-
-
-
 # Adjust start date:
 df_era5.index = pd.to_datetime(df_era5.index)  # Convert the index to datetime
 df_era5 = df_era5[df_era5.index >= '2000-01-01']  # Filter rows where the date is >= 2000-01-01
 obs = obs[obs.index >= '2000-01-01']  # Filter rows where the date is >= 2000-01-01
 
-
-
-
-
-
-
-# tas = parquet_to_dict(f"{dir_output}cmip6/adjusted/tas_parquet")
-# pr = parquet_to_dict(f"{dir_output}cmip6/adjusted/pr_parquet")
-#
-# matilda_scenarios = parquet_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios_parquet")
-
 tas = pickle_to_dict(f"{dir_output}cmip6/adjusted/tas.pickle")
 pr = pickle_to_dict(f"{dir_output}cmip6/adjusted/pr.pickle")
-
-
-
-
-
-
-
-
 
 # Adjust start date
 def adjust_startdate(data_dict, start_date='2000-01-01'):
@@ -133,13 +120,6 @@ def adjust_startdate(data_dict, start_date='2000-01-01'):
 # Apply the function to both dictionaries
 adjust_startdate(tas)
 adjust_startdate(pr)
-
-
-
-
-
-
-
 
 matilda_scenarios = pickle_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
 
@@ -199,7 +179,7 @@ melt_ssp2.index = melt_ssp2.index.map(lambda x: x.replace(month=1, day=1))  # As
 melt_ssp5 = pd.DataFrame()
 melt_ssp5['ssp5_avg_snow'] = snow_melt['SSP5'].mean(axis=1)
 melt_ssp5['ssp5_avg_ice'] = ice_melt['SSP5'].mean(axis=1)
-# melt_ssp5['ssp5_avg_off'] = off_melt['SSP5'].mean(axis=1)
+melt_ssp5['ssp5_avg_off'] = off_melt['SSP5'].mean(axis=1)
 melt_ssp5 = melt_ssp5.resample('Y').sum()
 
 melt_ssp5.index = melt_ssp5.index.map(lambda x: x.replace(month=1, day=1))  # Assign the first day of the year
@@ -210,43 +190,6 @@ melt_diff['diff_ice'] = melt_ssp5['ssp5_avg_ice'] - melt_ssp2['ssp2_avg_ice']
 # melt_diff['diff_off'] = melt_ssp5['ssp5_avg_off'] - melt_ssp2['ssp2_avg_off']
 
 ###
-
-
-# def df2long(df, val_name, intv_sum=None, intv_mean='Y', rolling=None, cutoff=None):
-#     """Resamples dataframes and converts them into long format to be passed to seaborn.lineplot()."""
-#     if intv_sum is not None:
-#         df = df.resample(intv_sum).sum()
-#
-#     df = df.resample(intv_mean).mean()
-#
-#     if rolling is not None:
-#         df = df.rolling(rolling).mean()
-#
-#     if cutoff is not None:
-#         df = df.loc[cutoff:]
-#
-#     df = df.reset_index()
-#     df = df.melt('TIMESTAMP', var_name='model', value_name=val_name)
-#
-#     return df
-
-# def df2long(df, val_name, intv_sum=None, intv_mean='Y', rolling=None, cutoff=None):
-#     """Resamples dataframes and converts them into long format to be passed to seaborn.lineplot()."""
-#     if intv_sum is not None:
-#         df = df.resample(intv_sum, label='left').sum()  # Align resampling to the start of the period
-#
-#     df = df.resample(intv_mean, label='left').mean()  # Align resampling to the start of the period
-#
-#     if rolling is not None:
-#         df = df.rolling(rolling).mean()
-#
-#     if cutoff is not None:
-#         df = df.loc[cutoff:]
-#
-#     df = df.reset_index()
-#     df = df.melt('TIMESTAMP', var_name='model', value_name=val_name)
-#
-#     return df
 
 def df2long(df, val_name, intv_sum=None, intv_mean='Y', rolling=None, cutoff=None):
     """Resamples dataframes and converts them into long format to be passed to seaborn.lineplot()."""
@@ -276,41 +219,62 @@ def df2long(df, val_name, intv_sum=None, intv_mean='Y', rolling=None, cutoff=Non
     return df
 
 
-def add_cmip_ensemble(param_scenarios, val_name, ylabel, ax, ylim=None, target=None, target_color='black', linestyle='solid', rolling=None, cutoff=None, intv_sum='Y'):
-    # Define color palette
+def add_cmip_ensemble(param_scenarios, val_name, ylabel, ax, ylim=None, target=None,
+                      target_color='black', linestyle='solid', rolling=None,
+                      cutoff=None, intv_sum='Y', ylabel_pad=0):
+
+    # Define color and line style palettes
     colors = ['orange', 'dodgerblue']
-    # create a new dictionary with the same keys but new values from the list
     col_dict = {key: value for key, value in zip(param_scenarios.keys(), colors)}
 
-    # Define color palette
     linestyles = ['dotted', 'dashed']
-    # create a new dictionary with the same keys but new values from the list
     ls_dict = {key: value for key, value in zip(param_scenarios.keys(), linestyles)}
 
-
     for i in param_scenarios.keys():
-        df_pred = df2long(param_scenarios[i], val_name, intv_sum=intv_sum, intv_mean='Y', rolling=rolling, cutoff=cutoff)
-        # sns.lineplot(data=df_pred, x='TIMESTAMP', y=val_name, color=col_dict[i], ax=ax, linestyle=linestyle)
-        sns.lineplot(data=df_pred, x='TIMESTAMP', y=val_name, color=target_color, ax=ax, linestyle=ls_dict[i])
-    ax.set(xlabel='Year', ylabel=ylabel)
+        df_pred = df2long(param_scenarios[i], val_name, intv_sum=intv_sum,
+                          intv_mean='Y', rolling=rolling, cutoff=cutoff)
+        sns.lineplot(data=df_pred, x='TIMESTAMP', y=val_name,
+                     color=target_color, ax=ax, linestyle=ls_dict[i])
+
+    ax.set('')
+    ax.set_ylabel(ylabel, labelpad=ylabel_pad)
 
     if ylim is not None:
         ax.set_ylim(ylim)
 
     if target is not None:
-        target_plot = ax.plot(target, linewidth=1.5, c=target_color)
+        ax.plot(target, linewidth=1.5, c=target_color)
+
 
 
 def ensemble_max(param_scenarios, val_name, rolling=None, cutoff=None, intv_sum='Y'):
+    all_dfs = []
+
+    # Step 1: Concatenate all scenarios into one long dataframe
     for i in param_scenarios.keys():
-        df_pred = df2long(param_scenarios[i], val_name, intv_sum=intv_sum, intv_mean='Y', rolling=rolling, cutoff=cutoff)
-    return round(df_pred[val_name].max())
+        df_pred = df2long(param_scenarios[i], val_name, intv_sum=intv_sum,
+                          intv_mean='Y', rolling=rolling, cutoff=cutoff)
+        df_pred["scenario"] = i
+        all_dfs.append(df_pred)
+
+    df_all = pd.concat(all_dfs)
+
+    # Step 2: Compute ensemble mean and 95% CI at each timestamp
+    grouped = df_all.groupby("TIMESTAMP")[val_name]
+    df_ci = grouped.agg(['mean', 'count', 'std']).reset_index()
+    df_ci['ci95'] = stats.t.ppf(0.975, df_ci['count'] - 1) * (df_ci['std'] / np.sqrt(df_ci['count']))
+
+    # Step 3: Add mean + upper confidence bound
+    df_ci['upper'] = df_ci['mean'] + df_ci['ci95']
+
+    # Step 4: Return the maximum of the upper bound
+    return round(df_ci['upper'].max())
 
 
 
-###
+### Construct main figure
 
-plt.rcParams["font.family"] = "Arial"
+# plt.rcParams["font.family"] = "Arial"
 
 rolling = None
 
@@ -318,14 +282,14 @@ arrow_props = dict(facecolor='grey', edgecolor='grey', arrowstyle='-', linewidth
 
 #--- START PLOT ---
 gridspec = dict(hspace=0.0, height_ratios=[1, 2, 4, 1])
-figure, axs = plt.subplots(nrows=4, ncols=1, figsize=(10, 8), sharex=True, gridspec_kw=gridspec)
+figure, axs = plt.subplots(nrows=4, ncols=1, figsize=(8, 8), sharex=True, gridspec_kw=gridspec)
 
 # -> fill box: glacerized area
 print("Shrink the glacier")
 
 ax0l = axs[0]
-add_cmip_ensemble(param_scenarios=glacier_area, val_name='glac_area', ylabel='Glacerized\nArea (km²)', #ylim=(0,35),
-                  ax=ax0l, target_color='darkviolet')
+add_cmip_ensemble(param_scenarios=glacier_area, val_name='glac_area', ylabel='Glacierized\nArea (km²)',
+                  ax=ax0l, target_color='darkviolet', ylabel_pad=10)
 
 # annote_final_val_lines(ax0l, 'km')
 
@@ -335,9 +299,10 @@ for line in ax0l.lines:
         ydata = line.get_ydata()
         last_val = ydata[-1]
         perc_val = last_val / max(ydata) * 100
-        ax0l.annotate(f'{last_val:.0f} km² ({perc_val:.0f} %)',
-                      xy=(1, last_val), xytext=(55, min(max(ydata)*0.9, last_val * 4)), va='center', ha='right',
-                      fontsize=8,
+        label = r"{:.0f} km² ({:.0f}\%)".format(last_val, perc_val)
+        ax0l.annotate(label,
+                      xy=(1, last_val), xytext=(55, min(max(ydata) * 0.9, last_val * 4)),
+                      va='center', ha='right', fontsize=8,
                       xycoords=('axes fraction', 'data'), textcoords=('offset points', 'data'),
                       arrowprops=arrow_props)
 
@@ -356,11 +321,6 @@ col = ["#eaeaea", "#d1e3ff"]
 ax1l.stackplot(melt_ssp5.index, melt_ssp5['ssp5_avg_snow'], melt_ssp5['ssp5_avg_ice'], colors = col)
 ax1l.stackplot(melt_ssp2.index, melt_ssp2['ssp2_avg_snow']*-1, melt_ssp2['ssp2_avg_ice']*-1, colors = col)
 
-#-- incl. off glacier melt
-# col = ['#e6ccb2',"#eaeaea", "#d1e3ff"]
-# ax1l.stackplot(melt_ssp5.index,melt_ssp5['ssp5_avg_off'], melt_ssp5['ssp5_avg_snow'], melt_ssp5['ssp5_avg_ice'], colors = col)
-# ax1l.stackplot(melt_ssp2.index,melt_ssp2['ssp2_avg_off']*-1, melt_ssp2['ssp2_avg_snow']*-1, melt_ssp2['ssp2_avg_ice']*-1, colors = col)
-
 ax1l.axhline(y=0, color='white', linestyle='-')
 
 ax1l.plot(melt_diff.index, melt_diff['diff_snow'], color='#b6b6b6')
@@ -374,18 +334,7 @@ ymax_ax1l_upper = round(ymax_ax1l*1.55, 1)     # add some space for the legend
 ymax_ax1l_lower = round(-ymax_ax1l*1.1, 1)
 
 ax1l.set_ylim(ymax_ax1l_lower, ymax_ax1l_upper)
-# ax1l.set_ylim(-149, 149)
-# ax1l.set_ylim(-600, 600)
-ax1l.set_ylabel('Melt (mm/a)')
-
-# y = melt_ssp5['ssp5_avg_snow'][-1]
-# annotate_final_val(ax1l, y, y, abs(y), 'mm')
-# y = melt_ssp5['ssp5_avg_ice'][-1]+melt_ssp5['ssp5_avg_snow'][-1]
-# annotate_final_val(ax1l, y, y, abs(y), 'mm')
-# y = melt_ssp2['ssp2_avg_snow'][-1]*-1
-# annotate_final_val(ax1l, y, y, abs(y), 'mm')
-# y = (melt_ssp2['ssp2_avg_ice'][-1]+melt_ssp2['ssp2_avg_snow'][-1])*-1
-# annotate_final_val(ax1l, y, y, abs(y), 'mm')
+ax1l.set_ylabel('Melt (mm/a)', labelpad=10)
 
 y = melt_ssp5['ssp5_avg_snow'][-1]
 annotate_final_val(ax1l, y, ymax_ax1l*0.3, abs(y), 'mm')
@@ -422,13 +371,13 @@ add_cmip_ensemble(param_scenarios=runoff, val_name='runoff', ylabel=' (mm/a)', y
 
 print("- evaporation")
 add_cmip_ensemble(param_scenarios=evaporation, val_name='eva', ylabel=' (mm/a)',
-                  target=None, target_color='green',  #linestyle='dashed',
+                  target=None, target_color='green',
                   ax=ax2l, rolling=rolling, cutoff='2000-12-31')
 
 print("- precipitation")
 add_cmip_ensemble(param_scenarios=precipitation, val_name='prec', ylabel=' (mm/a)',
                   target=None, target_color='darkgrey',
-                  ax=ax2l, rolling=rolling, cutoff='2000-12-31')
+                  ax=ax2l, rolling=rolling, cutoff='2000-12-31', ylabel_pad=5)
 
 annote_final_val_lines(ax2l, 'mm', min_dist=100)
 
@@ -437,7 +386,7 @@ print("Observation data")
 # Iterate over Observation data without NaN values
 for index, row in obs.dropna().iterrows():
     start = mdates.date2num(row['Date'])
-    ax2l.add_patch(Rectangle((start, 0), width=1, height=1400, alpha=0.1, label='_obs_data', zorder=0))
+    ax2l.add_patch(Rectangle((start, 0), width=1, height=ymax_ax2l, alpha=0.1, label='_obs_data', zorder=0))
 
 ax2l.axvline(dt.datetime(2022, 12, 31), color='salmon')
 
@@ -453,7 +402,7 @@ else:
 
 add_cmip_ensemble(param_scenarios=tas, val_name='temp', ylabel='Temp. (°C)',
                   target=era5_temp_rs, target_color='red',
-                  ax=ax3l, rolling=rolling, cutoff='2000-12-31', intv_sum=None)
+                  ax=ax3l, rolling=rolling, cutoff='2000-12-31', intv_sum=None, ylabel_pad=10)
 annote_final_val_lines(ax3l, '°C')
 
 ax3l.axhline(y=0, color='lightgrey', linestyle=':', linewidth = 1)
@@ -479,9 +428,6 @@ ax2l_legend.get_frame().set_edgecolor('white')
 scenario_legend = ax3l.legend(['SSP2 Scenario', '_ci1', 'SSP5 Scenario', '_ci2'],
                             loc="lower right", bbox_to_anchor=(1, -0.8), ncol=2,
                             frameon=True)  # First legend --> Workaround as seaborn lists CIs in legend
-for handle in scenario_legend.legendHandles:
-    handle.set_color('black')
-
 
 print("Legend ready")
 
@@ -506,9 +452,12 @@ for ax in axs:
 for ax in [ax1l,ax2l]:
     ax.grid(axis='y', color='lightgrey', linestyle='--', dashes=(5, 5))
 
-plt.suptitle(f"MATILDA Summary", fontweight='bold', fontsize=14)
-figure.tight_layout(rect=[0, 0.02, 1, 1])  # Make some room at the bottom
+ax3l.set_xlabel("")
+plt.suptitle(f"MATILDA Summary", fontweight='bold', fontsize=16)
+# figure.tight_layout(rect=[0, 0, 0.95, 1])  # Make space on the right (reduce right boundary from 1 to 0.95)
+figure.tight_layout()
 
+# figure.savefig("/home/phillip/Seafile/EBA-CA/Papers/No1_Kysylsuu_Bash-Kaingdy/HESS/figures/matilda_summary.png", dpi=300)
 
 # --- SHOW ---
 plt.show()

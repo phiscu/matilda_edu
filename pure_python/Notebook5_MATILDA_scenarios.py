@@ -146,6 +146,7 @@ if compact_files:
 else:
     dict_to_pickle(scenarios, f"{dir_output}cmip6/adjusted/matilda_scenario_input.pickle")
 
+
 # %% [markdown]
 # ## Running MATILDA for all climate projections
 
@@ -228,7 +229,7 @@ class MatildaBulkProcessor:
 
         with open(os.devnull, 'w') as devnull:
             with contextlib.redirect_stdout(devnull):
-                output = matilda_simulation(df, **matilda_settings, parameter_set=matilda_parameters)
+                output = matilda_simulation(df, **matilda_settings, **matilda_parameters)
         return {'model_output': output[0], 'glacier_rescaling': output[5]}
 
     def run_single_process(self):

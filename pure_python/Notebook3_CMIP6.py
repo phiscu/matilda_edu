@@ -116,13 +116,14 @@ print(ssp2_tas_raw.info())
 # If we want to check which models failed the consistency check of the `CMIPProcessor` we can use its `dropped_models` attribute.
 
 # %%
+print('Models that failed the consistency checks:\n')
 print(processor_t.dropped_models)
 
 # %% [markdown]
 # ## Bias adjustment using reananlysis data
 
 # %% [markdown]
-# Due to the coarse resolution of global climate models (GCMs) and the extensive correction of reanalysis data there is substantial bias between the two datasets. To force a glacio-hydrological model calibrated on reanalysis data with climate scenarios this bias needs to be adressed. We will use a method developed by [Switanek et.al. (2017)](https://doi.org/10.5194/hess-21-2649-2017) called Scaled Distribution Mapping (SDM) to correct for bias while preserving trends and the likelihood of meteorological events in the raw GCM data. The method has been implemented in the [`bias_correction`](https://github.com/pankajkarman/bias_correction) Python library by [Pankaj Kumar](https://pankajkarman.github.io/).
+# Due to the coarse resolution of global climate models (GCMs) and the extensive correction of reanalysis data there is substantial bias between the two datasets. To force a glacio-hydrological model calibrated on reanalysis data with climate scenarios this bias needs to be adressed. We will use a method developed by [Switanek et.al. (2017)](https://doi.org/10.5194/hess-21-2649-2017) called Scaled Distribution Mapping (SDM) to correct for bias while preserving trends and the likelihood of meteorological events in the raw GCM data. The method has been implemented in the [`bias_correction`](https://github.com/pankajkarman/bias_correction) Python library by [Pankaj Kumar](https://pankajkarman.github.io/). As suggested by the authors we will apply the bias adjustment to discrete blocks of data individually.
 # We will first create a function to read our reanalysis CSV. The `adjust_bias()` function will then loop over all models and adjust them to the reanalysis data in the overlap period (1979 to 2022).
 
 # %%
@@ -131,25 +132,57 @@ from bias_correction import BiasCorrection
 import pandas as pd
 
 def adjust_bias(predictand, predictor, method='normal_mapping'):
-    """Applies scaled distribution mapping to all passed climate projections (predictand)
-     based on a predictor timeseries."""
-    
+    """Applies bias correction to discrete periods individually."""
+    # Read predictor data
     predictor = read_era5l(predictor)
-    if predictand.mean().mean() > 100:
-        var = 'temp'
-    else:
-        var = 'prec'
-    training_period = slice('1979-01-01', '2022-12-31')
-    prediction_period = slice('1979-01-01', '2100-12-31')
-    corr = pd.DataFrame()
-    for m in predictand.columns:
-        x_train = predictand[m][training_period].squeeze()
-        y_train = predictor[training_period][var].squeeze()
-        x_predict = predictand[m][prediction_period].squeeze()
-        bc_corr = BiasCorrection(y_train, x_train, x_predict)
-        corr[m] = pd.DataFrame(bc_corr.correct(method=method))
 
-    return corr
+    # Determine variable type based on the mean value
+    var = 'temp' if predictand.mean().mean() > 100 else 'prec'
+
+    # Adjust bias in discrete blocks as suggested by Switanek et al. (2017)
+    correction_periods = [
+        {'correction_range': ('1979-01-01', '2010-12-31'), 'extraction_range': ('1979-01-01', '1990-12-31')},
+    ]
+    for decade_start in range(1991, 2090, 10):
+        correction_start = f"{decade_start - 10}-01-01"
+        correction_end = f"{decade_start + 19}-12-31"
+        extraction_start = f"{decade_start}-01-01"
+        extraction_end = f"{decade_start + 9}-12-31"
+
+        correction_periods.append({
+            'correction_range': (correction_start, correction_end),
+            'extraction_range': (extraction_start, extraction_end)
+        })
+
+    correction_periods.append({
+        'correction_range': ('2081-01-01', '2100-12-31'),
+        'extraction_range': ('2091-01-01', '2100-12-31')
+    })
+
+    # Store corrected periods
+    corrected_data_list = []
+    training_period = slice('1979-01-01', '2022-12-31')
+
+    for period in correction_periods:
+        correction_start, correction_end = period['correction_range']
+        extraction_start, extraction_end = period['extraction_range']
+
+        correction_slice = slice(correction_start, correction_end)
+        extraction_slice = slice(extraction_start, extraction_end)
+
+        data_corr = pd.DataFrame()
+        for col in predictand.columns:
+            x_train = predictand[col][training_period].squeeze()
+            y_train = predictor[training_period][var].squeeze()
+            x_predict = predictand[col][correction_slice].squeeze()
+            bc_corr = BiasCorrection(y_train, x_train, x_predict)
+            corrected_col = pd.DataFrame(bc_corr.correct(method=method))
+            data_corr[col] = corrected_col.loc[extraction_slice]
+
+        corrected_data_list.append(data_corr)
+
+    corrected_data = pd.concat(corrected_data_list, axis=0)
+    return corrected_data
 
 
 # %% [markdown]
@@ -264,8 +297,8 @@ ssp_tas_dict = drop_model(filter.filtered_models, ssp_tas_dict)
 ssp_pr_dict = drop_model(filter.filtered_models, ssp_pr_dict)
 
 
-cmip_plot_combined(data=ssp_tas_dict, target=era5, title='10y Mean of Air Temperature', target_label='ERA5-Land', show=True, fig_path=f"{dir_figures}NB3_CMIP6_Temp_filtered.png')
-cmip_plot_combined(data=ssp_pr_dict, target=era5, title='10y Mean of Monthly Precipitation', precip=True, target_label='ERA5-Land', show=True, agg_level='annual', smooth_window=10, fig_path=f"{dir_figures}NB3_CMIP6_Prec_filtered.png')
+cmip_plot_combined(data=ssp_tas_dict, target=era5, title='10y Mean of Air Temperature', target_label='ERA5-Land', show=True, fig_path=f"{dir_figures}NB3_CMIP6_Temp_filtered.png")
+cmip_plot_combined(data=ssp_pr_dict, target=era5, title='10y Mean of Monthly Precipitation', precip=True, target_label='ERA5-Land', show=True, agg_level='annual', smooth_window=10, fig_path=f"{dir_figures}NB3_CMIP6_Prec_filtered.png")
 
 # %% [markdown]
 # ### Ensemble mean plots
@@ -303,6 +336,7 @@ pp_matrix(ssp5_tas_raw, era5['temp'], ssp5_tas, scenario='SSP5', show=True, fig_
 pp_matrix(ssp2_pr_raw, era5['prec'], ssp2_pr, precip=True, scenario='SSP2', show=True, fig_path=f'{dir_figures}NB3_CMIP6_SSP2_probability_Prec.png')
 pp_matrix(ssp5_pr_raw, era5['prec'], ssp5_pr, precip=True, scenario='SSP5', show=True, fig_path=f'{dir_figures}NB3_CMIP6_SSP5_probability_Prec.png')
 
+
 # %% [markdown]
 # Considering the complexity and heterogeneity of precipitation data, the performance of SDM is convincing. While the fitted data of most models deviate from the target data for low and very high values, the general distribution of monthly precipitation is well met. 
 
@@ -310,20 +344,69 @@ pp_matrix(ssp5_pr_raw, era5['prec'], ssp5_pr, precip=True, scenario='SSP5', show
 # ## Write CMIP6 data to file
 
 # %% [markdown]
-# After a thorough review of the climate scenario data, we can write the final selection to files for use in the next notebook. Since the whole ensemble results in relatively large files, we store the dictionaries in binary files. These are not human readable, but compact and fast to read and write.
+# After a thorough review of the climate scenario data, we can write the final selection to files to be used in the next notebook. We want to use reanalysis data for the MATILDA model wherever possible and only use CMIP6 data for future projections. Therefore, we need to replace all of the data from our calibration period with ERA5-Land data.
+
+# %%
+def replace_values(target_df, source_df, source_column):
+    """
+    Replaces values in the overlapping period in the target dataframe with values
+    from the source dataframe using the specified source column.
+
+    Args:
+        target_df (pd.DataFrame): Target dataframe where values will be replaced.
+        source_df (pd.DataFrame): Source dataframe from which values will be taken.
+        source_column (str): Column name in the source dataframe to use for replacement.
+
+    Returns:
+        pd.DataFrame: The target dataframe with updated values.
+    """
+
+    # Identify overlapping period based on index (datetime)
+    overlapping_period = target_df.index.intersection(source_df.index)
+
+
+    if len(overlapping_period) == 0:
+        raise ValueError("No overlapping period between the source and target dataframes.")
+
+    # Ensure the source dataframe has the required column
+    if source_column not in source_df.columns:
+        raise ValueError(f"The source dataframe does not have a column named '{source_column}'")
+    
+    # Get the replacement values from the source columnAdd commentMore actions
+    replacement_values = source_df.loc[overlapping_period, source_column]
+
+    assert len(overlapping_period) == len(
+        replacement_values), "Mismatch in lengths of overlapping period and replacement values."
+
+    # Apply these values to all columns in the target DataFrame in the overlapping period
+    target_df.loc[overlapping_period] = replacement_values.values[:, None]
+
+    return target_df
+
+
+era5l = read_era5l(era5_file)
+ssp2_tas = ssp_tas_dict['SSP2_adjusted'].copy()
+ssp5_tas = ssp_tas_dict['SSP5_adjusted'].copy()
+ssp2_pr = ssp_pr_dict['SSP2_adjusted'].copy()
+ssp5_pr = ssp_pr_dict['SSP5_adjusted'].copy()
+
+ssp2_tas = replace_values(ssp2_tas, era5l, 'temp')
+ssp5_tas = replace_values(ssp5_tas, era5l, 'temp')
+ssp2_pr = replace_values(ssp2_pr, era5l, 'prec')
+ssp5_pr = replace_values(ssp5_pr, era5l, 'prec')
+
+# %% [markdown]
+# Since the whole ensemble results in relatively large files, we store the dictionaries in binary format. While these are not human-readable, they are compact and fast to read and write.
 
 # %% [markdown]
 # <div class="alert alert-block alert-info">
 # <b>Note:</b> In the config file you can choose between two storage options: <code>pickle</code> files are fast to read and write, but take up more disk space (<code>COMPACT_FILES = False</code>). You can use them on your local machine. <code>parquet</code> files need less disk space but take longer to read and write (<code>COMPACT_FILES = True</code>). They should be your choice in the Binder.</div>
 
 # %%
-ssp_tas_dict.keys()
-
-# %%
 from tools.helpers import dict_to_pickle, dict_to_parquet
 
-tas = {'SSP2': ssp_tas_dict['SSP2_adjusted'], 'SSP5': ssp_tas_dict['SSP5_adjusted']}
-pr = {'SSP2': ssp_pr_dict['SSP2_adjusted'], 'SSP5': ssp_pr_dict['SSP5_adjusted']}
+tas = {'SSP2': ssp2_tas, 'SSP5': ssp5_tas}
+pr = {'SSP2': ssp2_pr, 'SSP5': ssp5_pr}
 
 if compact_files:
     # For storage efficiency:
