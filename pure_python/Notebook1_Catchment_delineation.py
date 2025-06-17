@@ -7,7 +7,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.16.4
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: matilda_edu
 #     language: python
 #     name: python3
 # ---
@@ -358,7 +358,7 @@ import geopandas as gpd
 
 # load catcment and RGI regions as DF
 catchment = gpd.read_file(output_gpkg, layer='catchment_orig')
-df_regions = gpd.read_file('https://www.glims.org/RGI/rgi60_files/00_rgi60_regions.zip', layer='00_rgi60_O1Regions')
+df_regions = gpd.read_file('https://www.gtn-g.ch/database/GlacReg_2017.zip', layer='GTN-G_glacier_regions_201707')
 display(df_regions)
 
 # %% [markdown]
@@ -396,6 +396,10 @@ else:
     display(df_regions_catchment)
     rgi_region = None
 
+# %%
+rgi_code = int(df_regions_catchment['RGI_CODE'].iloc[0])
+print(rgi_code)
+
 # %% [markdown]
 # In the next step, the glacier inventory outlines for the determined RGI region will be downloaded. A spatial join is performed to determine all glacier outlines that intersect with the catchment area.
 #
@@ -404,47 +408,64 @@ else:
 #  Depending on the region and bandwidth, this might take 1 min or longer.</div>
 
 # %%
-# %%time
+import requests
 
-import urllib.request
-import fsspec
-import re
 
-if rgi_region != None:
-    url = "https://www.glims.org/RGI/rgi60_files/"  # Replace with the URL of your web server
-    html_page = urllib.request.urlopen(url)
-    html_content = html_page.read().decode("utf-8")
-    print('Reading Randolph Glacier Inventory 6.0 in GLIMS database...')
+rgi_mapping = {
+    'druid:bk044mm2896': '1',       # Alaska
+    'druid:bx819rp9942': '2',       # Western Canada and USA
+    'druid:rf996wm9813': '3',       # Arctic Canada North
+    'druid:jf736np7986': '4',       # Arctic Canada South
+    'druid:jf791qw8489': '4',       # Greenland
+    'druid:vw279vy3622': '6',       # Iceland
+    'druid:vq951pn6443': '7',       # Svalbard Region
+    'druid:xq220vs7286': '8',       # Scandinavia
+    'druid:jg462fq0330': '9',       # Russian Arctic
+    'druid:pd870md4737': '10',      # North Asia
+    'druid:yk055mq6325': '11',      # Central Europe
+    'druid:hq068pk2038': '12',      # Caucasus and Middle East
+    'druid:tz454nz3540': '13',      # Central Asia
+    'druid:kh918qf4828': '14',      # South West Asia
+    'druid:nf183jx2059': '15',      # South East Asia
+    'druid:rb597mv0151': '16',      # Low Latitudes
+    'druid:jp070dq9346': '17',      # Southern Andes
+    'druid:zv495xg4344': '18',      # New Zealand
+    'druid:gg131xy9972': '19'       # Antarctic and Sub-Antarctic
+}
 
-    # Use regular expressions to find links to files
-    pattern = re.compile(r'href="([^"]+\.zip)"')
-    file_links = pattern.findall(html_content)
 
-    for file in file_links:
-        splits = file.split("_")
-        if splits[0] != str(rgi_region):
-            continue
+geoserver_url = "https://geowebservices.stanford.edu/geoserver/wfs?"
+rgi_code = int(df_regions_catchment['RGI_CODE'].iloc[0])
+type_name = next((k for k, v in rgi_mapping.items() if v == str(rgi_code)), None)
 
-        # starting scanning regions
-        regionname = splits[0] + " (" + splits[2].split(".")[0] + ")"
-        print(f'Locating glacier outlines in RGI Region {regionname}...')
+print(type_name)
+if not type_name:
+    print(f"RGI region {rgi_code} not found in mapping.")
 
-        # read zip into dataframe
-        print('Loading shapefiles...')
-        path = f"simplecache::{url + file}"
-        print('Path:', path)
-        with fsspec.open(path) as file:
-            rgi = gpd.read_file(file)
 
-        if rgi.crs != catchment.crs:
-            print("CRS adjusted")
-            catchment = catchment.to_crs(rgi.crs)
+params = {
+    'service': 'WFS',
+    'version': '2.0.0',
+    'request': 'GetFeature',
+    'typeName': type_name,
+    'outputFormat': 'application/json'
+}
 
-        # check whether catchment intersects with glaciers of region
-        print('Perform spatial join...')
-        rgi_catchment = gpd.sjoin(rgi, catchment, how='inner', predicate='intersects')
-        if len(rgi_catchment.index) > 0:
-            print(f'{len(rgi_catchment.index)} outlines loaded from RGI Region {regionname}\n')
+response = requests.get(geoserver_url, params=params)
+    
+print('Loading shapefiles...')
+rgi = gpd.read_file(response.text)
+
+if rgi.crs != catchment.crs:
+    print("CRS adjusted")
+    catchment = catchment.to_crs(rgi.crs)
+
+# check whether catchment intersects with glaciers of region
+print('Perform spatial join...')
+rgi_catchment = gpd.sjoin(rgi, catchment, how='inner', predicate='intersects')
+if len(rgi_catchment.index) > 0:
+    print(f'{len(rgi_catchment.index)} outlines loaded from RGI Region {rgi_code}\n')
+
 
 # %% [markdown]
 # Some glaciers are not actually in the catchment, but intersect its outline. We will first determine their fractional overlap with the target catchment.
@@ -458,7 +479,7 @@ gdf_joined['area_joined'] = gdf_joined.to_crs(crs).area
 gdf_joined['share_of_area'] = (gdf_joined['area_joined'] / gdf_joined['rgi_area'] * 100)
 
 results = (gdf_joined
-           .groupby(['RGIId', 'LABEL_1'])
+           .groupby(['rgiid', 'LABEL_1'])
            .agg({'share_of_area': 'sum'}))
 
 display(results.sort_values(['share_of_area'], ascending=False))
@@ -470,7 +491,7 @@ display(results.sort_values(['share_of_area'], ascending=False))
 # - **<50%** of the area are in the catchment &rarr; **exclude** and reduce catchment area by glacier outlines (if needed)
 
 # %%
-rgi_catchment_merge = pd.merge(rgi_catchment, results, on="RGIId")
+rgi_catchment_merge = pd.merge(rgi_catchment, results, on="rgiid")
 rgi_in_catchment = rgi_catchment_merge.loc[rgi_catchment_merge['share_of_area'] >= 50]
 rgi_out_catchment = rgi_catchment_merge.loc[rgi_catchment_merge['share_of_area'] < 50]
 catchment_new = gpd.overlay(catchment, rgi_out_catchment, how='difference')
@@ -490,8 +511,8 @@ from pathlib import Path
 Path(output_folder + 'RGI').mkdir(parents=True, exist_ok=True)
 
 glacier_ids = pd.DataFrame(rgi_in_catchment)
-glacier_ids['RGIId'] = glacier_ids['RGIId'].map(lambda x: str(x).lstrip('RGI60-'))
-glacier_ids.to_csv(output_folder + 'RGI/' + 'Glaciers_in_catchment.csv', columns=['RGIId', 'GLIMSId'], index=False)
+glacier_ids['rgiid'] = glacier_ids['rgiid'].map(lambda x: str(x).lstrip('RGI60-'))
+glacier_ids.to_csv(output_folder + 'RGI/' + 'Glaciers_in_catchment.csv', columns=['rgiid', 'glimsid'], index=False)
 display(glacier_ids)
 
 # %% [markdown]
@@ -597,13 +618,13 @@ print(f"Mean catchment elevation (adjusted) is {ele_cat:.2f} m a.s.l.")
 
 # %%
 def getArchiveNames(row):
-    region = row['RGIId'].split('.')[0]
-    id = (int(row['RGIId'].split('.')[1]) - 1) // 1000 + 1
+    region = row['rgiid'].split('.')[0]
+    id = (int(row['rgiid'].split('.')[1]) - 1) // 1000 + 1
     return f'ice_thickness_{region}_{id}', f'dem_surface_DEM_{region}_{id}'
 
 
 # determine relevant .zip files for derived RGI IDs
-df_rgiids = pd.DataFrame(rgi_in_catchment['RGIId'].sort_values())
+df_rgiids = pd.DataFrame(rgi_in_catchment['rgiid'].sort_values())
 df_rgiids[['thickness', 'dem']] = df_rgiids.apply(getArchiveNames, axis=1, result_type='expand')
 zips_thickness = df_rgiids['thickness'].drop_duplicates()
 zips_dem = df_rgiids['dem'].drop_duplicates()
@@ -718,7 +739,7 @@ df_all = pd.DataFrame()
 if cnt_thickness != cnt_dem:
     print('Number of ice thickness raster files does not match number of DEM raster files!')
 else:
-    for idx, rgiid in enumerate(df_rgiids['RGIId']):
+    for idx, rgiid in enumerate(df_rgiids['rgiid']):
         if rgiid in file_names_thickness[idx] and rgiid in file_names_dem[idx]:
             file_list = [
                 output_folder + 'RGI/' + file_names_thickness[idx],

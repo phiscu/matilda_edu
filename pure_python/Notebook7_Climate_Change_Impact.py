@@ -7,7 +7,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.16.4
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: matilda_edu
 #     language: python
 #     name: python3
 # ---
@@ -26,13 +26,16 @@
 # We start by reading paths and MATILDA outputs again.
 
 # %%
-from tools.helpers import pickle_to_dict, parquet_to_dict
+from tools.helpers import pickle_to_dict, parquet_to_dict,read_yaml
 import configparser
+import os
 
 # read output directory from config.ini file
 config = configparser.ConfigParser()
 config.read('config.ini')
 dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
+dir_input = config['FILE_SETTINGS']['DIR_INPUT']
+settings = read_yaml(os.path.join(dir_output, 'settings.yml'))
 
 # set the file format for storage
 compact_files = config.getboolean('CONFIG','COMPACT_FILES')
@@ -358,8 +361,8 @@ adjust_jupyter_config()
 
 # %%
 import matplotlib.font_manager as fm
-path_to_palatinottf = '/home/phillip/Downloads/Palatino.ttf'
-fm.fontManager.addfont(path_to_palatinottf)
+# path_to_palatinottf = '/home/phillip/Downloads/Palatino.ttf' 
+# fm.fontManager.addfont(path_to_palatinottf)
 
 from dash import Dash, dcc, html, Input, Output
 from jupyter_server import serverapp
@@ -426,3 +429,9 @@ app.run(port=port, jupyter_mode="external")  # -> opens Dash in new browser tab
 #    app.run(port=port)  # -> opens Dash inline
 
 # %%
+from tools.plots import MetaPlot
+
+metaplot = MetaPlot(dir_input, dir_output, settings)
+metaplot.load_data()
+
+metaplot.plot_summary(rolling=5, save_path=None);
