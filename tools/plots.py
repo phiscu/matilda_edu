@@ -887,3 +887,477 @@ class MetaPlot:
             print(f"Figure saved to {save_path}")
                         
         return figure
+
+def custom_df_matilda(dic, scenario, var, resample_freq=None):
+    """
+    Takes a dictionary of model outputs and returns a combined dataframe of a specific variable for a given scenario.
+    Parameters
+    -------
+    dic : dict
+        A nested dictionary of model outputs.
+        The outer keys are scenario names and the inner keys are model names.
+        The corresponding values are dictionaries containing two keys:
+        'model_output' (DataFrame): containing model outputs for a given scenario and model
+        'glacier_rescaling' (DataFrame): containing glacier properties for a given scenario and model
+    scenario : str
+        The name of the scenario to select from the dictionary.
+    var : str
+        The name of the variable to extract from the model output DataFrame.
+    resample_freq : str, optional
+        The frequency of the resulting time series data.
+        Defaults to None (i.e. no resampling).
+        If provided, should be in pandas resample frequency string format.
+    Returns
+    -------
+    pandas.DataFrame
+        A DataFrame containing the combined data of the specified variable for the selected scenario
+        and models. The DataFrame is indexed by the time steps of the original models.
+        The columns are the names of the models in the selected scenario.
+    Raises
+    -------
+    ValueError
+        If the provided  var  string is not one of the following: ['avg_temp_catchment', 'avg_temp_glaciers',
+        'evap_off_glaciers', 'prec_off_glaciers', 'prec_on_glaciers', 'rain_off_glaciers', 'snow_off_glaciers',
+        'rain_on_glaciers', 'snow_on_glaciers', 'snowpack_off_glaciers', 'soil_moisture', 'upper_groundwater',
+        'lower_groundwater', 'melt_off_glaciers', 'melt_on_glaciers', 'ice_melt_on_glaciers', 'snow_melt_on_glaciers',
+        'refreezing_ice', 'refreezing_snow', 'total_refreezing', 'SMB', 'actual_evaporation', 'total_precipitation',
+        'total_melt', 'runoff_without_glaciers', 'runoff_from_glaciers', 'runoff_ratio', 'total_runoff', 'glacier_area',
+        'glacier_elev', 'smb_water_year', 'smb_scaled', 'smb_scaled_capped', 'smb_scaled_capped_cum', 'surplus',
+        'glacier_melt_perc', 'glacier_mass_mmwe', 'glacier_vol_m3', 'glacier_vol_perc']
+    """
+    out1_cols = ['avg_temp_catchment',
+                 'avg_temp_glaciers',
+                 'evap_off_glaciers',
+                 'prec_off_glaciers',
+                 'prec_on_glaciers',
+                 'rain_off_glaciers',
+                 'snow_off_glaciers',
+                 'rain_on_glaciers',
+                 'snow_on_glaciers',
+                 'snowpack_off_glaciers',
+                 'soil_moisture',
+                 'upper_groundwater',
+                 'lower_groundwater',
+                 'melt_off_glaciers',
+                 'melt_on_glaciers',
+                 'ice_melt_on_glaciers',
+                 'snow_melt_on_glaciers',
+                 'refreezing_ice',
+                 'refreezing_snow',
+                 'total_refreezing',
+                 'SMB',
+                 'actual_evaporation',
+                 'total_precipitation',
+                 'total_melt',
+                 'runoff_without_glaciers',
+                 'runoff_from_glaciers',
+                 'runoff_ratio',
+                 'total_runoff']
+
+    out2_cols = ['glacier_area',
+                 'glacier_elev',
+                 'smb_water_year',
+                 'smb_scaled',
+                 'smb_scaled_capped',
+                 'smb_scaled_capped_cum',
+                 'surplus',
+                 'glacier_melt_perc',
+                 'glacier_mass_mmwe',
+                 'glacier_vol_m3',
+                 'glacier_vol_perc']
+
+    if var in out1_cols:
+        output_df = 'model_output'
+    elif var in out2_cols:
+        output_df = 'glacier_rescaling'
+    else:
+        raise ValueError("var needs to be one of the following strings: " +
+                         str([i for i in [out1_cols, out2_cols]]))
+
+    # Create an empty list to store the dataframes
+    dfs = []
+    # Loop over the models in the selected scenario
+    for model in dic[scenario].keys():
+        # Get the dataframe for the current model
+        df = dic[scenario][model][output_df]
+        # Append the dataframe to the list of dataframes
+        dfs.append(df[var])
+    # Concatenate the dataframes into a single dataframe
+    combined_df = pd.concat(dfs, axis=1)
+    # Set the column names of the combined dataframe to the model names
+    combined_df.columns = dic[scenario].keys()
+    # Resample time series
+    if resample_freq is not None:
+        if output_df == 'glacier_rescaling':
+            if resample_freq == '10YE':
+                if var in ['glacier_area', 'glacier_elev']:
+                    combined_df = combined_df.resample(resample_freq).mean()
+                else:
+                    combined_df = combined_df.resample(resample_freq).sum()
+        else:
+            if var in ['avg_temp_catchment', 'avg_temp_glaciers']:
+                combined_df = combined_df.resample(resample_freq).mean()
+            else:
+                combined_df = combined_df.resample(resample_freq).sum()
+
+    return combined_df
+
+
+from tools.helpers import matilda_vars
+import plotly.graph_objects as go
+from tools.helpers import confidence_interval
+
+def plot_ci_matilda(var, dic, resample_freq='YE', show=False):
+    """
+    A function to plot multi-model mean and confidence intervals of a given variable for two different scenarios.
+    Parameters:
+    -----------
+    var: str
+        The variable to plot.
+    dic: dict, optional (default=matilda_scenarios)
+        A dictionary containing the scenarios as keys and the dataframes as values.
+    resample_freq: str, optional (default='YE')
+        The resampling frequency to apply to the data.
+    show: bool, optional (default=False)
+        Whether to show the resulting plot or not.
+    Returns:
+    --------
+    go.Figure
+        A plotly figure object containing the mean and confidence intervals for the given variable in the two selected scenarios.
+    """
+
+    if var is None:
+        var = 'total_runoff'       # Default if nothing selected
+
+    # SSP2
+    df1 = custom_df_matilda(dic, scenario='SSP2', var=var, resample_freq=resample_freq)
+    df1_ci = confidence_interval(df1)
+    # SSP5
+    df2 = custom_df_matilda(dic, scenario='SSP5', var=var, resample_freq=resample_freq)
+    df2_ci = confidence_interval(df2)
+
+    fig = go.Figure([
+        # SSP2
+        go.Scatter(
+            name='SSP2',
+            x=df1_ci.index,
+            y=round(df1_ci['mean'], 2),
+            mode='lines',
+            line=dict(color='darkorange'),
+        ),
+        go.Scatter(
+            name='95% CI Upper',
+            x=df1_ci.index,
+            y=round(df1_ci['ci_upper'], 2),
+            mode='lines',
+            marker=dict(color='#444'),
+            line=dict(width=0),
+            showlegend=False
+        ),
+        go.Scatter(
+            name='95% CI Lower',
+            x=df1_ci.index,
+            y=round(df1_ci['ci_lower'], 2),
+            marker=dict(color='#444'),
+            line=dict(width=0),
+            mode='lines',
+            fillcolor='rgba(255, 165, 0, 0.3)',
+            fill='tonexty',
+            showlegend=False
+        ),
+
+        # SSP5
+        go.Scatter(
+            name='SSP5',
+            x=df2_ci.index,
+            y=round(df2_ci['mean'], 2),
+            mode='lines',
+            line=dict(color='darkblue'),
+        ),
+        go.Scatter(
+            name='95% CI Upper',
+            x=df2_ci.index,
+            y=round(df2_ci['ci_upper'], 2),
+            mode='lines',
+            marker=dict(color='#444'),
+            line=dict(width=0),
+            showlegend=False
+        ),
+        go.Scatter(
+            name='95% CI Lower',
+            x=df2_ci.index,
+            y=round(df2_ci['ci_lower'], 2),
+            marker=dict(color='#444'),
+            line=dict(width=0),
+            mode='lines',
+            fillcolor='rgba(0, 0, 255, 0.3)',
+            fill='tonexty',
+            showlegend=False
+        )
+    ])
+    fig.update_layout(
+        xaxis_title='Year',
+        yaxis_title=matilda_vars[var][0] + ' [' + matilda_vars[var][1] + ']',
+        title={'text': '<b>' + matilda_vars[var][0] + '</b>', 'font': {'size': 28, 'color': 'darkblue', 'family': 'Arial'}},
+        legend={'font': {'size': 18, 'family': 'Arial'}},
+        hovermode='x',
+        plot_bgcolor='rgba(255, 255, 255, 1)',  # Set the background color to white
+        margin=dict(l=10, r=10, t=90, b=10),  # Adjust the margins to remove space around the plot
+        xaxis=dict(gridcolor='lightgrey'),  # set the grid color of x-axis to lightgrey
+        yaxis=dict(gridcolor='lightgrey'),  # set the grid color of y-axis to lightgrey
+    )
+    fig.update_yaxes(rangemode='tozero')
+
+    # show figure
+    if show:
+        fig.show()
+    else:
+        return fig
+    
+from dash import Dash, dcc, html, Input, Output
+from jupyter_server import serverapp
+    
+def matilda_dash(app,dic,fig_count=4,
+                 default_vars=['total_runoff', 'total_precipitation', 'runoff_from_glaciers', 'glacier_area'],
+                 display_mode='inLine'):
+    
+    # If number of default variables does not match the number of figures use variables in default order
+    if fig_count != len(default_vars):
+        default_vars = list(matilda_vars.keys())
+
+    
+    # Create separate callback functions for each dropdown menu and graph combination
+    for i in range(fig_count):
+        @app.callback(
+            Output(f'line-plot-{i}', 'figure'),
+            Input(f'arg-dropdown-{i}', 'value'),
+            Input(f'freq-dropdown-{i}', 'value')
+        )
+        def update_figure(selected_arg, selected_freq, i=i):
+            fig = plot_ci_matilda(selected_arg,dic=dic, resample_freq=selected_freq+'E')  # adding 'E' to resample freq due to deprecated warning (e.g. 'YE' instead of 'Y')
+            return fig
+
+    # Define the dropdown menus and figures
+    dropdowns_and_figures = []
+    for i in range(fig_count):
+        arg_dropdown = dcc.Dropdown(
+            id=f'arg-dropdown-{i}',
+            options=[{'label': matilda_vars[var][0], 'value': var} for var in matilda_vars.keys()],
+            value=default_vars[i],
+            clearable=False,
+            style={'width': '400px', 'fontFamily': 'Arial', 'fontSize': 15}
+        )
+        freq_dropdown = dcc.Dropdown(
+            id=f'freq-dropdown-{i}',
+            options=[{'label': freq, 'value': freq} for freq in ['M', 'Y', '10Y']],
+            value='Y',
+            clearable=False,
+            style={'width': '100px'}
+        )
+        dropdowns_and_figures.append(
+            html.Div([
+                html.Div([
+                    html.Label("Variable:"),
+                    arg_dropdown,
+                ], style={'display': 'inline-block', 'margin-right': '30px'}),
+                html.Div([
+                    html.Label("Frequency:"),
+                    freq_dropdown,
+                ], style={'display': 'inline-block'}),
+                dcc.Graph(id=f'line-plot-{i}'),
+            ])
+        )
+    # Combine the dropdown menus and figures into a single layout
+    app.layout = html.Div(dropdowns_and_figures)
+
+from tools.helpers import custom_df_indicators
+from tools.indicators import indicator_vars
+
+def plot_ci_indicators(var, dic, plot_type='line', show=False):
+    """
+    A function to plot multi-model mean and confidence intervals of a given variable for two different scenarios.
+    Parameters:
+    -----------
+    var: str
+        The variable to plot.
+    dic: dict, optional (default=matilda_scenarios)
+        A dictionary containing the scenarios as keys and the dataframes as values.
+    plot_type: str, optional (default='line')
+        Whether the plot should be a line or a bar plot.
+    show: bool, optional (default=False)
+        Whether to show the resulting plot or not.
+    Returns:
+    --------
+    go.Figure
+        A plotly figure object containing the mean and confidence intervals for the given variable in the two selected scenarios.
+    """
+
+    if var is None:
+        var = 'total_runoff'       # Default if nothing selected
+
+    # SSP2
+    df1 = custom_df_indicators(dic, scenario='SSP2', var=var)
+    df1_ci = confidence_interval(df1)
+    # SSP5
+    df2 = custom_df_indicators(dic, scenario='SSP5', var=var)
+    df2_ci = confidence_interval(df2)
+
+    if plot_type == 'line':
+        fig = go.Figure([
+        # SSP2
+        go.Scatter(
+            name='SSP2',
+            x=df1_ci.index,
+            y=round(df1_ci['mean'], 2),
+            mode='lines',
+            line=dict(color='darkorange'),
+        ),
+        go.Scatter(
+            name='95% CI Upper',
+            x=df1_ci.index,
+            y=round(df1_ci['ci_upper'], 2),
+            mode='lines',
+            marker=dict(color='#444'),
+            line=dict(width=0),
+            showlegend=False
+        ),
+        go.Scatter(
+            name='95% CI Lower',
+            x=df1_ci.index,
+            y=round(df1_ci['ci_lower'], 2),
+            marker=dict(color='#444'),
+            line=dict(width=0),
+            mode='lines',
+            fillcolor='rgba(255, 165, 0, 0.3)',
+            fill='tonexty',
+            showlegend=False
+        ),
+
+        # SSP5
+        go.Scatter(
+            name='SSP5',
+            x=df2_ci.index,
+            y=round(df2_ci['mean'], 2),
+            mode='lines',
+            line=dict(color='darkblue'),
+        ),
+        go.Scatter(
+            name='95% CI Upper',
+            x=df2_ci.index,
+            y=round(df2_ci['ci_upper'], 2),
+            mode='lines',
+            marker=dict(color='#444'),
+            line=dict(width=0),
+            showlegend=False
+        ),
+        go.Scatter(
+            name='95% CI Lower',
+            x=df2_ci.index,
+            y=round(df2_ci['ci_lower'], 2),
+            marker=dict(color='#444'),
+            line=dict(width=0),
+            mode='lines',
+            fillcolor='rgba(0, 0, 255, 0.3)',
+            fill='tonexty',
+            showlegend=False
+        )
+    ])
+    elif plot_type == 'bar':
+        fig = go.Figure([
+            # SSP2
+            go.Bar(
+                name='SSP2',
+                x=df1_ci.index,
+                y=round(df1_ci['mean'], 2),
+                marker=dict(color='darkorange'),
+                error_y=dict(
+                    type='data',
+                    symmetric=False,
+                    array=round(df1_ci['mean'] - df1_ci['ci_lower'], 2),
+                    arrayminus=round(df1_ci['ci_upper'] - df1_ci['mean'], 2),
+                    color='grey'
+                )
+            ),
+            # SSP5
+            go.Bar(
+                name='SSP5',
+                x=df2_ci.index,
+                y=round(df2_ci['mean'], 2),
+                marker=dict(color='darkblue'),
+                error_y=dict(
+                    type='data',
+                    symmetric=False,
+                    array=round(df2_ci['mean'] - df2_ci['ci_lower'], 2),
+                    arrayminus=round(df2_ci['ci_upper'] - df2_ci['mean'], 2),
+                    color='grey'
+                )
+            )
+        ])
+    else:
+        raise ValueError("Invalid property specified for 'plot_type'. Choose either 'line' or 'bar'")
+
+    fig.update_layout(
+        xaxis_title='Year',
+        yaxis_title=indicator_vars[var][0] + ' [' + indicator_vars[var][1] + ']',
+        title={'text': '<b>' + indicator_vars[var][0] + '</b>', 'font': {'size': 28, 'color': 'darkblue', 'family': 'Palatino'}},
+        legend={'font': {'size': 18, 'family': 'Palatino'}},
+        hovermode='x',
+        plot_bgcolor='rgba(255, 255, 255, 1)',  # Set the background color to white
+        margin=dict(l=10, r=10, t=90, b=10),  # Adjust the margins to remove space around the plot
+        xaxis=dict(gridcolor='lightgrey'),  # set the grid color of x-axis to lightgrey
+        yaxis=dict(gridcolor='lightgrey'),  # set the grid color of y-axis to lightgrey
+    )
+    fig.update_yaxes(rangemode='tozero')
+
+    # show figure
+    if show:
+        fig.show()
+    else:
+        return fig
+    
+
+def matilda_indicators_dash(app, indicator_data, fig_count=4,
+                             default_vars=['peak_day', 'melt_season_length', 'potential_aridity', 'spei12'],
+                             default_types=['line', 'line', 'line', 'bar']):
+    
+    for i in range(fig_count):
+        @app.callback(
+            Output(f'line-plot-{i}', 'figure'),
+            Input(f'arg-dropdown-{i}', 'value'),
+            Input(f'type-dropdown-{i}', 'value')
+        )
+        def update_figure(selected_arg, selected_type, i=i):
+            fig = plot_ci_indicators(selected_arg, indicator_data, selected_type)
+            return fig
+
+    dropdowns_and_figures = []
+    for i in range(fig_count):
+        arg_dropdown = dcc.Dropdown(
+            id=f'arg-dropdown-{i}',
+            options=[{'label': indicator_vars[var][0], 'value': var} for var in indicator_vars.keys()],
+            value=default_vars[i],
+            clearable=False,
+            style={'width': '400px', 'fontFamily': 'Palatino', 'fontSize': 15}
+        )
+        type_dropdown = dcc.Dropdown(
+            id=f'type-dropdown-{i}',
+            options=[{'label': lab, 'value': val} for lab, val in [('Line', 'line'), ('Bar', 'bar')]],
+            value=default_types[i],
+            clearable=False,
+            style={'width': '150px'}
+        )
+        dropdowns_and_figures.append(
+            html.Div([
+                html.Div([
+                    html.Label("Variable:"),
+                    arg_dropdown,
+                ], style={'display': 'inline-block', 'margin-right': '30px'}),
+                html.Div([
+                    html.Label("Plot Type:"),
+                    type_dropdown,
+                ], style={'display': 'inline-block'}),
+                dcc.Graph(id=f'line-plot-{i}'),
+            ])
+        )
+    
+    app.layout = html.Div(dropdowns_and_figures)
