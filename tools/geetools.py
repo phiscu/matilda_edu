@@ -4,7 +4,7 @@ import os
 import requests
 from retry import retry
 from tqdm import tqdm
-
+import ee
 
 class CMIPDownloader:
     """Class to download spatially averaged CMIP6 data for a given period, variable, and spatial subset."""
@@ -46,11 +46,12 @@ class CMIPDownloader:
             def getImageCollection(var):
                 """Create and image collection of CMIP6 data for the requested variable, period, and region.
                 [Server side]"""
-
                 collection = ee.ImageCollection('NASA/GDDP-CMIP6') \
                     .select(var) \
                     .filterDate(startDate, endDate) \
-                    .filterBounds(self.shape)
+                    .filterBounds(self.shape) \
+                    .filter(ee.Filter.neq('model', 'NorESM2-LM'))  # Exclude model (missing year 2096)
+
                 return collection
 
             def renameBandName(b):
