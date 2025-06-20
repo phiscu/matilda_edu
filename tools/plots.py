@@ -16,7 +16,8 @@ import datetime as dt
 import matplotlib.dates as mdates
 from matplotlib.patches import Rectangle
 import matplotlib as mpl
-
+from dash import Dash, dcc, html, Input, Output
+from jupyter_server import serverapp
 
 
 # Use Seaborn white style
@@ -217,9 +218,7 @@ def vplots(before, after, target, target_label='Target', precip=False, show=Fals
         axis[k].axhline(before_last, color='black', linestyle='--', linewidth=1)
 
         if k == 0:
-            axis[k].set_title('Before Scaled Distribution Mapping')
-        
-
+            axis[k].set_title('Before Scaled Distribution Mapping')        
 
     plt.xlabel(var_label + unit)
 
@@ -457,7 +456,7 @@ def pp_matrix(original, target, corrected, scenario=None, nrow=7, ncol=5, precip
         plt.show()
 
 
-class MetaPlot:
+class MatildaSummary:
     def __init__(self, dir_input, dir_output, settings):
         self.dir_input = dir_input
         self.dir_output = dir_output
@@ -836,6 +835,8 @@ class MetaPlot:
         ax3l.axvline(dt.datetime(2022, 12, 31), color='salmon')  # Present day line
 
         # ----- Create legends -----
+        print("Creating legends...")
+
         # Snow & Ice melt legend
         ax1l.legend(['Snow Melt', 'Ice Melt', '_Snow', '_Ice', '_White', 'SSP5-SSP2', 'SSP5-SSP2'], 
                 ncol=2, fontsize="8", loc="upper left", frameon=False)
@@ -868,6 +869,8 @@ class MetaPlot:
                   f"{rolling} year rolling mean", ha='right', va='bottom', style='italic', **style)
 
         # ----- Final formatting -----
+        print("Final formatting...")
+
         ax3l.xaxis.set_major_locator(mdates.YearLocator(base=10))
 
         for ax in axs:
@@ -885,6 +888,8 @@ class MetaPlot:
         if save_path:
             figure.savefig(save_path, dpi=300)
             print(f"Figure saved to {save_path}")
+
+        print(">> DONE! <<")
                         
         return figure
 
@@ -1114,8 +1119,6 @@ def plot_ci_matilda(var, dic, resample_freq='YE', show=False):
     else:
         return fig
     
-from dash import Dash, dcc, html, Input, Output
-from jupyter_server import serverapp
     
 def matilda_dash(app,dic,fig_count=4,
                  default_vars=['total_runoff', 'total_precipitation', 'runoff_from_glaciers', 'glacier_area'],
@@ -1361,3 +1364,128 @@ def matilda_indicators_dash(app, indicator_data, fig_count=4,
         )
     
     app.layout = html.Div(dropdowns_and_figures)
+
+
+def ensemble_mean(matilda_scenarios, result_name, dict_name="model_output"):
+    """
+    Compute the ensemble mean for a specific variable across all models in the scenarios.
+
+    Parameters:
+        matilda_scenarios (dict): Original scenario dictionary with nested model outputs.
+        result_name (str): Name of the target variable to extract (e.g., 'total_runoff').
+        dict_name (str): Name of the dictionary in the model output to look for results (default: 'model_output').
+
+    Returns:
+        dict: A dictionary with emission scenarios as keys and the ensemble mean time series (as pandas Series) as values.
+    """
+
+    def get_matilda_result_all_models(scenario, result_name, dict_name="model_output"):
+        df = pd.DataFrame()
+
+        for key, value in matilda_scenarios[scenario].items():
+            s = value[dict_name][result_name]
+            s.name = key
+            df = pd.concat([df, s], axis=1)
+
+        df.index = pd.to_datetime(df.index)
+        df.index.name = "TIMESTAMP"
+        print(f"{result_name} extracted for {scenario}")
+
+        return df
+
+    # Extract the result data for each scenario and compute the ensemble mean
+    mean_results = {}
+    for scenario in matilda_scenarios.keys():
+        # Get the DataFrame of all models for the given scenario and variable
+        df = get_matilda_result_all_models(scenario, result_name, dict_name)
+        # Compute the ensemble mean across models (columns)
+        mean_results[scenario] = df.mean(axis=1)
+
+    return mean_results
+
+
+def plot_annual_cycles(matilda_scenarios, scenarios=("SSP2", "SSP5"), save_path=None):
+    """
+    Creates a 2-column by 4-row plot of annual cycles for the given variables,
+    comparing two scenarios side by side.
+
+    Parameters:
+        runoff (dict): Ensemble mean dictionary for runoff.
+        snow_melt (dict): Ensemble mean dictionary for snowmelt.
+        ice_melt (dict): Ensemble mean dictionary for ice melt.
+        aet (dict): Ensemble mean dictionary for actual evaporation.
+        scenarios (tuple): Tuple of two scenarios to compare (default: ("SSP2", "SSP5"))
+
+    Returns:
+        None: Displays the subplot figure.
+    """
+
+    runoff = ensemble_mean(matilda_scenarios, "total_runoff")
+    snow_melt = ensemble_mean(matilda_scenarios, "snow_melt_on_glaciers")
+    ice_melt = ensemble_mean(matilda_scenarios, "ice_melt_on_glaciers")
+    off_melt = ensemble_mean(matilda_scenarios, "melt_off_glaciers")
+    aet = ensemble_mean(matilda_scenarios, "actual_evaporation")
+
+    # Melt off glacier is always snow melt:
+    snow_melt["SSP2"] = snow_melt["SSP2"] + off_melt["SSP2"]
+    snow_melt["SSP5"] = snow_melt["SSP5"] + off_melt["SSP5"]
+    
+    variables = {
+        "Total Runoff": ("YlGnBu", runoff),
+        "Snowmelt": ("Blues", snow_melt),
+        "Ice Melt": ("Blues", ice_melt),
+        "AET": ("Oranges", aet),
+    }
+
+    short_month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+    fig, axes = plt.subplots(4, 2, figsize=(8, 12), sharex=True)
+
+    for row_idx, (var_name, (cmap, var_dict)) in enumerate(variables.items()):
+        for col_idx, scenario in enumerate(scenarios):
+            ax = axes[row_idx, col_idx]
+            data = var_dict[scenario]
+
+            # Prepare the data
+            df = data.reset_index()
+            df.columns = ["date", var_name]
+            df["date"] = pd.to_datetime(df["date"])
+            df["year"] = df["date"].dt.year
+            df["month"] = df["date"].dt.month
+
+            # Group and pivot
+            monthly_values = df.groupby(["year", "month"])[var_name].sum().reset_index()
+            grid = monthly_values.pivot(index="month", columns="year", values=var_name)
+
+            # Plot
+            c = ax.pcolormesh(grid.index, grid.columns, grid.T, shading="nearest", cmap=cmap)
+
+            # Colorbar
+            cbar = fig.colorbar(c, ax=ax, ticks=[
+                round(grid.min().min() / 10) * 10,
+                round(grid.max().max() / 10) * 10
+            ])
+            c.set_clim(round(grid.min().min() / 10) * 10, round(grid.max().max() / 10) * 10)
+            cbar.ax.tick_params(labelsize=12)
+            cbar.set_label("mm", labelpad=-13, rotation=90, fontsize=12)
+
+            # Titles and labels
+            if col_idx == 0:
+                ax.set_ylabel(var_name, fontsize=16)
+            if row_idx == 0:
+                ax.set_title(scenario, fontsize=18)
+
+            # Customizing ticks
+            ax.set_xticks([1, 7, 12])
+            ax.set_xticklabels(["Jan", "Jul", "Dec"], fontsize=13)
+            ax.set_yticks([grid.columns[0], grid.columns[len(grid.columns) // 2], grid.columns[-1]])
+            ax.set_yticklabels(["2000", "2050", "2100"], fontsize=13)
+
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=300)
+        print(f"Figure saved to {save_path}")
+    plt.show()
+
+    

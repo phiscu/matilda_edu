@@ -7,7 +7,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.16.4
 #   kernelspec:
-#     display_name: matilda_edu
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -24,11 +24,11 @@
 #
 # 3. ...and create an **interactive application** to explore the results.
 #
-# Further,to highlight the impacts of climate change on our catchment we can calculate a set of indicators frequently used in climate impact studies. We will ...
+# 4. ...calculate a set of **meterological and hydrological indicators** frequently used in climate impact studies,
 #
-# 4. ...calculate **meterological and hydrological statistics** for our modelling results,
+# 5. ...plot these climate change indcators in **interactive applications**,
 #
-# 5. ...plot these climate change indcators **interactive applications** to explore the impacts.
+# 6. ...and finally create **summary figures** for our catchment through the 21st century.
 
 # %% [markdown]
 # ## Custom dataframes
@@ -59,6 +59,8 @@ if compact_files:
 else:
     # For speed:
     matilda_scenarios = pickle_to_dict(f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
+
+print("Done!")
 
 
 # %% [markdown]
@@ -160,7 +162,7 @@ else:
 # ## Climate Change Impact Analysis
 
 # %% [markdown]
-# This module calculates the following statistics for all ensemble members in annual resolution:
+# To highlight the impacts of climate change on our catchment we can calculate a set of indicators frequently used in climate impact studies and visualize them in a `Dash` board as above. The `calculate_indicators()` function calculates the following statistics for all ensemble members in annual resolution:
 #
 # - Month with minimum/maximum precipitation
 # - Timing of Peak Runoff
@@ -190,32 +192,8 @@ if compact_files:
 else:
     dict_to_pickle(matilda_indicators, f"{dir_output}cmip6/adjusted/matilda_indicators_pickle")
 
-# %%
-import shutil
-
-# refresh `output_download.zip` with data retrieved within this notebook
-shutil.make_archive('output_download', 'zip', 'output')
-print('Output folder can be download now (file output_download.zip)')
-
 # %% [markdown]
-# Similar to the last notebook we write a function to **create customs dataframes for individual indicators** across all ensemble members and write a plot function for a single plot.
-#
-
-# %%
-from tools.indicators import indicator_vars
-from tools.plots import plot_ci_indicators
-    
-
-plot_ci_indicators(var = 'potential_aridity', dic = matilda_indicators, plot_type='line', show=True)
-
-# %% [markdown]
-# Then we are creating a creating again an <b>interactive application</b> to visualize the calculated indicators.
-
-# %%
-from tools.helpers import adjust_jupyter_config
-
- # retrieve server information to find out whether it's running locally or on mybinder.org server
-adjust_jupyter_config()
+# Now, we create another **interactive application** to visualize the calculated indicators.
 
 # %%
 from tools.plots import matilda_indicators_dash
@@ -226,7 +204,7 @@ from jupyter_server import serverapp
 app2 = Dash(__name__)
 matilda_indicators_dash(app2, matilda_indicators)
 
-port = 8051
+port = 8052
 if list(serverapp.list_running_servers()) == []:
     app2.run(port=port, jupyter_mode="external")
 else:
@@ -236,12 +214,29 @@ else:
 # ## Matilda Summary
 
 # %% [markdown]
-# Finally, we generate a <b>Meta Plot</b> to highlight the most important results in a single figure. 
+# While interactive applications are great to explore, they require a lot of data and a running server. Therefore, we create two <b>summary figures</b> to illustrate the most important results in a compact way. 
+
+# %% [markdown]
+# The first figure shows the forcing data, the glacier area and all components of the water balance over the course of the 21st century.
 
 # %%
-from tools.plots import MetaPlot
+from tools.plots import MatildaSummary
 
-metaplot = MetaPlot(dir_input, dir_output, settings)
-metaplot.load_data()
+summary = MatildaSummary(dir_input, dir_output, settings)
+summary.load_data()
 
-metaplot.plot_summary(rolling=5, save_path=None);
+summary.plot_summary(save_path=f"{dir_output}/figures/summary_ensemble.png");
+
+# %% [markdown]
+# The second figure summarizes the ensemble means of the key variables in **two-dimensional grids**. This allows to easily identify **changes in the seasonal cycle** over the years.
+
+# %%
+from tools.plots import plot_annual_cycles
+
+plot_annual_cycles(matilda_scenarios, save_path=f"{dir_output}/figures/summary_gridplots.png")
+
+
+# %% [markdown]
+# ## Finish line
+#
+# **Congratulations**, you made it till the end! You can now explore your results, go back to refine your calibration or close this book for good. Thanks for sticking with us and please get in touch if you like.
