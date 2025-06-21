@@ -37,7 +37,7 @@
 #
 # Have fun exploring and happy modeling!
 #
-# ![flowchart](images/workflow_detailed_2024_-Full+legend.png)
+# ![flowchart](images/workflow_detailed_2024_-Full_legend.png)
 
 # %% [markdown]
 # ## Signing up for Google Earth Engine (GEE)
