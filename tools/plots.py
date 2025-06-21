@@ -9,7 +9,7 @@ from tools.helpers import read_era5l
 import configparser
 from scipy import stats
 import numpy as np
-from tools.helpers import parquet_to_dict, read_yaml, pickle_to_dict
+from tools.helpers import parquet_to_dict, read_yaml, pickle_to_dict, get_si
 from tools.indicators import indicator_vars, custom_df_indicators
 import warnings
 import seaborn as sns
@@ -19,7 +19,8 @@ from matplotlib.patches import Rectangle
 import matplotlib as mpl
 from dash import Dash, dcc, html, Input, Output
 from jupyter_server import serverapp
-
+import plotly.graph_objs as go
+import plotly.io as pio
 
 # Use Seaborn white style
 sns.set_style("white")
@@ -1487,4 +1488,47 @@ def plot_annual_cycles(matilda_scenarios, scenarios=("SSP2", "SSP5"), save_path=
         print(f"Figure saved to {save_path}")
     plt.show()
 
-    
+
+def plot_sensitivity_bars(*dfs, labels=None, show=False, bar_width=0.3, bar_gap=0.6):
+    """
+    Plots a horizontal bar chart showing the total sensitivity index for each parameter in a MATILDA model.
+
+    Parameters
+    ----------
+    *dfs : pandas.DataFrame
+        Multiple dataframes containing the sensitivity indices for each parameter.
+    labels : list of str, optional
+        Labels to use for the different steps in the sensitivity analysis. If not provided, the default
+        labels will be 'No Limits', 'Step 1', 'Step 2', etc.
+    bar_width : float, optional
+        Width of each bar in the chart.
+    bar_gap : float, optional
+        Space between bars.
+    """
+    traces = []
+    colors = ['darkblue', 'orange', 'purple', 'cyan']   # add more colors if needed
+    for i, df in enumerate(dfs):
+        df = get_si(df)
+        if i > 0:
+            if labels is None:
+                label = 'Step ' + str(i)
+            else:
+                label = labels[i]
+        else:
+            label = 'No Limits'
+        trace = go.Bar(y=df.index,
+                       x=df['ST'],
+                       name=label,
+                       orientation='h',
+                       marker=dict(color=colors[i]),
+                       width=bar_width)
+        traces.append(trace)
+    layout = go.Layout(title=dict(text='<b>' +'Total Sensitivity Index for MATILDA Parameters' + '<b>', font=dict(size=24)),
+                   xaxis_title='Total Sensitivity Index',
+                   yaxis_title='Parameter',
+                   yaxis=dict(automargin=True),
+                   bargap=bar_gap,
+                   height=700)
+    fig = go.Figure(data=traces, layout=layout)
+    if show:
+        fig.show()

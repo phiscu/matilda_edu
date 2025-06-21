@@ -8,6 +8,8 @@ from pathlib import Path
 from fastparquet import write
 import numpy as np
 from bias_correction import BiasCorrection
+import spotpy
+import contextlib
 
 
 def read_yaml(file_path):
@@ -549,3 +551,34 @@ def replace_values(target_df, source_df, source_column):
 
     return target_df
 
+
+def get_si(fast_results: str, to_csv: bool = False) -> pd.DataFrame:
+    """
+    Computes the sensitivity indices of a given FAST simulation results file.
+    Parameters
+    ----------
+    fast_results : str
+        The path of the FAST simulation results file.
+    to_csv : bool, optional
+        If True, the sensitivity indices are saved to a CSV file with the same
+        name as fast_results, but with '_sensitivity_indices.csv' appended to
+        the end (default is False).
+    Returns
+    -------
+    pd.DataFrame
+        A pandas DataFrame containing the sensitivity indices and parameter
+        names.
+    """
+    if fast_results.endswith(".csv"):
+        fast_results = fast_results[:-4]  # strip .csv
+    results = spotpy.analyser.load_csv_results(fast_results)
+    # Suppress prints
+    with contextlib.redirect_stdout(open(os.devnull, 'w')):
+        SI = spotpy.analyser.get_sensitivity_of_fast(results, print_to_console=False)
+    parnames = spotpy.analyser.get_parameternames(results)
+    sens = pd.DataFrame(SI)
+    sens['param'] = parnames
+    sens.set_index('param', inplace=True)
+    if to_csv:
+        sens.to_csv(os.path.basename(fast_results) + '_sensitivity_indices.csv', index=False)
+    return sens
