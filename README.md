@@ -1,8 +1,7 @@
 # MATILDA-Edu: Workflow for Modeling Water Resources in Glacierized Catchments
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/phiscu/matilda_edu/main?labpath=Notebook0_Introduction.ipynb)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/phiscu/matilda_edu/blob/main/HelloGEEWorld.ipynb)
 
-Welcome to **MATILDA-Edu**, the educational companion to the **MATILDA** glacio-hydrological modeling framework. This repository hosts the extended MATILDA workflow in form of a Jupyter Book. Designed for researchers, practitioners, and students, this workflow guides users from data acquisition to the analysis of climate change impacts on glacierized catchments.
+Welcome to **MATILDA-Edu**, the online companion to the **MATILDA** glacio-hydrological modeling framework. This repository hosts the extended MATILDA workflow in form of a Jupyter Book. Designed for researchers, practitioners, and students, this workflow guides users from data acquisition to the analysis of climate change impacts on glacierized catchments.
 
 📚 **Explore the Jupyter Book** on the [MATILDA-Online Website](https://matilda-online.github.io/jbook).
 
@@ -52,6 +51,7 @@ The core routines of MATILDA, including the temperature-index melt model and HBV
 
 - **Alexander Georgi** ([GitHub](https://github.com/geoalxx))
 - **Phillip Schuster** ([GitHub](https://github.com/phiscu))
+- **Mia Janzen** ([Github](https://github.com/hoepke))
 
 ---
 
