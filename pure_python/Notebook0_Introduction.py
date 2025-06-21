@@ -137,6 +137,7 @@
 #    - ... configure the **style of output figures**. More information about the available styles can be found in the **[SciencePlots manual](https://github.com/garrettj403/SciencePlots/wiki/Gallery)**.
 #    - ... choose between a faster (```.pickle```) and a more compact (```.parquet```) format for intermediate files.
 #    - ... set the number of cores available for computation. If you are in a binder, leave this at 1.
+#    - ... decide whether you want to store your output folder in a `.zip` file at the end of every Notebook. This is useful when you work online and want to download your (intermediate) results.
 #
 # &nbsp;
 # 3. The last section ```[MEDIA_SERVER]``` holds credentials for the file access on a file repository of our university and should not be edited if you are not a university member and know what you're doing. The credentials only grant read access to glacier-related public data and are not of value to you.

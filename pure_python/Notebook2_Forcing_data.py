@@ -18,7 +18,7 @@
 # %% [markdown]
 # Now that we have all the static data, we can focus on the **climate variables**. In this notebook we will...
 #
-# 1. ...download **ERA5 land reanalysis data** aggregated to our catchment area,
+# 1. ...download **ERA5 land reanalysis data** aggregated to our catchment,
 # 2. ...and determine the **reference altitude** of the data from the geopotential height.
 #
 # For data preprocessing and download we will again use the **Google Earth Engine** (GEE) to offload as much as possible to external servers. ERA5-Land is the latest reanalysis dataset from the European Center for Medium-Range Weather Forecast ([ECMWF](https://www.ecmwf.int/en/era5-land)), available from 1950 to near real-time. The GEE data catalog summarizes...
@@ -40,6 +40,8 @@
 import pandas as pd
 import configparser
 import ast
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)     # Suppress Deprecation Warnings
 
 # read local config.ini file
 config = configparser.ConfigParser()
@@ -53,6 +55,7 @@ dir_figures = config['FILE_SETTINGS']['DIR_FIGURES']
 output_gpkg = dir_output + config['FILE_SETTINGS']['GPKG_NAME']
 scenarios = config.getboolean('CONFIG', 'PROJECTIONS')
 show_map = config.getboolean('CONFIG','SHOW_MAP')
+zip_output = config['CONFIG']['ZIP_OUTPUT']
 
 # get style for matplotlib plots
 plt_style = ast.literal_eval(config['CONFIG']['PLOT_STYLE'])
@@ -87,7 +90,7 @@ catchment = geemap.geopandas_to_ee(catchment_new)
 
 # %%
 if scenarios == True:
-    date_range = ['1979-01-01', '2023-01-01']
+    date_range = ['1979-01-01', '2024-01-01']
 else:
     date_range = ast.literal_eval(config['CONFIG']['DATE_RANGE'])
 
@@ -163,7 +166,7 @@ cropped_ds = ds.sel(lat=slice(min_lat,max_lat), lon=slice(min_lon,max_lon))
 print(f"xr.Dataset cropped to bbox[{round(min_lon, 2)}, {round(min_lat, 2)}, {round(max_lon, 2)}, {round(max_lat)}]")
 
 # %% [markdown]
-# To load `xarray` data into GEE a little workaround is needed. Credits go out to [Oliver Lopez](https://github.com/lopezvoliver/geemap/blob/netcdf_to_ee/geemap/common.py#L1776) for this solution.
+# To load `xarray` data into GEE a little workaround is needed. Credits to [Oliver Lopez](https://github.com/lopezvoliver/geemap/blob/netcdf_to_ee/geemap/common.py#L1776) for this solution.
 
 # %%
 # function to load nc file into GEE
@@ -336,9 +339,10 @@ import shutil
 # update settings file
 update_yaml(dir_output + 'settings.yml', {'ele_dat': float(ele_dat)})
 
-# refresh `output_download.zip` with data retrieved within this notebook
-shutil.make_archive('output_download', 'zip', 'output')
-print('Output folder can be download now (file output_download.zip)')
+if zip_output:
+    # refresh `output_download.zip` with data retrieved within this notebook
+    shutil.make_archive('output_download', 'zip', 'output')
+    print('Output folder can be download now (file output_download.zip)')
 
 # %%
 # %reset -f
