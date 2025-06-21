@@ -19,21 +19,24 @@
 # In this notebook we will...
 # 1. ... aggregate and download climate scenario data from the Coupled Model Intercomparison Project Phase 6 ([CMIP6](https://wcrp-cmip.org/cmip-phase-6-cmip6/)) for our catchment,
 # 2. ... preprocess the data,
-# 3. ... compare the CMIP6 models with our reanalysis data and adjust them for bias,
+# 3. ... compare the CMIP6 models with our reanalysis data and adjust them for biases,
 # 4. ... and visualize the data before and after bias adjustment.
 #
-# The [NEX-GDDP-CMIP6 dataset](https://www.nature.com/articles/s41597-022-01393-4) we are going to use has been downscaled to 27830 m resolution by the [NASA Climate Analytics Group](https://www.nature.com/articles/s41597-022-01393-4) and is available in two [Shared Socio-Economic Pathways](https://unfccc.int/sites/default/files/part1_iiasa_rogelj_ssp_poster.pdf) (SSP2 and SSP5). It is available via [Google Earth Engine](https://developers.google.com/earth-engine/datasets/catalog/NASA_GDDP-CMIP6#bands) which makes it subsettable on the server side and the download relatively light-weight.
+# The [NEX-GDDP-CMIP6 dataset](https://www.nature.com/articles/s41597-022-01393-4) we are going to use has been downscaled to 27830 m resolution by the [NASA Climate Analytics Group](https://www.nature.com/articles/s41597-022-01393-4) and is available in two [Shared Socio-Economic Pathways](https://unfccc.int/sites/default/files/part1_iiasa_rogelj_ssp_poster.pdf) (SSP2 and SSP5). It is available via [Google Earth Engine](https://developers.google.com/earth-engine/datasets/catalog/NASA_GDDP-CMIP6#bands) which makes it subsettable on the server side and the download files relatively lightweight.
 
 # %% [markdown]
 # We start by reading the config and initializing the Google Earth Engine access again.
 
 # %%
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)     # Suppress Deprecation Warnings
 import configparser
 import ast
 import geopandas as gpd
 import ee
 import geemap
 import numpy as np
+
 
 # read local config.ini file
 config = configparser.ConfigParser()
@@ -43,6 +46,7 @@ config.read('config.ini')
 dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
 dir_figures = config['FILE_SETTINGS']['DIR_FIGURES']
 output_gpkg = dir_output + config['FILE_SETTINGS']['GPKG_NAME']
+zip_output = config['CONFIG']['ZIP_OUTPUT']
 
 # get style for matplotlib plots
 # plt_style = ast.literal_eval(config['CONFIG']['PLOT_STYLE'])
@@ -420,9 +424,10 @@ else:
 # %%
 import shutil
 
-# refresh `output_download.zip` with data retrieved within this notebook
-shutil.make_archive('output_download', 'zip', 'output')
-print('Output folder can be download now (file output_download.zip)')
+if zip_output:
+    # refresh `output_download.zip` with data retrieved within this notebook
+    shutil.make_archive('output_download', 'zip', 'output')
+    print('Output folder can be download now (file output_download.zip)')
 
 # %%
 # %reset -f

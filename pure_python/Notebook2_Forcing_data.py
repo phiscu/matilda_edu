@@ -37,11 +37,11 @@
 # - show/hide **interactive map** in notebooks
 
 # %%
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)     # Suppress Deprecation Warnings
 import pandas as pd
 import configparser
 import ast
-import warnings
-warnings.filterwarnings("ignore", category=UserWarning)     # Suppress Deprecation Warnings
 
 # read local config.ini file
 config = configparser.ConfigParser()

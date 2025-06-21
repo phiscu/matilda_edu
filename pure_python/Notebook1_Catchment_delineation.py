@@ -38,6 +38,8 @@
 # - **show/hide GEE map** in notebooks
 
 # %%
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)     # Suppress Deprecation Warnings
 import os
 import pandas as pd
 import numpy as np
@@ -45,8 +47,6 @@ import configparser
 import ast
 import matplotlib.pyplot as plt
 import scienceplots
-import warnings
-warnings.filterwarnings("ignore", category=UserWarning)     # Suppress Deprecation Warnings
 
 # read local config.ini file
 config = configparser.ConfigParser()
