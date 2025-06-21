@@ -65,12 +65,13 @@ except Exception as e:
     ee.Initialize(project=cloud_project)
 
 # %% [markdown]
-# The next cell reads the output directory location and the catchment outline as target polygon.
+# Now we can send the catchment outline to GEE to use it as target polygon for aggregation.
 
 # %%
 # load catchment outline as target polygon
 catchment_new = gpd.read_file(output_gpkg, layer='catchment_new')
 catchment = geemap.geopandas_to_ee(catchment_new)
+print("Catchment outline converted to GEE polygon.")
 
 # name target subdirectory to be created
 cmip_dir = dir_output + 'cmip6/'
@@ -78,9 +79,9 @@ cmip_dir = dir_output + 'cmip6/'
 # %% [markdown]
 # ## Select, aggregate, and download downscaled CMIP6 data
 # %% [markdown]
-# We have designed a class called `CMIPDownloader` that does all this in one go. The `buildFeature()` function requests daily catchment wide averages of all available CMIP6 models for individual years. All requested years are stored in an `ee.ImageCollection` by `getResult()`. To provide the best basis for bias adjustment, a large overlap of reanalysis and scenario data is recommended. By default, the `CMIPDownloader` class requests everything between the earliest available date from ERA5 (1979) and the latest available date from CMIP6 (2100). The `download()` function then starts a given number of parallel requests, each downloading a single year and saving it as a CSV file.
+# We have designed a class called `CMIPDownloader` that does everything promised in the heading in one go. The `buildFeature()` function requests daily catchment wide averages of all available CMIP6 models for individual years. All requested years are stored in an `ee.ImageCollection` by the`getResult()` function. To provide the best basis for bias adjustment, a large overlap of reanalysis and scenario data is recommended. By default, the `CMIPDownloader` class requests everything between the earliest available date from ERA5 (1979) and the latest available date from CMIP6 (2100). The `download()` function then starts a given number of parallel requests, each downloading a single year and saving it as a CSV file.
 #
-# We can simply specify a target location and start the download for both variables individually. We choose a moderate number of requests to avoid kernel hickups. The download time depends on the number of parallel processes, the traffic on the GEE servers and other mysterious factors. If you run this notebook in a binder, it usually doesn't take more than 5 minutes for both downloads to finish.
+# We can simply specify a target location and start the download for both variables individually. If you are in a binder or only have few CPUs available, choose a moderate number of requests to avoid "hickups". The download time depends on the number of parallel processes, the traffic on the GEE servers and other mysterious factors. If you run this notebook in a binder, it usually doesn't take more than 5 minutes for both downloads to finish.
 
 # %%
 from tools.geetools import CMIPDownloader
@@ -91,13 +92,13 @@ downloader_p = CMIPDownloader(var='pr', starty=1979, endy=2100, shape=catchment,
 downloader_p.download()
 
 # %% [markdown]
-# We have now downloaded individual files for each year and variable and stored them in `cmip_dir`. To use them as model forcing data, they need to be processed.
+# We have now downloaded individual files for each year and variable and stored them in `output/cmip_dir`. To use them as model forcing data, they need to be processed.
 
 # %% [markdown]
-# ## Process the downloaded CSV files
+# ## Processing CMIP6 data
 
 # %% [markdown]
-# The corresponding `CMIPProcessor` class will read all downloaded CSV files and concatenate them into a single file per scenario. It also checks for consistency and drops models that are not available for individual years or scenarios. It processes variables individually and returns a single data frame for each of the two scenarios from 1979 to 2100.
+# The corresponding `CMIPProcessor` class will read all downloaded CSV files and concatenate them into a single file per scenario. It also checks for consistency and drops models that are not available for individual years or scenarios. It processes variables individually and returns a single dataframe for each of the two scenarios from 1979 to 2100.
 
 # %%
 from tools.geetools import CMIPProcessor
@@ -111,7 +112,7 @@ processor_p = CMIPProcessor(file_dir=cmip_dir, var='pr')
 ssp2_pr_raw, ssp5_pr_raw = processor_p.get_results()
 
 # %% [markdown]
-# Let's have a look. We can see that our scenario dataset now contains 33 CMIP6 models in alphabetical order.
+# Let's have a look. We can see that our scenario dataset now contains a fairly large number of CMIP6 models in alphabetical order.
 
 # %% tags=["output_scroll"]
 print(ssp2_tas_raw.info())
@@ -127,91 +128,31 @@ print(processor_t.dropped_models)
 # ## Bias adjustment using reananlysis data
 
 # %% [markdown]
-# Due to the coarse resolution of global climate models (GCMs) and the extensive correction of reanalysis data there is substantial bias between the two datasets. To force a glacio-hydrological model calibrated on reanalysis data with climate scenarios this bias needs to be adressed. We will use a method developed by [Switanek et.al. (2017)](https://doi.org/10.5194/hess-21-2649-2017) called Scaled Distribution Mapping (SDM) to correct for bias while preserving trends and the likelihood of meteorological events in the raw GCM data. The method has been implemented in the [`bias_correction`](https://github.com/pankajkarman/bias_correction) Python library by [Pankaj Kumar](https://pankajkarman.github.io/). As suggested by the authors we will apply the bias adjustment to discrete blocks of data individually.
-# We will first create a function to read our reanalysis CSV. The `adjust_bias()` function will then loop over all models and adjust them to the reanalysis data in the overlap period (1979 to 2022).
-
-# %%
-from tools.helpers import read_era5l
-from bias_correction import BiasCorrection
-import pandas as pd
-
-def adjust_bias(predictand, predictor, method='normal_mapping'):
-    """Applies bias correction to discrete periods individually."""
-    # Read predictor data
-    predictor = read_era5l(predictor)
-
-    # Determine variable type based on the mean value
-    var = 'temp' if predictand.mean().mean() > 100 else 'prec'
-
-    # Adjust bias in discrete blocks as suggested by Switanek et al. (2017)
-    correction_periods = [
-        {'correction_range': ('1979-01-01', '2010-12-31'), 'extraction_range': ('1979-01-01', '1990-12-31')},
-    ]
-    for decade_start in range(1991, 2090, 10):
-        correction_start = f"{decade_start - 10}-01-01"
-        correction_end = f"{decade_start + 19}-12-31"
-        extraction_start = f"{decade_start}-01-01"
-        extraction_end = f"{decade_start + 9}-12-31"
-
-        correction_periods.append({
-            'correction_range': (correction_start, correction_end),
-            'extraction_range': (extraction_start, extraction_end)
-        })
-
-    correction_periods.append({
-        'correction_range': ('2081-01-01', '2100-12-31'),
-        'extraction_range': ('2091-01-01', '2100-12-31')
-    })
-
-    # Store corrected periods
-    corrected_data_list = []
-    training_period = slice('1979-01-01', '2022-12-31')
-
-    for period in correction_periods:
-        correction_start, correction_end = period['correction_range']
-        extraction_start, extraction_end = period['extraction_range']
-
-        correction_slice = slice(correction_start, correction_end)
-        extraction_slice = slice(extraction_start, extraction_end)
-
-        data_corr = pd.DataFrame()
-        for col in predictand.columns:
-            x_train = predictand[col][training_period].squeeze()
-            y_train = predictor[training_period][var].squeeze()
-            x_predict = predictand[col][correction_slice].squeeze()
-            bc_corr = BiasCorrection(y_train, x_train, x_predict)
-            corrected_col = pd.DataFrame(bc_corr.correct(method=method))
-            data_corr[col] = corrected_col.loc[extraction_slice]
-
-        corrected_data_list.append(data_corr)
-
-    corrected_data = pd.concat(corrected_data_list, axis=0)
-    return corrected_data
-
+# Due to the coarse resolution of global climate models (GCMs) and the extensive correction of reanalysis data there is substantial bias between the two datasets. To force a glacio-hydrological model calibrated on reanalysis data with climate scenarios this bias needs to be adressed. We will use a method developed by [Switanek et.al. (2017)](https://doi.org/10.5194/hess-21-2649-2017) called **Scaled Distribution Mapping (SDM)** to correct for bias while preserving trends and the likelihood of meteorological events in the raw GCM data. The method has been implemented in the [`bias_correction`](https://github.com/pankajkarman/bias_correction) Python library by [Pankaj Kumar](https://pankajkarman.github.io/). As suggested by the authors we will apply the bias adjustment to discrete blocks of data individually. The `adjust_bias()` function loops over all models and adjusts them to the reanalysis data in the overlap period (1979 to 2024).
+# The function is applied separately to each variable and scenario. The `bias_adjustment` library provides a normal and a gamma distribution as a basis for the SDM. As the distribution of the ERA5 Land precipitation data is actually closer to a normal distribution with a cut-off of 0 mm, we use the `normal_mapping` method for both variables.
 
 # %% [markdown]
 # The function is applied separately to each variable and scenario. The `bias_adjustment` library provides a normal and a gamma distribution as a basis for the SDM. As the distribution of the ERA5 Land precipitation data is actually closer to a normal distribution with a cut-off of 0 mm, we use the `normal_mapping` method for both variables.
 
 # %%
+from tools.helpers import adjust_bias
+
 era5_file = dir_output + 'ERA5L.csv'
 
+print("SSP2 Temperature:")
 ssp2_tas = adjust_bias(predictand=ssp2_tas_raw, predictor=era5_file)
+print("SSP5 Temperature:")
 ssp5_tas = adjust_bias(predictand=ssp5_tas_raw, predictor=era5_file)
+print("SSP2 Precipitation:")
 ssp2_pr = adjust_bias(predictand=ssp2_pr_raw, predictor=era5_file)
+print("SSP5 Precipitation:")
 ssp5_pr = adjust_bias(predictand=ssp5_pr_raw, predictor=era5_file)
 
 # %% [markdown]
-# The result is a comprehensive dataset of 33 models over 122 years in two versions (pre- and post-adjustment) for every variable. To see what's in the data and what happened during bias adjustment we need an overview.
+# The result is a comprehensive dataset of several models over 122 years in two versions (pre- and post-adjustment) for every variable. To see what's in the data and what happened during bias adjustment we need an overview.
 
 # %% [markdown]
 # ## 	Visualization
-
-# %% [markdown]
-# First, we store our raw and adjusted data in dictionaries.
-
-# %%
-ssp_tas_dict = {'SSP2_raw': ssp2_tas_raw, 'SSP2_adjusted': ssp2_tas, 'SSP5_raw': ssp5_tas_raw, 'SSP5_adjusted': ssp5_tas}
-ssp_pr_dict = {'SSP2_raw': ssp2_pr_raw, 'SSP2_adjusted': ssp2_pr, 'SSP5_raw': ssp5_pr_raw, 'SSP5_adjusted': ssp5_pr}
 
 # %% [markdown]
 # The first plot will contain simple timeseries. The first function `cmip_plot()` resamples the data so a given frequency and creates a single plot. `cmip_plot_combined()` arranges multiple plots for both scenarios before and after bias adjustment.
@@ -220,10 +161,15 @@ ssp_pr_dict = {'SSP2_raw': ssp2_pr_raw, 'SSP2_adjusted': ssp2_pr, 'SSP5_raw': ss
 # ### Time series
 
 # %% [markdown]
-# By default, the data is smoothed with a 10-year moving average (`smooting_window=10`). Precipitation data is aggregated to annual totals (`agg_level='annual'`). You can customise this by specifying the appropriate arguments.
+# First, we store our raw and adjusted data in dictionaries. By default, the data is smoothed with a 10-year moving average (`smooting_window=10`). Precipitation data is aggregated to annual totals (`agg_level='annual'`). You can customise this by specifying the appropriate arguments.
 
 # %%
+from tools.helpers import read_era5l
 from tools.plots import cmip_plot_combined
+
+# store CMIP6 data in dictionaries
+ssp_tas_dict = {'SSP2_raw': ssp2_tas_raw, 'SSP2_adjusted': ssp2_tas, 'SSP5_raw': ssp5_tas_raw, 'SSP5_adjusted': ssp5_tas}
+ssp_pr_dict = {'SSP2_raw': ssp2_pr_raw, 'SSP2_adjusted': ssp2_pr, 'SSP5_raw': ssp5_pr_raw, 'SSP5_adjusted': ssp5_pr}
 
 era5 = read_era5l(era5_file)
 
@@ -239,31 +185,22 @@ import plotly.express as px
 fig = px.line(ssp5_tas_raw.resample('10YE', closed='left', label='left').mean())
 fig.show()
 
-
 # %% [markdown]
 # ### Violin plots
 
 # %% [markdown]
 # To look at it from a different perpective we can also have a look at the individual distributions of all models. A nice way to cover several aspects at once is to use `seaborne` [violinplots](https://seaborn.pydata.org/generated/seaborn.violinplot.html).
 #
-# First we have to rearrange our input dictionaries a little bit. 
+# First we have to rearrange our input dictionaries a little bit. For comparison the `vplots()` function will arrange the plots in a similar grid as in the figures above.
 
 # %%
-def dict_filter(dictionary, filter_string):
-    """Returns a dict with all elements of the input dict that contain a filter string in their keys."""
-    return {key.split('_')[0]: value for key, value in dictionary.items() if filter_string in key}
-
+from tools.helpers import dict_filter
+from tools.plots import vplots
 
 tas_raw = dict_filter(ssp_tas_dict, 'raw')
 tas_adjusted = dict_filter(ssp_tas_dict, 'adjusted')
 pr_raw = dict_filter(ssp_pr_dict, 'raw')
 pr_adjusted = dict_filter(ssp_pr_dict, 'adjusted')
-
-# %% [markdown]
-# For comparison the `vplots()` function will arrange the plots in a similar grid as in the figures above.
-
-# %%
-from tools.plots import vplots
 
 vplots(tas_raw, tas_adjusted, era5, target_label='ERA5-Land', show=True, fig_path=f"{dir_figures}NB3_vplot_Temp.png")
 vplots(pr_raw, pr_adjusted, era5, target_label='ERA5-Land', precip=True, show=True, fig_path=f"{dir_figures}NB3_vplot_Prec.png")
@@ -280,12 +217,16 @@ vplots(pr_raw, pr_adjusted, era5, target_label='ERA5-Land', precip=True, show=Tr
 #
 # The functions can be applied separately (`check_outliers` or `check_jumps`) or together (`filter_all`). All three return a `list` of model names.
 #
-# Here, we also use the `resampling_rate` parameter to resample the data to annual means (`'YE'`) before running the checks.
+# Here, we also use the `resampling_rate` argument to resample the data to annual means (`'YE'`) before running the checks.
+#
+# <div class="alert alert-block alert-info">
+#     <b>Note:</b> While extreme temperature outliers are easy to identify, precipitation data is more variable between models and requires careful evaluation. In this example, we remove only models failing the temperature checks from the ensemble. Adjust the filters to your needs and use them for precipitation if you know what your are doing. 
+# </div>
 
 # %%
 from tools.helpers import DataFilter
 
-filter = DataFilter(ssp5_tas_raw, zscore_threshold=3, jump_threshold=5, resampling_rate='YE')
+filter = DataFilter(ssp2_tas_raw, zscore_threshold=3, jump_threshold=5, resampling_rate='YE')
 
 print('Models with temperature outliers: ' + str(filter.outliers))
 print('Models with temperature jumps: ' + str(filter.jumps))
@@ -308,7 +249,7 @@ cmip_plot_combined(data=ssp_pr_dict, target=era5, title='10y Mean of Monthly Pre
 # ### Ensemble mean plots
 
 # %% [markdown]
-# As we now don't need to focus on individual models anymore, we can reduce the number of lines by only plotting the ensemble means with a 90% confidence interval. With less lines in the plot, we can also reduce the resample frequency and show annual means.
+# Now that we no longer need to focus on individual models, we can reduce the number of lines by plotting only the ensemble means with a 90% confidence interval. With fewer lines in the plot, we can also reduce the resampling frequency and display the annual means.
 
 # %%
 from tools.plots import cmip_plot_ensemble
@@ -317,7 +258,7 @@ cmip_plot_ensemble(ssp_tas_dict, era5['temp'], intv_mean='YE', fig_path=f'{dir_f
 cmip_plot_ensemble(ssp_pr_dict, era5['prec'], precip=True, intv_sum='ME', intv_mean='YE', fig_path=f'{dir_figures}NB3_CMIP6_Ensemble_Prec.png')
 
 # %% [markdown]
-# We can see that the SDM adjusts the range and mean of the target data while preserving the distribution and trend of the original data. However, the inter-model variance is slightly reduced for temperature and significantly increased for precipitation.
+# We can see that the SDM adjusts the range and mean of the target data while preserving the distribution and trend of the original data. However, the inter-model variance is slightly reduced for temperature and notably increased for precipitation.
 
 # %% [markdown]
 # Last but not least, we will have a closer look at the performance of the bias adjustment. To do that, we will create probability plots for all models comparing original, target, and adjusted data with each other and a standard normal distribution. The `prob_plot` function creates such a plot for an individual model and scenario. The `pp_matrix` function loops the `prob_plot` function over all models in a `DataFrame` and arranges them in a matrix.
@@ -334,15 +275,14 @@ pp_matrix(ssp5_tas_raw, era5['temp'], ssp5_tas, scenario='SSP5', show=True, fig_
 # %% [markdown]
 # We can see that the SDM worked very well for the temperature data, with high agreement between the target and adjusted data.
 #
-# Let's look at the probability curves for precipitation. Since the precipitation data is bounded at 0, but most days have very small values >0 mm, we resample the data to monthly sums to get an idea of the overall performance.
+# Now, let's examine the probability curves for precipitation. Since the precipitation data is bounded at 0 mm and most days have small values greater than 0 mm, we resample the data as monthly sums to get an idea of the overall performance.
 
 # %%
 pp_matrix(ssp2_pr_raw, era5['prec'], ssp2_pr, precip=True, scenario='SSP2', show=True, fig_path=f'{dir_figures}NB3_CMIP6_SSP2_probability_Prec.png')
 pp_matrix(ssp5_pr_raw, era5['prec'], ssp5_pr, precip=True, scenario='SSP5', show=True, fig_path=f'{dir_figures}NB3_CMIP6_SSP5_probability_Prec.png')
 
-
 # %% [markdown]
-# Considering the complexity and heterogeneity of precipitation data, the performance of SDM is convincing. While the fitted data of most models deviate from the target data for low and very high values, the general distribution of monthly precipitation is well met. 
+# Considering the complexity and heterogeneity of precipitation data, the performance of the SDM is acceptable. Although the fitted data of most models differ from the target data at low and very high values, the general distribution of monthly precipitation is accurately represented.
 
 # %% [markdown]
 # ## Write CMIP6 data to file
@@ -351,41 +291,7 @@ pp_matrix(ssp5_pr_raw, era5['prec'], ssp5_pr, precip=True, scenario='SSP5', show
 # After a thorough review of the climate scenario data, we can write the final selection to files to be used in the next notebook. We want to use reanalysis data for the MATILDA model wherever possible and only use CMIP6 data for future projections. Therefore, we need to replace all of the data from our calibration period with ERA5-Land data.
 
 # %%
-def replace_values(target_df, source_df, source_column):
-    """
-    Replaces values in the overlapping period in the target dataframe with values
-    from the source dataframe using the specified source column.
-
-    Args:
-        target_df (pd.DataFrame): Target dataframe where values will be replaced.
-        source_df (pd.DataFrame): Source dataframe from which values will be taken.
-        source_column (str): Column name in the source dataframe to use for replacement.
-
-    Returns:
-        pd.DataFrame: The target dataframe with updated values.
-    """
-
-    # Identify overlapping period based on index (datetime)
-    overlapping_period = target_df.index.intersection(source_df.index)
-
-
-    if len(overlapping_period) == 0:
-        raise ValueError("No overlapping period between the source and target dataframes.")
-
-    # Ensure the source dataframe has the required column
-    if source_column not in source_df.columns:
-        raise ValueError(f"The source dataframe does not have a column named '{source_column}'")
-    
-    # Get the replacement values from the source columnAdd commentMore actions
-    replacement_values = source_df.loc[overlapping_period, source_column]
-
-    assert len(overlapping_period) == len(
-        replacement_values), "Mismatch in lengths of overlapping period and replacement values."
-
-    # Apply these values to all columns in the target DataFrame in the overlapping period
-    target_df.loc[overlapping_period] = replacement_values.values[:, None]
-
-    return target_df
+from tools.helpers import replace_values
 
 
 era5l = read_era5l(era5_file)
@@ -408,6 +314,7 @@ ssp5_pr = replace_values(ssp5_pr, era5l, 'prec')
 
 # %%
 from tools.helpers import dict_to_pickle, dict_to_parquet
+import shutil
 
 tas = {'SSP2': ssp2_tas, 'SSP5': ssp5_tas}
 pr = {'SSP2': ssp2_pr, 'SSP5': ssp5_pr}
@@ -421,9 +328,6 @@ else:
     dict_to_pickle(tas, cmip_dir + 'adjusted/tas.pickle')
     dict_to_pickle(pr, cmip_dir + 'adjusted/pr.pickle')
 
-# %%
-import shutil
-
 if zip_output:
     # refresh `output_download.zip` with data retrieved within this notebook
     shutil.make_archive('output_download', 'zip', 'output')
@@ -431,3 +335,6 @@ if zip_output:
 
 # %%
 # %reset -f
+
+# %% [markdown]
+# You can now continue with [Notebook 4](Notebook4_MATILDA.ipynb) to calibrate the MATILDA model.

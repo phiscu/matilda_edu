@@ -90,7 +90,7 @@ catchment = geemap.geopandas_to_ee(catchment_new)
 
 # %%
 if scenarios == True:
-    date_range = ['1979-01-01', '2024-01-01']
+    date_range = ['1979-01-01', '2025-01-01']
 else:
     date_range = ast.literal_eval(config['CONFIG']['DATE_RANGE'])
 

@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 from fastparquet import write
 import numpy as np
+from bias_correction import BiasCorrection
 
 
 def read_yaml(file_path):
@@ -433,6 +434,60 @@ def read_era5l(file):
         'parse_dates':  ['dt']}).resample('D').agg({'temp': 'mean', 'prec': 'sum'})
     
 
+def adjust_bias(predictand, predictor, method='normal_mapping'):
+    """Applies bias correction to discrete periods individually."""
+    # Read predictor data
+    predictor = read_era5l(predictor)
+
+    # Determine variable type based on the mean value
+    var = 'temp' if predictand.mean().mean() > 100 else 'prec'
+
+    # Adjust bias in discrete blocks as suggested by Switanek et al. (2017)
+    correction_periods = [
+        {'correction_range': ('1979-01-01', '2010-12-31'), 'extraction_range': ('1979-01-01', '1990-12-31')},
+    ]
+    for decade_start in range(1991, 2090, 10):
+        correction_start = f"{decade_start - 10}-01-01"
+        correction_end = f"{decade_start + 19}-12-31"
+        extraction_start = f"{decade_start}-01-01"
+        extraction_end = f"{decade_start + 9}-12-31"
+
+        correction_periods.append({
+            'correction_range': (correction_start, correction_end),
+            'extraction_range': (extraction_start, extraction_end)
+        })
+
+    correction_periods.append({
+        'correction_range': ('2081-01-01', '2100-12-31'),
+        'extraction_range': ('2091-01-01', '2100-12-31')
+    })
+
+    # Store corrected periods
+    corrected_data_list = []
+    training_period = slice('1979-01-01', '2022-12-31')
+
+    for period in tqdm(correction_periods, desc="Bias Correction"):
+        correction_start, correction_end = period['correction_range']
+        extraction_start, extraction_end = period['extraction_range']
+
+        correction_slice = slice(correction_start, correction_end)
+        extraction_slice = slice(extraction_start, extraction_end)
+
+        data_corr = pd.DataFrame()
+        for col in predictand.columns:
+            x_train = predictand[col][training_period].squeeze()
+            y_train = predictor[training_period][var].squeeze()
+            x_predict = predictand[col][correction_slice].squeeze()
+            bc_corr = BiasCorrection(y_train, x_train, x_predict)
+            corrected_col = pd.DataFrame(bc_corr.correct(method=method))
+            data_corr[col] = corrected_col.loc[extraction_slice]
+
+        corrected_data_list.append(data_corr)
+
+    corrected_data = pd.concat(corrected_data_list, axis=0)
+    return corrected_data
+
+
 def confidence_interval(df):
     """
     Calculate the mean and 95% confidence interval for each row in a dataframe.
@@ -452,86 +507,45 @@ def confidence_interval(df):
     df_ci = pd.DataFrame({'mean': mean, 'ci_lower': ci_lower, 'ci_upper': ci_upper})
     return df_ci
 
-from tools.indicators import cc_indicators
 
-def calculate_indicators(dic, **kwargs):
-    """
-    Calculate climate change indicators for all scenarios and models.
-    Parameters
-    ----------
-    dic : dict
-        Dictionary containing MATILDA outputs for all scenarios and models.
-    **kwargs : optional
-        Optional keyword arguments to be passed to the cc_indicators() function.
-    Returns
-    -------
-    dict
-        Dictionary with the same structure as the input but containing climate change indicators in annual resolution.
-    """
-    # Create an empty dictionary to store the outputs
-    out_dict = {}
-    # Loop over the scenarios with progress bar
-    for scenario in dic.keys():
-        model_dict = {}  # Create an empty dictionary to store the model outputs
-        # Loop over the models with progress bar
-        for model in tqdm(dic[scenario].keys(), desc=scenario):
-            # Get the dataframe for the current scenario and model
-            df = dic[scenario][model]['model_output']
-            # Run the indicator function
-            indicators = cc_indicators(df, **kwargs)
-            # Store indicator time series in the model dictionary
-            model_dict[model] = indicators
-        # Store the model dictionary in the scenario dictionary
-        out_dict[scenario] = model_dict
+def dict_filter(dictionary, filter_string):
+    """Returns a dict with all elements of the input dict that contain a filter string in their keys."""
+    return {key.split('_')[0]: value for key, value in dictionary.items() if filter_string in key}
 
-    return out_dict
 
-def custom_df_indicators(dic, scenario, var):
+def replace_values(target_df, source_df, source_column):
     """
-    Takes a dictionary of climate change indicators and returns a combined dataframe of a specific variable for
-    a given scenario.
-    Parameters
-    ----------
-    dic : dict
-        Dictionary containing the outputs of calculate_indicators() for different scenarios and models.
-    scenario : str
-        Name of the selected scenario.
-    var : str
-        Name of the variable to extract from the DataFrame.
-    Returns
-    -------
-    pandas.DataFrame
-        A DataFrame containing the selected variable from different models within the specified scenario.
-    Raises
-    ------
-    ValueError
-        If the provided variable is not one of the function outputs.
+    Replaces values in the overlapping period in the target dataframe with values
+    from the source dataframe using the specified source column.
+
+    Args:
+        target_df (pd.DataFrame): Target dataframe where values will be replaced.
+        source_df (pd.DataFrame): Source dataframe from which values will be taken.
+        source_column (str): Column name in the source dataframe to use for replacement.
+
+    Returns:
+        pd.DataFrame: The target dataframe with updated values.
     """
 
-    out_cols = ['max_prec_month', 'min_prec_month',
-                'peak_day',
-                'melt_season_start', 'melt_season_end', 'melt_season_length',
-                'actual_aridity', 'potential_aridity',
-                'dry_spell_days',
-                'qlf_freq', 'qlf_dur', 'qhf_freq', 'qhf_dur',
-                'clim_water_balance', 'spi1', 'spei1', 'spi3', 'spei3',
-                'spi6', 'spei6', 'spi12', 'spei12', 'spi24', 'spei24']
+    # Identify overlapping period based on index (datetime)
+    overlapping_period = target_df.index.intersection(source_df.index)
 
-    if var not in out_cols:
-        raise ValueError("var needs to be one of the following strings: " +
-                         str([i for i in out_cols]))
 
-    # Create an empty list to store the dataframes
-    dfs = []
-    # Loop over the models in the selected scenario
-    for model in dic[scenario].keys():
-        # Get the dataframe for the current model
-        df = dic[scenario][model]
-        # Append the dataframe to the list of dataframes
-        dfs.append(df[var])
-    # Concatenate the dataframes into a single dataframe
-    combined_df = pd.concat(dfs, axis=1)
-    # Set the column names of the combined dataframe to the model names
-    combined_df.columns = dic[scenario].keys()
+    if len(overlapping_period) == 0:
+        raise ValueError("No overlapping period between the source and target dataframes.")
 
-    return combined_df
+    # Ensure the source dataframe has the required column
+    if source_column not in source_df.columns:
+        raise ValueError(f"The source dataframe does not have a column named '{source_column}'")
+    
+    # Get the replacement values from the source columnAdd commentMore actions
+    replacement_values = source_df.loc[overlapping_period, source_column]
+
+    assert len(overlapping_period) == len(
+        replacement_values), "Mismatch in lengths of overlapping period and replacement values."
+
+    # Apply these values to all columns in the target DataFrame in the overlapping period
+    target_df.loc[overlapping_period] = replacement_values.values[:, None]
+
+    return target_df
+

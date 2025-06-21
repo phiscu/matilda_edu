@@ -181,7 +181,8 @@ else:
 
 # %%
 import pandas as pd
-from tools.helpers import dict_to_pickle, dict_to_parquet, calculate_indicators
+from tools.helpers import dict_to_pickle, dict_to_parquet
+from tools.indicators import calculate_indicators
 
 print("Calculating Climate Change Indicators...")
 matilda_indicators = calculate_indicators(matilda_scenarios)

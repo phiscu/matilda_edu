@@ -10,6 +10,7 @@ import configparser
 from scipy import stats
 import numpy as np
 from tools.helpers import parquet_to_dict, read_yaml, pickle_to_dict
+from tools.indicators import indicator_vars, custom_df_indicators
 import warnings
 import seaborn as sns
 import datetime as dt
@@ -1173,8 +1174,6 @@ def matilda_dash(app,dic,fig_count=4,
     # Combine the dropdown menus and figures into a single layout
     app.layout = html.Div(dropdowns_and_figures)
 
-from tools.helpers import custom_df_indicators
-from tools.indicators import indicator_vars
 
 def plot_ci_indicators(var, dic, plot_type='line', show=False):
     """
