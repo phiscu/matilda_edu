@@ -46,6 +46,7 @@ config.read('config.ini')
 dir_input = config['FILE_SETTINGS']['DIR_INPUT']
 dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
 date_range = ast.literal_eval(config['CONFIG']['CALIBRATION_PERIOD'])
+zip_output = config['CONFIG']['ZIP_OUTPUT']
 
 print('MATILDA will be calibrated on the period ' + date_range[0] + ' to ' + date_range[1])
 
@@ -799,9 +800,10 @@ print(f"Parameter set stored in '{dir_output}parameters.yml'")
 # %%
 import shutil
 
-# refresh `output_download.zip` with data retrieved within this notebook
-shutil.make_archive('output_download', 'zip', 'output')
-print('Output folder can be download now (file output_download.zip)')
+if zip_output:
+    # refresh `output_download.zip` with data retrieved within this notebook
+    shutil.make_archive('output_download', 'zip', 'output')
+    print('Output folder can be download now (file output_download.zip)')
 
 # %%
 # %reset -f
