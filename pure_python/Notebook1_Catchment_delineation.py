@@ -7,7 +7,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.16.4
 #   kernelspec:
-#     display_name: matilda_edu
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -24,7 +24,7 @@
 #
 # 3. ...identify all glaciers within the catchment and download the **glacier outlines and ice thicknesses**,
 #
-# 4. ...create a glacier profile based on elevation zones.
+# 4. ...create a **glacier mass profile** based on elevation zones.
 #
 
 # %% [markdown]
@@ -38,12 +38,15 @@
 # - **show/hide GEE map** in notebooks
 
 # %%
+import os
 import pandas as pd
 import numpy as np
 import configparser
 import ast
 import matplotlib.pyplot as plt
 import scienceplots
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)     # Suppress Deprecation Warnings
 
 # read local config.ini file
 config = configparser.ConfigParser()
@@ -55,6 +58,9 @@ output_folder = config['FILE_SETTINGS']['DIR_OUTPUT']
 figures_folder = config['FILE_SETTINGS']['DIR_FIGURES']
 filename = output_folder + config['FILE_SETTINGS']['DEM_FILENAME']
 output_gpkg = output_folder + config['FILE_SETTINGS']['GPKG_NAME']
+
+# create folder for output figures
+os.makedirs(figures_folder, exist_ok=True)
 
 # get used GEE DEM, coords and other settings
 dem_config = ast.literal_eval(config['CONFIG']['DEM'])
@@ -91,11 +97,13 @@ except Exception as e:
     ee.Authenticate()  # authenticate when using GEE for the first time
     ee.Initialize(project=cloud_project)
 
+print("Google Earth Engine Access initialized!")
+
 # %% [markdown]
 # ## Start GEE and download DEM
 
 # %% [markdown]
-# Once we are set up, we can start working with the data. Let's start with the **base map**, if enabled in `config.ini`. The map can be used to follow the steps as more layers are added throughout the notebook. <a id="map"></a>
+# Once we are set up, we can start working with the data. Let's start with the **base map**, if enabled in `config.ini`. The map can be used to follow the steps as more layers are added throughout the notebook.
 
 # %%
 import geemap
@@ -126,10 +134,10 @@ if show_map:
     Map.addLayer(image, srtm_vis, dem_config[3], True, 0.7)
 
 # %% [markdown]
-# Next, we add the configured discharge point to the map and generate a **40km** buffer box. 
+# Next, we add the location of our discharge observations to the map and generate a **40km** buffer box. 
 #
 # <div class="alert alert-block alert-info">
-#     <b>Note:</b> Please check whether the default box covers your research area. Alternatively, you can adjust the box manually. <b>The catchment area will be cropped if the selected box is too small.</b></div>
+#     <b>Note:</b> Please check that the default box covers your research area. Alternatively, you can manually adjust the box by drawing a polygon using the tools in the sidebar. <b>If the selected box is too small, the catchment area will be cropped.</b></div>
 
 # %%
 point = ee.Geometry.Point(x, y)
@@ -141,7 +149,7 @@ if show_map:
     Map.centerObject(box, zoom=9)
 
 # %% [markdown]
-# The discharge point (marker) and box (polygon/rectangle) can also be added manually to the map above. If features have been drawn, they will overrule the configured discharge point and automatically created box.
+# The gauging location (marker) and the box (polygon/rectangle) can also be added manually to the map above. If features have been drawn, they will overrule the configured discharge point and automatically created box.
 #
 # <a id="rp01">**Restart Point #1**</a>
 
@@ -194,7 +202,7 @@ else:
 # ## Catchment deliniation
 
 # %% [markdown]
-# Based on the downloaded DEM file, we can calculate a catchment area using the <code>pysheds</code> library. The result will be a raster and displayed at the end of this section.
+# Based on the downloaded DEM file, we can delineate the watershed using the <code>pysheds</code> library. The result will be a raster and displayed at the end of this section.
 #
 # The full documentation of the <code>pysheds</code> module can be found [here](https://mattbartos.com/pysheds/).
 #
@@ -264,7 +272,7 @@ plt.savefig(figures_folder + 'NB1_DEM_Catchment.png')
 plt.show()
 
 # %% [markdown]
-# For the following steps we need the catchment outline as a polygon. Thus, we convert the **raster to a polygon** and save both in a **geopackage** to the output folder. From these files, we can already calculate important **catchment statistics** needed for the glacio-hydrological model in Notebook 4.
+# For the following steps, we need the catchment outline in polygon form. Thus, we will **convert the raster to a polygon** and save both to the output folder in a **geopackage**. We can calculate the important **catchment statistics** needed for the glacio-hydrological model in Notebook 4 from these files.
 
 # %%
 from shapely.geometry import Polygon, shape
@@ -318,11 +326,11 @@ print(f"Catchment area is {catchment_area:.2f} km²")
 # %% [markdown]
 # <div class="alert alert-block alert-warning">
 # <b>Note:</b>
-#  Please make sure to leave some buffer between the catchment outline and the used box (&rarr; <a href='#map'>Jump to map</a>). If the bounding box is close to the catchment, please extent the box and repeat the DEM download and catchment delineation (&rarr; use <a href='#rp01'>Restart Point #1</a>).</div>
+#  Please make sure to leave some buffer between the catchment outline and the applied bounding box (&rarr; <a href='#map'>Jump to map</a>). If you run into problems, please extent the box and repeat the DEM download and catchment delineation (&rarr; use <a href='#rp01'>Restart Point #1</a>).</div>
 #
 # Example:
 #
-# 1. The automatically created box for the pouring point (in gray) is not sufficient to cover the entire catchment area; cropped at the eastern edge.
+# 1. The automatically created box for the pouring point (in gray) is not sufficient to cover the entire catchment area &rarr; cropped at the eastern edge.
 # 2. Manually drawn box (in blue) has been added to ensure that the catchment is not cropped &rarr; buffer remains on all edges
 #
 # ![Example for Cropped Catchment](images/gee_catchment_extent.png)
@@ -333,9 +341,9 @@ print(f"Catchment area is {catchment_area:.2f} km²")
 # ## Determine glaciers in catchment area
 
 # %% [markdown]
-# To acquire outlines of all glaciers in the catchment we will rely on latest Randolph Glacier Inventory (RGI 6.0).
+# To acquire outlines of all glaciers in the catchment we will use the Randolph Glacier Inventory version 6 (RGI 6.0). *While RGI version 7 has been released, there are no fully compatible ice thickness datasets yet.*
 #
-# > The *Randolph Glacier Inventory (RGI 6.0)* is a global inventory of glacier outlines. It is supplemental to the Global Land Ice Measurements from Space initiative (GLIMS). Production of the RGI was motivated by the Fifth Assessment Report of the Intergovernmental Panel on Climate Change (IPCC AR5). Future updates will be made to the RGI and the GLIMS Glacier Database in parallel during a transition period. As all these data are incorporated into the GLIMS Glacier Database and as download tools are developed to obtain GLIMS data in the RGI data format, the RGI will evolve into a downloadable subset of GLIMS, offering complete one-time coverage, version control, and a standard set of attributes.
+# > The *Randolph Glacier Inventory* is a global inventory of glacier outlines. It is supplemental to the Global Land Ice Measurements from Space initiative (GLIMS). Production of the RGI was motivated by the Fifth Assessment Report of the Intergovernmental Panel on Climate Change (IPCC AR5).
 # >
 # > Source: https://www.glims.org/RGI/
 
@@ -349,7 +357,7 @@ print(f"Catchment area is {catchment_area:.2f} km²")
 # ![Map of the RGI regions; the red dots indicate the glacier locations and the blue circles the location of the 254 reference WGMS glaciers used by the OGGM calibration](https://docs.oggm.org/en/v1.2.0/_images/wgms_rgi_map.png)
 
 # %% [markdown]
-# In the first step, the RGI region of the catchment area must be determined to access the correct repository. Therefore, the RGI region outlines will be downloaded from the official website and joined with the catchment outline.
+# In the first step, the RGI region of the catchment area must be determined to access the correct repository. Therefore, the RGI region outlines will be downloaded and joined with the catchment outline.
 #
 # > Source: [RGI Consortium (2017)](https://doi.org/10.7265/4m1f-gd79)
 
@@ -395,17 +403,10 @@ else:
     print("Catchment belongs to more than one region. This use case is not yet supported.")
     display(df_regions_catchment)
     rgi_region = None
-
-# %%
 rgi_code = int(df_regions_catchment['RGI_CODE'].iloc[0])
-print(rgi_code)
 
 # %% [markdown]
-# In the next step, the glacier inventory outlines for the determined RGI region will be downloaded. A spatial join is performed to determine all glacier outlines that intersect with the catchment area.
-#
-# <div class="alert alert-block alert-info">
-# <b>Note:</b>
-#  Depending on the region and bandwidth, this might take 1 min or longer.</div>
+# In the next step, the glacier outlines for the determined RGI region will be downloaded. First, we access the repository...
 
 # %%
 from resourcespace import ResourceSpace
@@ -416,18 +417,22 @@ user = config['MEDIA_SERVER']['user']
 
 myrepository = ResourceSpace(api_base_url, user, private_key)
 
+print("Accessed remote repository")
+
 # get resource IDs for each .zip file
 rgi_refs = pd.DataFrame(myrepository.get_collection_resources(1168))[
     ['ref', 'file_size', 'file_extension', 'field8']]
 
 if not rgi_refs.empty:
-    print(f'Found RGI archive for region {rgi_code}:')
+    print("Listing files ...")
     display(rgi_refs)
 else:
-    print(f'No RGI archive found for region {rgi_code}')
+    print(f'No files found. Please check remote repository.')
+
+# %% [markdown]
+# ...and download the `.shp` files for the target region.
 
 # %%
-
 # %%time
 
 import os
@@ -461,12 +466,8 @@ else:
 
     print(f'{cnt_rgi} files extracted to: {output_dir}')
 
-
-# %%
 #reading the shapefile
-
 import glob
-import os
 
 region_str = f"{rgi_code}_rgi60_*.shp"
 search_pattern = os.path.join(output_folder, 'RGI', region_str)
@@ -480,6 +481,10 @@ if matching_files:
 else:
     print(f"no shapefile for {rgi_code} found")
 
+
+# %% [markdown]
+# Now we can perform a spatial join to determine all glacier outlines that intersect with the catchment area.
+
 # %%
 if rgi.crs != catchment.crs:
     print("CRS adjusted")
@@ -492,7 +497,7 @@ if len(rgi_catchment.index) > 0:
     print(f'{len(rgi_catchment.index)} outlines loaded from RGI Region {rgi_code}\n')
 
 # %% [markdown]
-# Some glaciers are not actually in the catchment, but intersect its outline. We will first determine their fractional overlap with the target catchment.
+# Some glaciers are not actually in the catchment, but intersect its outline due to spatial inaccuracies. We will first determine their fractional overlap with the target catchment.
 
 # %% tags=["output_scroll"]
 # intersects selects too many. calculate percentage of glacier area that is within catchment
@@ -500,7 +505,7 @@ rgi_catchment['rgi_area'] = rgi_catchment.to_crs(crs).area
 
 gdf_joined = gpd.overlay(catchment, rgi_catchment, how='union')
 gdf_joined['area_joined'] = gdf_joined.to_crs(crs).area
-gdf_joined['share_of_area'] = (gdf_joined['area_joined'] / gdf_joined['rgi_area'] * 100)
+gdf_joined['share_of_area'] = round((gdf_joined['area_joined'] / gdf_joined['rgi_area'] * 100), 2)
 
 results = (gdf_joined
            .groupby(['RGIId', 'LABEL_1'])
@@ -540,7 +545,7 @@ glacier_ids.to_csv(output_folder + 'RGI/' + 'Glaciers_in_catchment.csv', columns
 display(glacier_ids)
 
 # %% [markdown]
-# With an updated glacier outline we can now determine the **final area of the catchment** and the **part covered by glaciers**.
+# With the updated catchment outline we can now determine the **final area of the catchment** and the **part covered by glaciers**.
 
 # %%
 catchment_new['area'] = catchment_new.to_crs(crs)['geometry'].area
@@ -578,9 +583,6 @@ if show_map:
     Map.addLayer(c_new, {'color': 'orange'}, "Catchment New")
     Map.addLayer(rgi, {'color': 'white'}, "RGI60")
     print('New layers added.')
-
-# %% [markdown]
-# &rarr; [Jump to map](#map) to see the results.
 
 # %% [markdown]
 # ...or combined in a simple plot.
