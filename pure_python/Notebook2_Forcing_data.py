@@ -347,3 +347,6 @@ if zip_output:
 # %%
 # %reset -f
 
+
+# %% [markdown]
+# You can now continue with [Notebook 3](Notebook3_CMIP6.ipynb).
