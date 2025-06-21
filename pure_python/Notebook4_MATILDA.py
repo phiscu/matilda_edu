@@ -16,7 +16,7 @@
 # # Calibrating the MATILDA framework
 
 # %% [markdown]
-# In this notebook we will
+# While the last notebooks focused on data acquisition and preprocessing, we can finally start modeling. In this notebook we will...
 #
 # 1. ... set up a glacio-hydrological model with all the data we have collected,
 #
@@ -27,7 +27,7 @@
 # 4. ... and store the calibrated parameter set for the scenario runs in the next notebook.
 #
 #
-# The framework for Modeling water resources in glacierized catchments [MATILDA] (https://github.com/cryotools/matilda) has been developed for use in this workflow and is published as a Python package. It is based on the widely used [HBV hydrological model](https://www.cabdirect.org/cabdirect/abstract/19961904773), extended by a simple temperature-index melt model based  on the code of [Seguinot (2019)](https://zenodo.org/record/3467639). Glacier evolution over time is modeled using a modified version of the &Delta;*h* approach following [Seibert et. al. (2018)](https://doi.org/10.5194/hess-22-2211-2018).
+# The framework for Modeling water resources in glacierized catchments [MATILDA] (https://github.com/cryotools/matilda) has been developed for use in this workflow and is published as a Python package. It is based on the widely used [HBV hydrological model](https://www.cabdirect.org/cabdirect/abstract/19961904773), complemented by a temperature-index glacier melt model based on the code of [Seguinot (2019)](https://zenodo.org/record/3467639). Glacier evolution over time is simulated using a modified version of the &Delta;*h* approach following [Seibert et. al. (2018)](https://doi.org/10.5194/hess-22-2211-2018).
 
 # %% [markdown]
 # As before we start by loading configurations such as the calibration period and some helper functions to work with  `yaml` files.
@@ -45,7 +45,8 @@ config.read('config.ini')
 # get output dir and date range from config.ini
 dir_input = config['FILE_SETTINGS']['DIR_INPUT']
 dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
-date_range = ast.literal_eval(config['CONFIG']['DATE_RANGE'])
+date_range = ast.literal_eval(config['CONFIG']['CALIBRATION_PERIOD'])
+zip_output = config['CONFIG']['ZIP_OUTPUT']
 
 print('MATILDA will be calibrated on the period ' + date_range[0] + ' to ' + date_range[1])
 
@@ -130,18 +131,20 @@ output_matilda = matilda_simulation(era5, obs, **settings)
 #
 # - remote sensing estimates of **glacier surface mass balance** (**SMB**) and ...
 #
-# - **snow water equivalent** (**SWE**) estimates from a dedicated snow reanalysis product.
+# - ...**snow water equivalent** (**SWE**) estimates from a dedicated snow reanalysis product.
 #
 # Unfortunately, both default datasets are **limited to High Mountain Asia (HMA)**. For study sites in other areas, please consult other sources and manually add the target values for calibration in the appropriate code cells. We are happy to include additional datasets as long as they are available online and can be integrated into the workflow.
 #
 # <div class="alert alert-block alert-info">
-# <b>Note:</b> Statistical parameter optimization (SPOT) algorithms require a high number of model runs, especially for large parameter sets. Both <i>mybinder.org</i> and <i>Google Colab</i> offer a maximum of two cores per user. One MATILDA calibration run for 20 years takes roughly 3s on one core. Therefore, large optimization runs in an online environment will be slow and may require you to leave the respective browser tab in the foreground for hours. To speed things up, you can either...</div>
+# <b>Note:</b> Statistical parameter optimization (SPOT) algorithms require a high number of model runs, especially for large parameter sets. <i>mybinder.org</i> offers a maximum of two cores per user. One MATILDA calibration run for 20 years takes roughly 3s on one core. Therefore, large optimization runs in an online environment will be slow and may require you to leave the respective browser tab in the foreground for hours. To speed things up, you can either:
 #
-# ... run this notebook **locally on a computer with more cores** (ideally a high performance cluster) or ...
+# <div style="margin-left: 20px; margin-top: 12px;">
+#     ... run this notebook <b>locally on a computer with more cores</b> (ideally a high performance cluster) or <br>
+#     ... <b>reduce the number of calibration parameters</b> based on global sensitivity. We will return to this topic <a href="#Sensitivity-Analysis-with-FAST">later in this notebook</a>.
+# </div>
+# </div>
 #
-# ... **reduce the number of calibration parameters** based the global sensitivity. We will return to this topic later in this notebook.
-#
-# For now, we will demonstrate how to use the SPOT features and then continue with a parameter set from a large HPC optimization run. If you need help implementing the routine on your HPC, consult the [SPOTPY documentation](https://spotpy.readthedocs.io/en/latest/Advanced_hints/#mpi-parallel-computing) and [contact us](https://github.com/phiscu/matilda_edu/issues/new) if you encounter problems.
+# For now, we will demonstrate how to use the SPOT features and then **continue with a parameter set from a large HPC optimization run**. If you need help implementing the routine on your HPC, consult the [SPOTPY documentation](https://spotpy.readthedocs.io/en/latest/Advanced_hints/#mpi-parallel-computing) and [contact us](https://github.com/phiscu/matilda_edu/issues/new) if you encounter problems.
 
 # %% [markdown]
 # ### Glacier surface mass balance data
@@ -152,7 +155,7 @@ output_matilda = matilda_simulation(era5, obs, **settings)
 # <div class="alert alert-block alert-info">
 # <b>Note:</b> As all remote sensing estimates the used dataset has significant uncertainties. A comparison to other datasets and the impact on the modeling results are discussed in the associated publication. </div>
 #
-# We pick all individual mass balances that match the glacier IDs in our catchment and calculate the catchment-wide mean. In addition, we use the uncertainty estimate provided in the dataset to derive an uncertainty range.
+# We pick all individual mass balance records that match the glacier IDs in our catchment and calculate the catchment-wide mean. In addition, we use the uncertainty estimate provided in the dataset to derive an uncertainty range.
 
 # %%
 import pandas as pd
@@ -172,7 +175,7 @@ print('Target glacier mass balance for calibration: ' + str(mean_mb) + ' +-' + s
 # ### Snow water equivalent
 
 # %% [markdown]
-# For snow cover estimates, we will use a specialized **snow reanalysis** dataset from [Liu et. al. 2021](https://doi.org/10.5067/HNAUGJQXSCVU). Details on the data can be found in the dataset documentation and the associated [publication](https://doi.org/10.1029/2022GL100082).
+# For snow cover estimates, we will use a dedicated **snow reanalysis** dataset from [Liu et. al. 2021](https://doi.org/10.5067/HNAUGJQXSCVU). Details on the data can be found in the dataset documentation and the associated [publication](https://doi.org/10.1029/2022GL100082).
 # Unfortunately, access to the dataset requires a (free) registration at **NASA's EarthData** portal, which prevents a seamless integration. Also, the dataset consists of large files and requires some pre-processing that **could not be done in a Jupyter Notebook**. However, we provide you with the `SWEETR` tool, a **fully automated workflow** that you can run on your local computer to download, process, and aggregate the data. Please refer to the dedicated [Github repository](https://github.com/phiscu/hma_snow) for further instructions.
 
 # %% [markdown]
@@ -185,33 +188,35 @@ print('Target glacier mass balance for calibration: ' + str(mean_mb) + ' +-' + s
 swe = pd.read_csv(f'{dir_input}/swe.csv')
 
 # %% [markdown]
-# Along with the cropped SWE rasters the `SWEETR` tool creates binary masks for seasonal- and non-seasonal snow. Due to its strong signal in remote sensing data, seasonal snow can be better detected leading to more robust SWE estimates. However, the non-seasonal snow largely agrees with the glacierized area. Therefore, we will calibrate the snow routine by comparing the SWE of the ice-free sub-catchment with the seasonal snow of the reanalysis. Since the latter has a coarse resolution of 500 m, the excluded catchment area is a bit larger than the RGI glacier outlines (17.2% non-seasonal snow vs. 10.8% glacierized sub-catchment). Therefore, we use a scaling factor to account for this mismatch in the reference area.
+# Along with the cropped SWE rasters the `SWEETR` tool creates binary masks for seasonal- and non-seasonal snow. Due to its strong signal in remote sensing data, seasonal snow can be better detected leading to more robust SWE estimates. However, the non-seasonal snow largely agrees with the glacierized area. Therefore, we will calibrate the snow routine by comparing the SWE of the ice-free sub-catchment with the seasonal snow of the reanalysis. Since the latter has a coarse resolution of 500 m, the excluded catchment area is a bit larger than the RGI glacier outlines (in the example: 17.2% non-seasonal snow vs. 10.8% glacierized sub-catchment). Therefore, we use a scaling factor to account for this mismatch in the reference area.
 
 # %%
 glac_ratio = settings['area_glac'] / settings['area_cat']       # read glacieriezed and total area from the settings
 swe_area_sim = 1-glac_ratio
-swe_area_obs = 0.828            # 1 - non-seasonal snow / seasonal snow
+swe_area_obs = 0.828                                            # 1 - non-seasonal snow / seasonal snow
 sf = swe_area_obs / swe_area_sim
 print('SWE scaling factor: ' + str(round(sf, 3)))
 
 # %% [markdown]
 # The MATILDA framework provides an interface for [SPOTPY](https://github.com/thouska/spotpy/). Here we will use the `psample()` function to run MATILDA with the same settings as before but varying parameters. To do this, we will remove redundant `settings` and add some new ones specific to the function. Be sure to choose the number of repetitions carefully.
+# <div class="alert alert-block alert-info">
+# <b>Note:</b> A latin hypercube sampling with only 5 samples does not actually make sense but the number is chosen for demonstration purposes. </div>
 
 # %% tags=["output_scroll"]
 from tools.helpers import drop_keys
 
 psample_settings = drop_keys(settings, ['warn', 'plots', 'plot_type'])
 
-additional_settings = {'rep': 10,                             # Number of model runs. For advice, check the documentation of the algorithms.
+additional_settings = {'rep': 5,                             # Number of model runs. For advice, check the documentation of the algorithms.
                        'glacier_only': False,                 # True when calibrating an entirely glacierized catchment
-                       'obj_dir': 'maximize',                 # should your objective function be maximized (e.g. NSE) or minimized (e.g. RMSE)
+                       'obj_dir': 'maximize',                 # Maximize (e.g. NSE) or minimize (e.g. RMSE) the objective function 
                        'target_mb': mean_mb,                  # Average annual glacier mass balance to target at
                        'target_swe': swe,                     # Catchment-wide mean SWE timeseries of seasonal snow to calibrate the snow routine
                        'swe_scaling': 0.928,                  # scaling factor for simulated SWE to account for reference area mismatch
-                       'dbformat': None,                      # Write the results to a file ('csv', 'hdf5', 'ram', 'sql')
+                       'dbformat': None,                      # Write the results to a file ('csv', 'hdf5', 'ram', 'sql') or not ('None')
                        'output': None,                        # Choose where to store the files
-                       'algorithm': 'lhs',                    # Choose algorithm (for parallelization: mc, lhs, fast, rope, sceua or demcz)
-                       'dbname': 'era5_matilda_example',      # Choose name
+                       'algorithm': 'lhs',                    # Select the algorithm (for parallelization: mc, lhs, fast, rope, sceua or demcz)
+                       'dbname': 'era5_matilda_example',      # Name the database
                        
                        'parallel': False,                     # Distribute the calculation on multiple cores or not
                       # 'cores': 20                           # Set number of cores when running in parallel
@@ -222,7 +227,7 @@ print('Settings for calibration runs:\n')
 for key in psample_settings.keys(): print(key + ': ' + str(psample_settings[key]))
 
 # %% [markdown]
-# With these settings we can start the `psample()` to run our model with various parameter combinations. The default parameter boundaries can be found in the MATILDA [parameter documentation](https://github.com/cryotools/matilda/tree/master?tab=readme-ov-file#parameter-list). If you want to narrow down the parameter space, you can do that using the following syntax. Here, we define custom ranges for the temperature lapse rate and the precipitation correction factor and run a short Latin Hypercube Sampling (LHS) as an example.
+# With these settings we can start `psample()` to run our model with various parameter combinations. The default parameter boundaries can be found in the MATILDA [parameter documentation](https://github.com/cryotools/matilda/tree/master?tab=readme-ov-file#parameter-list). If you want to narrow down the parameter space, you can do that using the following syntax. Here, we define custom ranges for the temperature lapse rate and the precipitation correction factor and run a short Latin Hypercube Sampling (LHS) for demonstration.
 
 # %% tags=["output_scroll"]
 from matilda.mspot_glacier import psample
@@ -232,24 +237,371 @@ lim_dict = {'lr_temp_lo': -0.007, 'lr_temp_up': -0.005, 'PCORR_lo': 0.5, 'PCORR_
 best_summary = psample(df=era5, obs=obs, **psample_settings, **lim_dict)
 
 # %% [markdown]
+# In this example the function ran the model 5 times with different parameter sets and returned the one with the highest KGE score. It can be accessed from the results dictionary.
+
+# %%
+best_parameterset = best_summary['best_param']
+# Rounding all values for readability
+rounded_parameters = {key: round(value, 3) for key, value in best_parameterset.items()}
+print(rounded_parameters)
+
+# %% [markdown]
+# Of course, to properly cover the full parameter space you would need way more repetitions. However, a high number of samples and a high KGE score don't necessarily give you the parameter set that describes the features of your catchment the best. To find the parameter combination most suitable to simulate the processes governing streamflow, we propose to calibrate MATILDA in several steps.
+
+# %% [markdown]
 # ## Process-based calibration
 
 # %% [markdown]
-# Every parameter governs a different aspect of the water balance, and not all parameters affect every calibration variable. Therefore, we propose an **iterative process-based calibration** approach where we calibrate parameters in order of their importance using different algorithms, objective functions, and calibration variables. Details on the calibration strategy can be found in the model publication which is currently under review. The individual steps will be implemented in the notebook soon.
+# Each parameter governs a different aspect of the water balance, and not all parameters influence every calibration variable. Therefore, we propose an **iterative process-based calibration** approach where we calibrate parameters in order of their importance using different algorithms, objective functions, and calibration variables. Details on the calibration strategy can be found in the model publication which is currently under review. Here, we only provide code examples with 10 samples per step for demonstration purposes. For ideal number of samples please refer to the associated publication.
 #
 # <img src="images/calibration_strategy.png" alt="calibration" width="300">
 #
 
 # %% [markdown]
+# ### Step 1: Input correction
+
+# %% [markdown]
+# Three HBV parameters correct for errors in the input precipitation, snowfall, and evaporation data. They have by far the largest impact on simulated runoff and must be corrected first. The correction factors are primarily designed to correct for observational errors, such as undercatch of solid precipitation. The best way to determine these parameters depends on your study site and available observations. In this example, we disable the correction factors for snowfall (`SFCF=0`) and evaporation (`CET=0`), leaving the input data unchanged, to focus on the model's internal sensitivities rather than the input data sets. However, the ERA5-Land dataset overestimates precipitation frequency and amounts in mountainous regions. A comparison of the monthly summer precipitation (Apr-Sep) with the in-situ observations from 2008 to 2017 showed that ERA5-Land overestimates the total precipitation in the example catchment by more than 100% (`108±62%`). Since the precipitation correction factor (`PCORR`) was identified as the most influential parameter, we cannot avoid to carefully calibrate it to obtain realistic runoff rates.
+#
+# To constrain `PCORR`, we split the remaining 19 parameters into two subsets:
+#
+# <div style="margin-left: 20px; margin-top: 12px;margin-bottom: 12px;">
+#     (1) parameters governing the water balance, and<br>
+#     (2) those controlling runoff timing,
+# </div>
+#
+#
+# ...with the latter set to default values. The results can then be filtered sequentially based on thresholds for $MAE_{smb}$, $KGE_{swe}$, and subsequently $KGE_{r}$. `PCORR` was set to the mean value of the posterior distribution for subsequent calibration steps.
+
+# %% [markdown]
+# First, we edit the settings to write results to a `.csv` file and run random sampling for the parameter subset governing the runoff amount while fixing all other parameters.
+
+# %%
+# Edit the settings to write results in a .csv file
+psample_settings['dbformat'] = 'csv'
+psample_settings['output'] = dir_output
+psample_settings['dbname'] = 'calib_step1'
+
+# Run random sampling
+step1_summary = psample(
+            df=era5, obs=obs, **psample_settings,
+			fix_param=['SFCF', 'CET', 'FC', 'K0', 'K1', 'K2', 'MAXBAS', 'PERC', 'UZL', 'CWH', 'AG', 'LP', 'CFR'],    # fixed on defaults
+			fix_val={'SFCF': 1, 'CET': 0}                                                                            # fixed on specific values
+		       )
+
+# %% [markdown]
+# Next, we load the samples from the `.csv` file and can apply appropriate filters to the data, if desired.
+
+# %%
+step1_samples = pd.read_csv(f"{dir_output}calib_step1.csv")
+
+step1_samples = step1_samples.drop(['chain'], axis=1)
+step1_samples.columns = ['KGE_Runoff', 'MAE_SMB', 'KGE_SWE'] + list(step1_samples.columns[3:])
+step1_samples.columns = step1_samples.columns.str.replace('par', '')
+
+# Apply appropriate filters
+#step1_samples = step1_samples[step1_samples['KGE_Runoff'] > 0.5]
+#step1_samples = step1_samples[step1_samples['MAE_SMB'] < 100]
+#step1_samples = step1_samples[step1_samples['KGE_SWE'] > 0.7]
+
+print(step1_samples)
+
+# %% [markdown]
+# We then plot the posterior distributions for each parameter.
+# <div class="alert alert-block alert-info">
+# <b>Note:</b> For very few samples they are likely to look very similar.</div>
+
+# %%
+import matplotlib.pyplot as plt
+import seaborn as sns
+from matplotlib.ticker import FuncFormatter
+
+# Create a 2x4 matrix of subplots
+fig, axs = plt.subplots(2, 4, figsize=(15, 7))
+
+# Plot posterior distributions for each parameter in the matrix of subplots
+for i, parameter in enumerate(step1_samples.columns[3:]):  # Exclude the first two columns
+    row = i // 4
+    col = i % 4
+    sns.kdeplot(step1_samples[parameter], fill=True, ax=axs[row, col])
+    axs[row, col].set_xlabel(None)
+    axs[row, col].set_ylabel('Density')
+    axs[row, col].set_title(f'{parameter}', fontweight='bold', fontsize=14)
+    if parameter in [step1_samples.columns[3], step1_samples.columns[4]]:
+        def format_ticks(x, _):
+            return '{:.0f}e-4'.format(x * 10000)  # Adjust multiplier here for desired scientific notation
+        axs[row, col].xaxis.set_major_formatter(FuncFormatter(format_ticks))
+    # Add vertical lines for mean, mean ± standard deviation
+    mean_val = step1_samples[parameter].mean()
+    std_val = step1_samples[parameter].std()
+    axs[row, col].axvline(mean_val, color='red', linestyle='--', label='Mean')
+
+plt.tight_layout()
+plt.show()
+
+# %% [markdown]
+# Finally, we calculate the mean and standard deviation for each parameter and write the results to a table.
+
+# %%
+# Calculate mean and standard deviation for each column
+stats_dict = {}
+for col in step1_samples.columns[2:]:
+    mean = step1_samples[col].mean()
+    std = step1_samples[col].std()
+    stats_dict[col + "_mean"] = round(mean, 5)
+    stats_dict[col + "_stddev"] = round(std, 5)
+
+# Write to table
+table_step1_samples = []
+for col in step1_samples.columns[:]:
+    mean = step1_samples[col].mean()
+    std = step1_samples[col].std()
+    table_step1_samples.append([round(mean, 5), round(std, 5)])
+
+table_df = pd.DataFrame(table_step1_samples, columns=['Mean', 'Stdv'], index=step1_samples.columns)
+print(table_df[3:])
+
+# %% [markdown]
+# With an appropriate number of samples, these values will give you a good idea of the parameter distribution. In our example study, we'll fix `PCORR` and few insensitive parameters (`lr_temp`, `lr_prec`; see the <a href="#Sensitivity-Analysis-with-FAST">Sensitivity Section</a> for details) on their mean values and use the standard deviation of the other parameters to define the bounds for subsequent calibration steps. The insensitive refreezing parameter `CFR` is fixed on it's default value (0.15).
+
+# %% [markdown]
+# ### Step 2: Snow routine calibration
+
+# %% [markdown]
+# Three of the remaining parameters control the snow routine: `TT_snow`, `TT_diff`, and `CFMAX_snow`. These parameters affect how snow accumulation and melting are simulated, making them critical for high mountain catchments. We repeat the procedure of step 1, but additionally fix all previously calibrated parameters. The results can then be filtered based on **$KGE_{swe}$**. As before, the selected snow routine parameters are set to the mean of the posterior distribution for use in subsequent calibration steps.
+
+# %%
+# New database name
+psample_settings['dbname'] = 'calib_step2'
+
+# Running LHS with only three open parameters
+step1_summary = psample(
+                df=era5, obs=obs, **psample_settings,
+		        fix_param=['PCORR', 'SFCF', 'CET', 'lr_temp', 'lr_prec', 'K0', 'LP', 'MAXBAS', 'CFMAX_rel', 'CFR', 'FC', 'K1', 'K2', 'PERC', 'UZL', 'CWH', 'AG', 'BETA'],
+		        fix_val={'PCORR': 0.58, 'SFCF': 1, 'CET': 0, 'lr_temp': -0.0061, 'lr_prec': 0.0015, 'CFR': 0.15},
+		       )
+
+# Reading the samples from file
+step2_samples = pd.read_csv(f"{dir_output}calib_step2.csv")
+step2_samples = step2_samples.drop(['chain'], axis=1)
+step2_samples.columns = ['KGE_Runoff', 'MAE_SMB', 'KGE_SWE'] + list(step2_samples.columns[3:])
+step2_samples.columns = step2_samples.columns.str.replace('par', '')
+
+# Apply appropriate filters
+#step2_samples = step2_samples[step2_samples['KGE_SWE'] > 0.8]
+
+# Create a 1x3 matrix of subplots
+fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+# Plot posterior distributions for each parameter in the matrix of subplots
+for i, parameter in enumerate(step2_samples.columns[3:6]):  # Exclude the first two columns
+    sns.kdeplot(step2_samples[parameter], shade=True, ax=axs[i])
+    axs[i].set_xlabel(None)
+    axs[i].set_ylabel('Density')
+    axs[i].set_title(f'{parameter}', fontweight='bold', fontsize=14)
+    # Add vertical lines for mean, mean ± standard deviation
+    mean_val = step2_samples[parameter].mean()
+    std_val = step2_samples[parameter].std()
+    axs[i].axvline(mean_val, color='red', linestyle='--', label='Mean')
+    axs[i].axvline(mean_val - std_val, color='blue', linestyle='--', label='Mean - SD')
+    axs[i].axvline(mean_val + std_val, color='blue', linestyle='--', label='Mean + SD')
+plt.tight_layout()
+plt.show()
+
+# Calculate mean and standard deviation for each parameter
+stats_dict = {}
+for col in step2_samples.columns[2:]:
+    mean = step2_samples[col].mean()
+    std = step2_samples[col].std()
+    stats_dict[col + "_mean"] = round(mean, 5)
+    stats_dict[col + "_stddev"] = round(std, 5)
+
+# Write to table
+table_step2_samples = []
+for col in step2_samples.columns[:]:
+    mean = step2_samples[col].mean()
+    std = step2_samples[col].std()
+    table_step2_samples.append([round(mean, 5), round(std, 5)])
+
+table_df = pd.DataFrame(table_step2_samples, columns=['Mean', 'Stdv'], index=step2_samples.columns)
+
+# Show calibrated values
+print('\nCalibrated values:')
+print(table_df[3:])
+
+# %% [markdown]
+# ### Step 3: Glacier routine calibration
+#
+
+# %% [markdown]
+# Since we already calibrated the snow routine, there is only one parameter left that controls glacier evolution: the ice melt rate `CFMAX_ice`. Since the melt rate for ice is higher than the one for snow due to differences in albedo, the parameter is calculated from the snow melt rate using a factor `CFMAX_rel`. We will therefore calibrate this factor instead of `CFMAX_ice` directly.
+#
+# As before, we draw stratified random samples using the LHS algorithm and filter for a mean absolute error ($\text{MAE}$) threshold around the target SMB. To account for the large uncertainties in the remote sensing estimates for the SMB, we don't fix the ice melt rate but constrain it to a range that lies with the uncertainty band of the dataset.
+
+# %%
+# New database name
+psample_settings['dbname'] = 'calib_step3'
+
+# Running LHS with only one open parameter
+step3_summary = psample(
+                        df=era5, obs=obs, **psample_settings,
+                        fix_param=['PCORR', 'SFCF', 'CET', 'lr_temp', 'lr_prec', 'K0', 'LP', 'MAXBAS', 'CFR', 'FC', 'K1', 'K2', 'PERC', 'UZL', 'CWH', 'AG', 'BETA', 'TT_snow', 'TT_diff', 'CFMAX_snow'],
+                        fix_val={'PCORR': 0.58, 'SFCF': 1, 'CET': 0, 'lr_temp': -0.0061, 'lr_prec': 0.0015, 'CFR': 0.15, 'TT_snow': -1.45, 'TT_diff': 0.76, 'CFMAX_snow': 3.37}
+)
+
+# Reading the samples from file
+step3_samples = pd.read_csv(f"{dir_output}calib_step3.csv")
+step3_samples = step3_samples.drop(['chain'], axis=1)
+step3_samples.columns = ['KGE_Runoff', 'MAE_SMB', 'KGE_SWE'] + list(step3_samples.columns[3:])
+step3_samples.columns = step3_samples.columns.str.replace('par', '')
+
+# Apply appropriate filters
+#step3_samples = step3_samples[step3_samples['MAE_SMB'] < 100
+
+# Use the range of values that meet the target SMB range as bound for the next calibration steps
+print('\nCalibrated values:')
+print(f"CFMAX_rel lower bound: {step3_samples['CFMAX_rel'].min()}\nCFMAX_rel upper bound: {step3_samples['CFMAX_rel'].max()}")
+
+# %% [markdown]
+# ### Step 4: Soil and routing routine calibration
+#
+
+# %% [markdown]
+# In the last step we calibrate the remaining 11 parameters controlling the soil, response, and routing routines all at once. Since this leads to a large parameter space, we apply the Differential Evolution Markov Chain algorithm (DEMCz). This technique is more efficient at finding global optima than other Monte Carlo Markov Chain (MCMC) algorithms and does not require prior distribution information.
+#
+# However, the algorithm is sensitive to informal likelihood functions such as the $\text{KGE}$. To mitigate this problem, we use an adapted version based on the gamma-distribution (`loglike_kge`).
+
+# %%
+from matilda.mspot_glacier import loglike_kge
+
+# New database name
+psample_settings['dbname'] = 'calib_step4'
+
+# Change algorithm
+psample_settings['algorithm'] = 'demcz'
+
+# The algorithm needs a minimum sample size to run through
+psample_settings['rep'] = 30
+
+# Running DEMCz with 11 open parameters
+step4_summary = psample(
+                df=era5, obs=obs, **psample_settings,
+                # obj_func=loglike_kge,
+                # Optional arguments specific to the algorithm. Use for large sample sizes only!
+#		        demcz_args={'burnIn': 500, 'thin': 1, 'convergenceCriteria': 0.8},
+		        fix_param=['PCORR', 'SFCF', 'CET', 'CFR', 'lr_temp', 'lr_prec', 'TT_diff', 'TT_snow', 'CFMAX_snow'],
+		        fix_val={
+				    # Fix:
+				    'CFR': 0.15,
+				    'SFCF': 1,
+				    'CET': 0,
+
+				    # Step 1:
+				    'PCORR': 0.58,
+				    'lr_temp': -0.006,
+				    'lr_prec': 0.0015,
+
+				    # Step 2:
+				    'TT_diff': 0.76198,
+				    'TT_snow': -1.44646,
+				    'CFMAX_snow': 3.3677
+				},
+                    # Step 3:
+                    CFMAX_rel_lo=1.2000372,
+                    CFMAX_rel_up=1.5314099
+)
+
+# %% [markdown]
+# Again, we can apply various criteria to filter the samples, e.g. for the glacier mass balance ($MAE_{smb}$) and runff ($KGE_{r}$).
+
+# %%
+# Reading the samples from file
+step4_samples = pd.read_csv(f"{dir_output}calib_step4.csv")
+step4_samples = step4_samples.drop(['chain'], axis=1)
+step4_samples.columns = ['KGE_Runoff', 'MAE_SMB', 'KGE_SWE'] + list(step4_samples.columns[3:])
+
+# Apply appropriate filters
+# data = data[data['KGE_Runoff'] > 800]            # loglike_KGE values rough equivalents: 700 =~0.85    max. 895 =~0.87
+# data = data[data['MAE_SMB'] < 50]
+
+# %% [markdown]
+# We can now plot the posterior distribution of all 11 parameters and the calibration variables.
+
+# %%
+# Create a 3x5 matrix of subplots
+fig, axs = plt.subplots(3, 5, figsize=(20, 16))
+
+# Plot posterior distributions for each parameter in the matrix of subplots
+for i, parameter in enumerate(step4_samples.columns[:-1]):  # Exclude the 'chain' column
+    row = i // 5
+    col = i % 5
+    sns.kdeplot(step4_samples[parameter], shade=True, ax=axs[row, col])
+    axs[row, col].set_xlabel(parameter)
+    axs[row, col].set_ylabel('Density')
+    axs[row, col].set_title(f'Posterior Distribution of {parameter}')
+
+plt.tight_layout()
+plt.show()
+
+# %% [markdown]
+# Depending on your sample size and filter criteria, there might still be a large number of possible parameter sets. To identify the best sample, you can either apply further criteria (e.g. seasonal $\text{KGE}$ scores) or use visual methods.
+
+# %%
+import plotly.graph_objects as go
+custom_text = [f'Index: {index}<br>KGE_Runoff: {KGE_Runoff}<br>MAE_SMB: {MAE_SMB}' for (index, KGE_Runoff, MAE_SMB) in
+               zip(step4_samples.index, step4_samples['KGE_Runoff'], step4_samples['MAE_SMB'])]
+
+# Create a 2D scatter plot with custom text
+fig = go.Figure(data=go.Scatter(
+    x=step4_samples['KGE_Runoff'],
+    y=step4_samples['MAE_SMB'],
+    mode='markers',
+    text=custom_text, # Assign custom text to each step4_samples point
+    hoverinfo='text',  # Show custom text when hovering
+))
+
+# Update layout
+fig.update_layout(
+    xaxis_title='Kling-Gupta-Efficiency score',
+    yaxis_title='MAE of mean annual SMB',
+    #title='2D Scatter Plot of like1 and like2 with parPCORR Color Ramp',
+    margin=dict(l=0, r=0, b=0, t=40)  # Adjust margins for better visualization
+)
+
+# Show the plot
+fig.show()
+
+
+# %% [markdown]
+# When you identified the best run, you can get the respective parameter set using the index number (e.g run number 10).
+
+# %%
+# Select ID of your best run
+best = step4_samples[step4_samples.index == 10]                     # change accordingly
+
+# Filter columns with the prefix 'par'
+par_columns = [col for col in best.columns if col.startswith('par')]
+
+# Create a dictionary with keys as column names without the 'par' prefix
+parameters = {col.replace('par', ''): best[col].values[0] for col in par_columns}
+
+# Print the dictionary
+print(parameters)
+
+# %% [markdown]
+# Together with your parameter values from previous steps, this is your calibrated parameter set you can use to run the projections.
+#
+# This incremental calibration allows linking the parameters to the processes simulated instead of randomly fitting them to match the measured discharge. However, uncertainties in the calibration data still allow for a wide range of potential scenarios. For a detailed discussion please refer to the associated publication.
+
+# %% [markdown]
 # ## Run MATILDA with calibrated parameters
 
 # %% [markdown]
-# The following parameter set was computed applying the mentioned calibration strategy on an HPC cluster.
+# The following parameter set was computed applying the mentioned calibration strategy on an HPC cluster with large sample sizes for every step.
 # <a id="param"></a>
 
 # %%
 param = {
-    'RFS': 0.15,
+    'CFR': 0.15,
     'SFCF': 1,
     'CET': 0,
     'PCORR': 0.58,
@@ -271,8 +623,6 @@ param = {
     'CWH': 0.000117,
     'AG': 0.54930484
 }
-
-
 
 print('Calibrated parameter set:\n\n')
 for key in param.keys(): print(key + ': ' + str(param[key]))
@@ -297,7 +647,7 @@ output_matilda[10].show()
 
 
 # %% [markdown]
-# ## Reducing the parameter space - Sensitivity analysis with FAST
+# ## Sensitivity Analysis with FAST
 
 # %% [markdown]
 # To reduce the computation time of the calibration procedure, we need to reduce the number of parameters to be optimized. Therefore, we will perform a global sensitivity analysis to identify the most important parameters and set the others to default values. The algorithm of choice will be the [Fourier Amplitude Sensitivity Test (FAST)](https://www.tandfonline.com/doi/abs/10.1080/00401706.1999.10485594) available through the [SPOTPY](https://github.com/thouska/spotpy/blob/master/src/spotpy/algorithms/fast.py) library. As before, we will show the general procedure with a few iterations, but display results from extensive runs on a HPC. You can use the results as a guide for your parameter choices, but keep in mind that they are highly correlated with your catchment properties, such as elevation range and glacier coverage.
@@ -329,7 +679,8 @@ print('Needed number of iterations for FAST: ' + str(fast_iter(21)))
 # %% [markdown]
 # That is a lot of iterations! Running this routine on a single core would take about two days, but can be sped up significantly with each additional core. The setup would look exactly like the parameter optimization before.
 #
-# **Note:** No matter what number of iterations you define, SPOTPY will run $N*k$ times, where $k$ is the number of model parameters. So even if we set `rep=10`, the algorithm will run at least 21 times.
+# <div class="alert alert-block alert-info">
+# <b>Note:</b> No matter what number of iterations you define, SPOTPY will run $N*k$ times, where $k$ is the number of model parameters. So even if we set rep=10, the algorithm will run at least 21 times.</div>
 
 # %% tags=["output_scroll"]
 from matilda.mspot_glacier import psample
@@ -349,43 +700,10 @@ for key in psample_settings.keys(): print(key + ': ' + str(psample_settings[key]
 # fast_results = psample(df=era5, obs=obs, **psample_settings)
 
 # %% [markdown]
-# We ran *FAST*s for the example catchment with the full number of iterations required. The results are saved in *CSV* files. We can use the `spotpy.analyser` library to create easy-to-read data frames from the databases. The summary shows the first (`S1`) and the total order sensitivity index (`ST`) for each parameter. `S1` refers to the variance of the model output explained by the parameter, holding all other parameters constant. The `ST` takes into account the interaction of the parameters and is therefore a good measure of the impact of individual parameters on the model output.
+# We ran *FAST*s for the example catchment an an HPC with the full number of iterations required. The results are saved in *CSV* files. We can use the `spotpy.analyser` library to create easy-to-read data frames from the databases. The summary shows the first (`S1`) and the total order sensitivity index (`ST`) for each parameter. `S1` refers to the variance of the model output explained by the parameter, holding all other parameters constant. The `ST` takes into account the interaction of the parameters and is therefore a good measure of the impact of individual parameters on the model output.
 
 # %%
-import spotpy
-import os
-import contextlib
-
-def get_si(fast_results: str, to_csv: bool = False) -> pd.DataFrame:
-    """
-    Computes the sensitivity indices of a given FAST simulation results file.
-    Parameters
-    ----------
-    fast_results : str
-        The path of the FAST simulation results file.
-    to_csv : bool, optional
-        If True, the sensitivity indices are saved to a CSV file with the same
-        name as fast_results, but with '_sensitivity_indices.csv' appended to
-        the end (default is False).
-    Returns
-    -------
-    pd.DataFrame
-        A pandas DataFrame containing the sensitivity indices and parameter
-        names.
-    """
-    if fast_results.endswith(".csv"):
-        fast_results = fast_results[:-4]  # strip .csv
-    results = spotpy.analyser.load_csv_results(fast_results)
-    # Suppress prints
-    with contextlib.redirect_stdout(open(os.devnull, 'w')):
-        SI = spotpy.analyser.get_sensitivity_of_fast(results, print_to_console=False)
-    parnames = spotpy.analyser.get_parameternames(results)
-    sens = pd.DataFrame(SI)
-    sens['param'] = parnames
-    sens.set_index('param', inplace=True)
-    if to_csv:
-        sens.to_csv(os.path.basename(fast_results) + '_sensitivity_indices.csv', index=False)
-    return sens
+from tools.helpers import get_si
 
 display(get_si(dir_input + 'FAST/' + 'example_fast_nolim.csv'))
 
@@ -400,54 +718,8 @@ lim_dict = {'lr_temp_lo': -0.007, 'lr_temp_up': -0.005, 'PCORR_lo': 0.5, 'PCORR_
 # To see the effect of parameter restrictions on sensitivity, we can plot the indices of both runs. Feel free to explore further by adding more *FAST* outputs to the plot function.
 
 # %%
-import plotly.graph_objs as go
-import pandas as pd
-import plotly.io as pio
+from tools.plots import plot_sensitivity_bars
 
-def plot_sensitivity_bars(*dfs, labels=None, show=False, bar_width=0.3, bar_gap=0.6):
-    """
-    Plots a horizontal bar chart showing the total sensitivity index for each parameter in a MATILDA model.
-
-    Parameters
-    ----------
-    *dfs : pandas.DataFrame
-        Multiple dataframes containing the sensitivity indices for each parameter.
-    labels : list of str, optional
-        Labels to use for the different steps in the sensitivity analysis. If not provided, the default
-        labels will be 'No Limits', 'Step 1', 'Step 2', etc.
-    bar_width : float, optional
-        Width of each bar in the chart.
-    bar_gap : float, optional
-        Space between bars.
-    """
-    traces = []
-    colors = ['darkblue', 'orange', 'purple', 'cyan']   # add more colors if needed
-    for i, df in enumerate(dfs):
-        df = get_si(df)
-        if i > 0:
-            if labels is None:
-                label = 'Step ' + str(i)
-            else:
-                label = labels[i]
-        else:
-            label = 'No Limits'
-        trace = go.Bar(y=df.index,
-                       x=df['ST'],
-                       name=label,
-                       orientation='h',
-                       marker=dict(color=colors[i]),
-                       width=bar_width)
-        traces.append(trace)
-    layout = go.Layout(title=dict(text='<b>' +'Total Sensitivity Index for MATILDA Parameters' + '<b>', font=dict(size=24)),
-                   xaxis_title='Total Sensitivity Index',
-                   yaxis_title='Parameter',
-                   yaxis=dict(automargin=True),
-                   bargap=bar_gap,
-                   height=700)
-    fig = go.Figure(data=traces, layout=layout)
-    if show:
-        fig.show()
-        
 step1 = dir_input + 'FAST/' + 'example_fast_nolim.csv'
 step2 = dir_input + 'FAST/' + 'era5_ipynb_fast_step1.csv'
 
@@ -528,9 +800,13 @@ print(f"Parameter set stored in '{dir_output}parameters.yml'")
 # %%
 import shutil
 
-# refresh `output_download.zip` with data retrieved within this notebook
-shutil.make_archive('output_download', 'zip', 'output')
-print('Output folder can be download now (file output_download.zip)')
+if zip_output:
+    # refresh `output_download.zip` with data retrieved within this notebook
+    shutil.make_archive('output_download', 'zip', 'output')
+    print('Output folder can be download now (file output_download.zip)')
 
 # %%
 # %reset -f
+
+# %% [markdown]
+# With this calibrated parameter set, you can now continue with [Notebook 5](Notebook5_MATILDA_scenarios.ipynb) to run the calibrated model for the whole ensemble.

@@ -37,7 +37,7 @@ jupyter lab
 
 The MATILDA-Edu workflow is organized into a series of interactive Jupyter notebooks. These cover all key steps of modeling water resources in glacierized catchments, including catchment delineation, data acquisition, model calibration, and scenario analysis. Below is a detailed flowchart of the workflow:
 
-![Workflow Flowchart](images/workflow_detailed_2024_-Full+legend.png)
+![Workflow Flowchart](images/workflow_detailed_2024_-Full_legend.png)
 
 ---
 

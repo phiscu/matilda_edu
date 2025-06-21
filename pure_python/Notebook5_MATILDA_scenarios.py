@@ -16,9 +16,9 @@
 # # MATILDA Scenarios
 
 # %% [markdown]
-# After calibrating MATILDA we can now use the best parameter set to run the model with climate scenario data until 2100. In this notebook we will only
+# After calibrating MATILDA we can now use the best parameter set to run the model with climate scenario data until 2100. In this notebook we will...
 #
-# - ...run MATILDA with the same parameters and settings but 2 x 31 different climate forcings.
+# - ...run MATILDA with the same parameters and settings for two emission scenarios and all models of the ensemble.
 #
 # <div class="alert alert-block alert-info">
 # <b>Note:</b> On a single CPU one MATILDA run over 120y takes ~4s. For all ensemble members this adds up to ~4min. The <code>MatildaBulkProcessor</code> class allows you to reduce this time significantly with more CPUs so you might want to run this notebook locally. Or have a coffee. Again...</div>
@@ -40,6 +40,7 @@ config.read('config.ini')
 # get directories from config.ini
 dir_input = config['FILE_SETTINGS']['DIR_INPUT']
 dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
+zip_output = config['CONFIG']['ZIP_OUTPUT']
 
 # set the file format for storage
 compact_files = config.getboolean('CONFIG','COMPACT_FILES')
@@ -56,7 +57,7 @@ print(f"Output path: '{dir_output}'")
 # <b>Note:</b> Choose in the config between faster <code>pickle</code> files and smaller <code>parquet</code> files.</div>
 
 # %% [markdown]
-# To run MATILDA for a period in the future, we need to adapt the modeling period. Therefore, we read the `settings.yaml` to a ditionary and change the respective settings. We also turn off the plotting module to reduce processing time and add the glacier profile from its `.csv`.
+# Let's extend the modeling period to the full century. Therefore, we read the `settings.yaml` to a ditionary and change the respective settings. We also turn off the plotting module to reduce processing time and add the glacier profile from its `.csv`.
 
 # %%
 from tools.helpers import read_yaml, write_yaml
@@ -77,16 +78,13 @@ print("Settings for MATILDA scenario runs:\n")
 for key in matilda_settings.keys(): print(key + ': ' + str(matilda_settings[key]))
 
 # %% [markdown]
-# As we want to use the best calibrated parameter set for the projections we read the `parameters.yml`...
-
-# %%
-param_dict = read_yaml(f"{dir_output}/parameters.yml")
-
-# %% [markdown]
-# ...and our forcing data.
+# Now, we read the calibrated parameter set from the `parameters.yml` and our forcing data from the binary files.
 
 # %%
 from tools.helpers import parquet_to_dict, pickle_to_dict
+
+param_dict = read_yaml(f"{dir_output}/parameters.yml")
+print("Parameters loaded.")
 
 if compact_files:
     # For size:
@@ -97,45 +95,13 @@ else:
     tas = pickle_to_dict(f"{dir_output}cmip6/adjusted/tas.pickle")
     pr = pickle_to_dict(f"{dir_output}cmip6/adjusted/pr.pickle")
 
+print("Forcing data loaded.")
+
 # %% [markdown]
-# Now we have to convert the individual climate projections into MATILDA input dataframes with the correct column names. We store these 2 x 31 MATILDA inputs in a nested dictionary again and save the file in a `parquet` (or `pickle`).
+# The `create_scenario_dict` function converts the individual climate projections into MATILDA input dataframes. We store the ensemble of MATILDA inputs in a nested dictionary again and save the file in a `parquet` (or `pickle`). 
 
 # %%
-from tools.helpers import dict_to_parquet, dict_to_pickle
-
-def create_scenario_dict(tas: dict, pr: dict, scenario_nums: list) -> dict:
-    """
-    Create a nested dictionary of scenarios and models from two dictionaries of pandas DataFrames.
-    Parameters
-    ----------
-    tas : dict
-        A dictionary of pandas DataFrames where the keys are scenario names and each DataFrame has columns
-        representing different climate model mean daily temperature (K) time series.
-    pr : dict
-        A dictionary of pandas DataFrames where the keys are scenario names and each DataFrame has columns
-        representing different climate models mean daily precipitation (mm/day) time series.
-    scenario_nums : list
-        A list of integers representing the scenario numbers to include in the resulting dictionary.
-    Returns
-    -------
-    dict
-        A nested dictionary where the top-level keys are scenario names (e.g. 'SSP2', 'SSP5') and the values are
-        dictionaries containing climate models as keys and the corresponding pandas DataFrames as values.
-        The DataFrames have three columns: 'TIMESTAMP', 'T2', and 'RRR', where 'TIMESTAMP'
-        represents the time step, 'T2' represents the mean daily temperature (K), and 'RRR' represents the mean
-        daily precipitation (mm/day).
-    """
-    scenarios = {}
-    for s in scenario_nums:
-        s = 'SSP' + str(s)
-        scenarios[s] = {}
-        for m in tas[s].columns:
-            model = pd.DataFrame({'T2': tas[s][m],
-                                  'RRR': pr[s][m]})
-            model = model.reset_index()
-            mod_dict = {m: model.rename(columns={'time': 'TIMESTAMP'})}
-            scenarios[s].update(mod_dict)
-    return scenarios
+from tools.helpers import dict_to_parquet, dict_to_pickle, create_scenario_dict
 
 scenarios = create_scenario_dict(tas, pr, [2, 5])
 
@@ -146,146 +112,24 @@ if compact_files:
 else:
     dict_to_pickle(scenarios, f"{dir_output}cmip6/adjusted/matilda_scenario_input.pickle")
 
+
 # %% [markdown]
 # ## Running MATILDA for all climate projections
 
 # %% [markdown]
-# Now that we are set up we need to **run MATILDA for every CMIP6 model and both scenarios**. This adds up to **62 model runs at ~4s each** on a single core. So you can either start the bulk processor and have a break or download the repo and change the config according to your available cores.
+# Now that we are set up we need to **run MATILDA for every CMIP6 model and both scenarios**. This adds up to **50-70 model runs at ~4s each** on a single core, depending on how many models remained in your ensemble. So you can either start the bulk processor and have a break or download the repo and change the config according to your available cores.
 #
 # <div class="alert alert-block alert-info">
 # <b>Note:</b> Don't be confused by the status bar. It only updates after one full scenario is processed.</div>
 
 # %%
-## Run Matilda in a loop (takes a while - have a coffee)
+from tools.helpers import MatildaBulkProcessor
+import shutil
 
-from matilda.core import matilda_simulation
-from tqdm import tqdm
-import contextlib
-import os
-from multiprocessing import Pool
-from functools import partial
-
-
-class MatildaBulkProcessor:
-    """
-    A class to run multiple MATILDA simulations for different input scenarios and models in single or multi-processing
-    mode and store the results in a dictionary.
-    Attributes
-    ----------
-    scenarios : dict
-        A dictionary with scenario names as keys and a dictionary of climate models as values.
-    matilda_settings : dict
-        A dictionary of MATILDA settings.
-    matilda_parameters : dict
-        A dictionary of MATILDA parameter values.
-    Methods
-    -------
-    run_single_process():
-        Runs the MATILDA simulations for the scenarios and models in single-processing mode and returns a dictionary
-        of results.
-    run_multi_process():
-        Runs the MATILDA simulations for the scenarios and models in multi-processing mode and returns a dictionary
-        of results.
-    matilda_headless(df, matilda_settings, matilda_parameters):
-        A helper function to run a single MATILDA simulation given a dataframe, MATILDA settings and parameter
-        values.
-    """
-
-    def __init__(self, scenarios, matilda_settings, matilda_parameters):
-        """
-        Parameters
-        ----------
-        scenarios : dict
-            A dictionary with scenario names as keys and a dictionary of models as values.
-        matilda_settings : dict
-            A dictionary of MATILDA settings.
-        matilda_parameters : dict
-            A dictionary of MATILDA parameter values.
-        """
-
-        self.scenarios = scenarios
-        self.matilda_settings = matilda_settings
-        self.matilda_parameters = matilda_parameters
-
-    @staticmethod
-    def matilda_headless(df, matilda_settings, matilda_parameters):
-        """
-        A helper function to run a single MATILDA simulation given a dataframe, MATILDA settings and parameter
-        values.
-        Parameters
-        ----------
-        df : pandas.DataFrame
-            The input dataframe for the MATILDA simulation.
-        matilda_settings : dict
-            A dictionary of MATILDA settings.
-        matilda_parameters : dict
-            A dictionary of MATILDA parameter values.
-        Returns
-        -------
-        dict
-            A dictionary containing the MATILDA model output and glacier rescaling factor.
-        """
-
-        with open(os.devnull, 'w') as devnull:
-            with contextlib.redirect_stdout(devnull):
-                output = matilda_simulation(df, **matilda_settings, parameter_set=matilda_parameters)
-        return {'model_output': output[0], 'glacier_rescaling': output[5]}
-
-    def run_single_process(self):
-        """
-        Runs the MATILDA simulations for the scenarios and models in single-processing mode and returns a dictionary
-        of results.
-        Returns
-        -------
-        dict
-            A dictionary of MATILDA simulation results.
-        """
-
-        out_dict = {}  # Create an empty dictionary to store the outputs
-        # Loop over the scenarios with progress bar
-        for scenario in self.scenarios.keys():
-            model_dict = {}  # Create an empty dictionary to store the model outputs
-            # Loop over the models with progress bar
-            for model in tqdm(self.scenarios[scenario].keys(), desc=scenario):
-                # Get the dataframe for the current scenario and model
-                df = self.scenarios[scenario][model]
-                # Run the model simulation and get the output while suppressing prints
-                model_output = self.matilda_headless(df, self.matilda_settings, self.matilda_parameters)
-                # Store the list of output in the model dictionary
-                model_dict[model] = model_output
-            # Store the model dictionary in the scenario dictionary
-            out_dict[scenario] = model_dict
-        return out_dict
-
-    def run_multi_process(self, num_cores=2):
-        """
-        Runs the MATILDA simulations for the scenarios and models in multi-processing mode and returns a dictionary
-        of results.
-        Returns
-        -------
-        dict
-            A dictionary of MATILDA simulation results.
-        """
-
-        out_dict = {}  # Create an empty dictionary to store the outputs
-        with Pool(num_cores) as pool:
-            # Loop over the scenarios with progress bar
-            for scenario in tqdm(self.scenarios.keys(), desc="Scenarios SSP2 and SSP5"):
-                model_dict = {}  # Create an empty dictionary to store the model outputs
-                # Loop over the models with progress bar
-                model_list = [self.scenarios[scenario][m] for m in self.scenarios[scenario].keys()]
-                for model, model_output in zip(self.scenarios[scenario], pool.map(
-                        partial(self.matilda_headless, matilda_settings=self.matilda_settings,
-                                matilda_parameters=self.matilda_parameters), model_list)):
-                    model_dict[model] = model_output
-                # Store the model dictionary in the scenario dictionary
-                out_dict[scenario] = model_dict
-            pool.close()
-
-        return out_dict
-
-
+# Create an instance of the MatildaBulkProcessor class
 matilda_bulk = MatildaBulkProcessor(scenarios, matilda_settings, param_dict)
+
+# Run Matilda in a loop (takes a while - have a coffee)
 if num_cores == 1:
     matilda_scenarios = matilda_bulk.run_single_process()
 else:
@@ -298,16 +142,14 @@ if compact_files:
 else:
     dict_to_pickle(matilda_scenarios, f"{dir_output}cmip6/adjusted/matilda_scenarios.pickle")
 
+if zip_output:
+    # refresh `output_download.zip` with data retrieved within this notebook
+    shutil.make_archive('output_download', 'zip', 'output')
+    print('Output folder can be download now (file output_download.zip)')
 
-# %% [markdown]
-# The results is a large nested dictionary with 62 x 2 dataframes of MATILDA outputs. To have a look at the results, continue with Notebook 6.
-
-# %%
-import shutil
-
-# refresh `output_download.zip` with data retrieved within this notebook
-shutil.make_archive('output_download', 'zip', 'output')
-print('Output folder can be download now (file output_download.zip)')
 
 # %%
 # %reset -f
+
+# %% [markdown]
+# The result is a large nested dictionary with 100-140 dataframes of MATILDA outputs. Now, it is finally time to look at the results. Explore your projections in [Notebook 6](Notebook6_Analysis.ipynb).

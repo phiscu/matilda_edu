@@ -4,6 +4,9 @@ from climate_indices.indices import spei, spi, Distribution
 from climate_indices import compute, utils
 import pandas as pd
 import numpy as np
+import inspect
+from tqdm import tqdm
+
 
 def prec_minmax(df):
     """
@@ -321,10 +324,10 @@ def hydrological_signatures(df):
 
 
 # Drought indicators
-def drought_indicators(df, freq='M', dist='gamma'):
+def drought_indicators(df, freq='ME', dist='gamma'):
     """
     Calculate the climatic water balance, SPI (Standardized Precipitation Index), and
-    SPEI (Standardized Precipitation Evapotranspiration Index) for 1, 3, 6, 12, and 24 months..
+    SPEI (Standardized Precipitation Evapotranspiration Index) for 1, 3, 6, 12, and 24 months.
     Parameters
     ----------
     df : pandas.DataFrame
@@ -342,7 +345,7 @@ def drought_indicators(df, freq='M', dist='gamma'):
     Raises
     ------
     ValueError
-         If 'freq' is not 'D' or 'M'.
+         If 'freq' is not 'D' or 'ME'.
          If 'dist' is not 'pearson' or 'gamma'.
     Notes
     -----
@@ -352,11 +355,11 @@ def drought_indicators(df, freq='M', dist='gamma'):
     If 'freq' is 'D', the input data is transformed from Gregorian to a 366-day format for SPI and SPEI calculation,
     and then transformed back to Gregorian format for output.
     The default distribution for SPI and SPEI calculation is Gamma.
-    The calibration period for SPI and SPEI calculation is th full data range from 1981 to 2100.
+    The calibration period for SPI and SPEI calculation is from 1981 to 2020.
     """
     # Check if frequency is valid
-    if freq != 'D' and freq != 'M':
-        raise ValueError("Invalid value for 'freq'. Choose either 'D' or 'M'.")
+    if freq != 'D' and freq != 'ME':
+        raise ValueError("Invalid value for 'freq'. Choose either 'D' or 'ME'.")
 
     # Resample precipitation and evaporation data based on frequency
     prec = df.prec_off_glaciers.resample(freq).sum().values
@@ -383,7 +386,7 @@ def drought_indicators(df, freq='M', dist='gamma'):
     # Set periodicity based on frequency
     if freq == 'D':
         periodicity = compute.Periodicity.daily
-    elif freq == 'M':
+    elif freq == 'ME':
         periodicity = compute.Periodicity.monthly
 
     # Set common parameters
@@ -391,7 +394,7 @@ def drought_indicators(df, freq='M', dist='gamma'):
                      'periodicity': periodicity,
                      'data_start_year': 1981,
                      'calibration_year_initial': 1981,
-                     'calibration_year_final': 2100}
+                     'calibration_year_final': 2020}
 
     # Set parameters for SPEI calculation
     spei_params = {'precips_mm': prec,
@@ -423,7 +426,7 @@ def drought_indicators(df, freq='M', dist='gamma'):
 
 
 # Wrapper function
-import inspect
+
 def cc_indicators(df, **kwargs):
     """
     Apply a list of climate change indicator functions to output DataFrame of MATILDA and concatenate
@@ -473,7 +476,7 @@ indicator_vars = {
  'melt_season_length': ('Length of Melting Season', 'd'),
  'actual_aridity': ('Relative Change of Actual Aridity', '%'),
  'potential_aridity': ('Relative Change of Potential Aridity', '%'),
- 'dry_spell_days': ('Total Length of Dry Spells per year', 'd/a'),
+ 'dry_spell_days': ('Total Length of Dry Spells', 'd/a'),
  'qlf_freq': ('Frequency of Low-flow events', 'yr^-1'),
  'qlf_dur': ('Mean Duration of Low-flow events', 'd'),
  'qhf_freq': ('Frequency of High-flow events', 'yr^-1'),
@@ -490,3 +493,87 @@ indicator_vars = {
  'spi24': ('Standardized Precipitation Index (24 months)', '-'),
  'spei24': ('Standardized Precipitation Evaporation Index (24 months)', '-')
 }
+
+
+def calculate_indicators(dic, **kwargs):
+    """
+    Calculate climate change indicators for all scenarios and models.
+    Parameters
+    ----------
+    dic : dict
+        Dictionary containing MATILDA outputs for all scenarios and models.
+    **kwargs : optional
+        Optional keyword arguments to be passed to the cc_indicators() function.
+    Returns
+    -------
+    dict
+        Dictionary with the same structure as the input but containing climate change indicators in annual resolution.
+    """
+    # Create an empty dictionary to store the outputs
+    out_dict = {}
+    # Loop over the scenarios with progress bar
+    for scenario in dic.keys():
+        model_dict = {}  # Create an empty dictionary to store the model outputs
+        # Loop over the models with progress bar
+        for model in tqdm(dic[scenario].keys(), desc=scenario):
+            # Get the dataframe for the current scenario and model
+            df = dic[scenario][model]['model_output']
+            # Run the indicator function
+            indicators = cc_indicators(df, **kwargs)
+            # Store indicator time series in the model dictionary
+            model_dict[model] = indicators
+        # Store the model dictionary in the scenario dictionary
+        out_dict[scenario] = model_dict
+
+    return out_dict
+
+
+def custom_df_indicators(dic, scenario, var):
+    """
+    Takes a dictionary of climate change indicators and returns a combined dataframe of a specific variable for
+    a given scenario.
+    Parameters
+    ----------
+    dic : dict
+        Dictionary containing the outputs of calculate_indicators() for different scenarios and models.
+    scenario : str
+        Name of the selected scenario.
+    var : str
+        Name of the variable to extract from the DataFrame.
+    Returns
+    -------
+    pandas.DataFrame
+        A DataFrame containing the selected variable from different models within the specified scenario.
+    Raises
+    ------
+    ValueError
+        If the provided variable is not one of the function outputs.
+    """
+
+    out_cols = ['max_prec_month', 'min_prec_month',
+                'peak_day',
+                'melt_season_start', 'melt_season_end', 'melt_season_length',
+                'actual_aridity', 'potential_aridity',
+                'dry_spell_days',
+                'qlf_freq', 'qlf_dur', 'qhf_freq', 'qhf_dur',
+                'clim_water_balance', 'spi1', 'spei1', 'spi3', 'spei3',
+                'spi6', 'spei6', 'spi12', 'spei12', 'spi24', 'spei24']
+
+    if var not in out_cols:
+        raise ValueError("var needs to be one of the following strings: " +
+                         str([i for i in out_cols]))
+
+    # Create an empty list to store the dataframes
+    dfs = []
+    # Loop over the models in the selected scenario
+    for model in dic[scenario].keys():
+        # Get the dataframe for the current model
+        df = dic[scenario][model]
+        # Append the dataframe to the list of dataframes
+        dfs.append(df[var])
+    # Concatenate the dataframes into a single dataframe
+    combined_df = pd.concat(dfs, axis=1)
+    # Set the column names of the combined dataframe to the model names
+    combined_df.columns = dic[scenario].keys()
+
+    return combined_df
