@@ -130,6 +130,7 @@
 # 2. In the ```[CONFIG]``` section you can ...
 #    - ... specify your **Google Cloud project**. This information is **mandatory** to use the GEE in the workflow. The current project ```matilda-edu``` is set up for demonstration purposes and is not publicly accessible.
 #    - ... specify your **reference coordinates** (usually your gauging station location) and select the calibration period. The latter should cover your observation period plus a few years before as a spin-off.
+#    - ... specify the calibration period of the hydrlogical model depending on your data.
 #    - ... change the **digital elevation model** used.
 #    - ... choose download option from GEE (direct download or via ```xarray```).
 #    - ... choose whether to create scenario-based **projections** or just model the past.

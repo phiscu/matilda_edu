@@ -16,7 +16,7 @@
 # # Calibrating the MATILDA framework
 
 # %% [markdown]
-# In this notebook we will
+# While the last notebooks focused on data acquisition and preprocessing, we can finally start modeling. In this notebook we will...
 #
 # 1. ... set up a glacio-hydrological model with all the data we have collected,
 #
@@ -45,7 +45,7 @@ config.read('config.ini')
 # get output dir and date range from config.ini
 dir_input = config['FILE_SETTINGS']['DIR_INPUT']
 dir_output = config['FILE_SETTINGS']['DIR_OUTPUT']
-date_range = ast.literal_eval(config['CONFIG']['DATE_RANGE'])
+date_range = ast.literal_eval(config['CONFIG']['CALIBRATION_PERIOD'])
 
 print('MATILDA will be calibrated on the period ' + date_range[0] + ' to ' + date_range[1])
 
