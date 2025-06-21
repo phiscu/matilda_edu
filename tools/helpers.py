@@ -2,14 +2,17 @@ import yaml
 import pickle
 import pandas as pd
 import os
-from tqdm import tqdm
 import sys
-from pathlib import Path
-from fastparquet import write
 import numpy as np
-from bias_correction import BiasCorrection
 import spotpy
 import contextlib
+from pathlib import Path
+from fastparquet import write
+from bias_correction import BiasCorrection
+from tqdm import tqdm
+from matilda.core import matilda_simulation
+from multiprocessing import Pool
+from functools import partial
 
 
 def read_yaml(file_path):
@@ -582,3 +585,157 @@ def get_si(fast_results: str, to_csv: bool = False) -> pd.DataFrame:
     if to_csv:
         sens.to_csv(os.path.basename(fast_results) + '_sensitivity_indices.csv', index=False)
     return sens
+
+
+def create_scenario_dict(tas: dict, pr: dict, scenario_nums: list) -> dict:
+    """
+    Create a nested dictionary of scenarios and models from two dictionaries of pandas DataFrames.
+    Parameters
+    ----------
+    tas : dict
+        A dictionary of pandas DataFrames where the keys are scenario names and each DataFrame has columns
+        representing different climate model mean daily temperature (K) time series.
+    pr : dict
+        A dictionary of pandas DataFrames where the keys are scenario names and each DataFrame has columns
+        representing different climate models mean daily precipitation (mm/day) time series.
+    scenario_nums : list
+        A list of integers representing the scenario numbers to include in the resulting dictionary.
+    Returns
+    -------
+    dict
+        A nested dictionary where the top-level keys are scenario names (e.g. 'SSP2', 'SSP5') and the values are
+        dictionaries containing climate models as keys and the corresponding pandas DataFrames as values.
+        The DataFrames have three columns: 'TIMESTAMP', 'T2', and 'RRR', where 'TIMESTAMP'
+        represents the time step, 'T2' represents the mean daily temperature (K), and 'RRR' represents the mean
+        daily precipitation (mm/day).
+    """
+    scenarios = {}
+    for s in scenario_nums:
+        s = 'SSP' + str(s)
+        scenarios[s] = {}
+        for m in tas[s].columns:
+            model = pd.DataFrame({'T2': tas[s][m],
+                                  'RRR': pr[s][m]})
+            model = model.reset_index()
+            mod_dict = {m: model.rename(columns={'time': 'TIMESTAMP'})}
+            scenarios[s].update(mod_dict)
+    return scenarios
+
+
+class MatildaBulkProcessor:
+    """
+    A class to run multiple MATILDA simulations for different input scenarios and models in single or multi-processing
+    mode and store the results in a dictionary.
+    Attributes
+    ----------
+    scenarios : dict
+        A dictionary with scenario names as keys and a dictionary of climate models as values.
+    matilda_settings : dict
+        A dictionary of MATILDA settings.
+    matilda_parameters : dict
+        A dictionary of MATILDA parameter values.
+    Methods
+    -------
+    run_single_process():
+        Runs the MATILDA simulations for the scenarios and models in single-processing mode and returns a dictionary
+        of results.
+    run_multi_process():
+        Runs the MATILDA simulations for the scenarios and models in multi-processing mode and returns a dictionary
+        of results.
+    matilda_headless(df, matilda_settings, matilda_parameters):
+        A helper function to run a single MATILDA simulation given a dataframe, MATILDA settings and parameter
+        values.
+    """
+
+    def __init__(self, scenarios, matilda_settings, matilda_parameters):
+        """
+        Parameters
+        ----------
+        scenarios : dict
+            A dictionary with scenario names as keys and a dictionary of models as values.
+        matilda_settings : dict
+            A dictionary of MATILDA settings.
+        matilda_parameters : dict
+            A dictionary of MATILDA parameter values.
+        """
+
+        self.scenarios = scenarios
+        self.matilda_settings = matilda_settings
+        self.matilda_parameters = matilda_parameters
+
+    @staticmethod
+    def matilda_headless(df, matilda_settings, matilda_parameters):
+        """
+        A helper function to run a single MATILDA simulation given a dataframe, MATILDA settings and parameter
+        values.
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            The input dataframe for the MATILDA simulation.
+        matilda_settings : dict
+            A dictionary of MATILDA settings.
+        matilda_parameters : dict
+            A dictionary of MATILDA parameter values.
+        Returns
+        -------
+        dict
+            A dictionary containing the MATILDA model output and glacier rescaling factor.
+        """
+
+        with open(os.devnull, 'w') as devnull:
+            with contextlib.redirect_stdout(devnull):
+                output = matilda_simulation(df, **matilda_settings, **matilda_parameters)
+        return {'model_output': output[0], 'glacier_rescaling': output[5]}
+
+    def run_single_process(self):
+        """
+        Runs the MATILDA simulations for the scenarios and models in single-processing mode and returns a dictionary
+        of results.
+        Returns
+        -------
+        dict
+            A dictionary of MATILDA simulation results.
+        """
+
+        out_dict = {}  # Create an empty dictionary to store the outputs
+        # Loop over the scenarios with progress bar
+        for scenario in self.scenarios.keys():
+            model_dict = {}  # Create an empty dictionary to store the model outputs
+            # Loop over the models with progress bar
+            for model in tqdm(self.scenarios[scenario].keys(), desc=scenario):
+                # Get the dataframe for the current scenario and model
+                df = self.scenarios[scenario][model]
+                # Run the model simulation and get the output while suppressing prints
+                model_output = self.matilda_headless(df, self.matilda_settings, self.matilda_parameters)
+                # Store the list of output in the model dictionary
+                model_dict[model] = model_output
+            # Store the model dictionary in the scenario dictionary
+            out_dict[scenario] = model_dict
+        return out_dict
+
+    def run_multi_process(self, num_cores=2):
+        """
+        Runs the MATILDA simulations for the scenarios and models in multi-processing mode and returns a dictionary
+        of results.
+        Returns
+        -------
+        dict
+            A dictionary of MATILDA simulation results.
+        """
+
+        out_dict = {}  # Create an empty dictionary to store the outputs
+        with Pool(num_cores) as pool:
+            # Loop over the scenarios with progress bar
+            for scenario in tqdm(self.scenarios.keys(), desc="Scenarios SSP2 and SSP5"):
+                model_dict = {}  # Create an empty dictionary to store the model outputs
+                # Loop over the models with progress bar
+                model_list = [self.scenarios[scenario][m] for m in self.scenarios[scenario].keys()]
+                for model, model_output in zip(self.scenarios[scenario], pool.map(
+                        partial(self.matilda_headless, matilda_settings=self.matilda_settings,
+                                matilda_parameters=self.matilda_parameters), model_list)):
+                    model_dict[model] = model_output
+                # Store the model dictionary in the scenario dictionary
+                out_dict[scenario] = model_dict
+            pool.close()
+
+        return out_dict
