@@ -809,4 +809,4 @@ if zip_output:
 # %reset -f
 
 # %% [markdown]
-# With this calibrated parameter set, you can now continue with [Notebook 5](Notebook5_MATILDA_scnearios.ipynb) to run the calibrated model for the whole ensemble.
+# With this calibrated parameter set, you can now continue with [Notebook 5](Notebook5_MATILDA_scenarios.ipynb) to run the calibrated model for the whole ensemble.
