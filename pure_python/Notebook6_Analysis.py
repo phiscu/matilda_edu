@@ -92,7 +92,7 @@ print("Done!")
 #      ...
 
 # %% [markdown]
-# To analyze all projections of a single variable, we need a function to rearrange the data. The `custom_df_matilda()` function returns a dataframe with all ensemble members for a given variable and scenario resampled to a desired frequency, e.g. **the total annual runoff under SSP 2**.
+# To analyze all projections of a single variable, we need to rearrange the data. The `custom_df_matilda()` function returns a dataframe with all ensemble members for a given variable and scenario resampled to a desired frequency, e.g. **the total annual runoff under SSP 2**.
 
 # %% tags=["output_scroll"]
 from tools.plots import custom_df_matilda
@@ -108,7 +108,7 @@ print(matilda_SSP2.head())
 # ## Plot ensemble mean with confidence interval
 
 # %% [markdown]
-# Showing 31 curves in one figure gets confusing. A standard way to visualize ensemble data is to plot **the mean** (or median) **across all ensemble members with a confidence interval**. We choose a 95% confidence interval, meaning that based on this sample of 31 climate models, there is a 95% probability that the "true" mean lies within this interval. For that we are using the `confidence_interval()` function.
+# Showing curves for every individual ensemble member in one figure gets confusing. A standard way to visualize this is to plot **the mean** (or median) **across the ensemble with a confidence interval**. We choose a 95% confidence interval, meaning that based on this sample of 31 climate models, there is a 95% probability that the "true" mean lies within this interval. For that we are using the `confidence_interval()` function.
 #
 # [<img src="https://miro.medium.com/max/3840/1*qSCzTfliGMCcPfIQcGIAJw.jpeg" width="70%"/>](https://miro.medium.com/max/3840/1*qSCzTfliGMCcPfIQcGIAJw.jpeg)
 #
@@ -120,8 +120,6 @@ from tools.helpers import confidence_interval
 confidence_interval = confidence_interval(matilda_SSP2)
 print('\n95% Confidence Intervals for Total Annual Runoff Projections:\n')
 print(confidence_interval)
-
-
 
 # %% [markdown]
 # We are going to use the `plotly` library again to create interactive plots. For now, let's plot *total discharge* over all ensemble members. You can change the variables and resampling frequency in the example at will.
@@ -136,21 +134,19 @@ plot_ci_matilda('total_runoff',dic=matilda_scenarios, resample_freq='YE', show=T
 # ## Interactive plotting application 
 
 # %% [markdown]
-# To make the full dataset more accessible, we can integrate these figures into an **interactive application** using [`ploty.Dash`](https://dash.plotly.com/). This launches a `Dash` server that updates the figures as you select variables and frequencies in the **dropdown menus**. To compare time series, you can align multiple figures in the same application. The demo application aligns three figures showing *total runoff, total precipitation* and *runoff_from_glaciers* by default directly in the output cell. If you want to display the complete application in a separate Jupyter tab, set `display_mode='tab'`.
+# To make the full dataset more accessible, we can integrate these figures into an **interactive application** using [`ploty.Dash`](https://dash.plotly.com/). This launches a `Dash` server that updates the figures as you select variables and frequencies in the **dropdown menus**. To compare time series, you can align multiple figures in the same application. The demo application aligns four figures showing *total runoff, total precipitation*, *runoff_from_glaciers*, and *glacier area* by default directly in the output cell. If you want to display the complete application in a separate Jupyter tab, set `display_mode='tab'`.
 
 # %%
 from tools.helpers import adjust_jupyter_config
-
-# retrieve server information to find out whether it's running locally or on mybinder.org server
-adjust_jupyter_config()
-
-# %%
 from dash import Dash
 from jupyter_server import serverapp
 from tools.plots import matilda_dash
 
+# retrieve server information to find out whether it's running locally or on mybinder.org server
+adjust_jupyter_config()
+
 app1 = Dash(__name__)
-matilda_dash(app1,dic=matilda_scenarios, fig_count=4, default_vars=[...], display_mode='inLine')
+matilda_dash(app1,dic=matilda_scenarios, fig_count=4, display_mode='inLine')
 
 port = 8051
 if list(serverapp.list_running_servers()) == []:
@@ -162,7 +158,7 @@ else:
 # ## Climate Change Impact Analysis
 
 # %% [markdown]
-# To highlight the impacts of climate change on our catchment we can calculate a set of indicators frequently used in climate impact studies and visualize them in a `Dash` board as above. The `calculate_indicators()` function calculates the following statistics for all ensemble members in annual resolution:
+# To highlight the impacts of climate change on our catchment we can calculate a set of indicators frequently used in climate impact studies and visualize them in a `Dash` board as well. The `calculate_indicators()` function calculates the following statistics for all ensemble members in annual resolution:
 #
 # - Month with minimum/maximum precipitation
 # - Timing of Peak Runoff
@@ -174,7 +170,7 @@ else:
 # - 5th Percentile of Total Runoff
 # - 50th Percentile of Total Runoff
 # - 95th Percentile of Total Runoff
-# - Climatec Water Balance
+# - Climatic Water Balance
 # - SPI (Standardized Precipitation Index) and SPEI (Standardized Precipitation Evapotranspiration Index) for 1, 3, 6, 12, and 24 months
 #
 # For details on these metrics check the [source code](tools/indicators.py).
@@ -240,4 +236,15 @@ plot_annual_cycles(matilda_scenarios, save_path=f"{dir_output}/figures/summary_g
 # %% [markdown]
 # ## Finish line
 #
-# **Congratulations**, you made it till the end! You can now explore your results, go back to refine your calibration or close this book for good. Thanks for sticking with us and please get in touch if you like.
+# **Congratulations**, you made it till the end! We reward you with a **virtual swim in the beautiful Issyk-Kul**!
+
+# %% [markdown]
+# <img src="images/issykul_swim.JPG" width="70%"/>
+#
+# &copy; *Phillip Schuster*
+
+# %% [markdown]
+# You can now explore your results, go back to refine your calibration or close this book for good.
+#
+# **Thanks for sticking with us and please get in touch if you like!**
+# **Cheers!**

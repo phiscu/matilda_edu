@@ -5,6 +5,7 @@ from climate_indices import compute, utils
 import pandas as pd
 import numpy as np
 import inspect
+from tqdm import tqdm
 
 
 def prec_minmax(df):
