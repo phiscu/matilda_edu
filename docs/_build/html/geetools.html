@@ -1,0 +1,175 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tools.geetools &mdash; Matilda ONLINE 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="tools.plots" href="plots.html" />
+    <link rel="prev" title="tools.indicators" href="indicators.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Matilda ONLINE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">MATILDA Tools</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Tools Modules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="helpers.html">tools.helpers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="indicators.html">tools.indicators</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">tools.geetools</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#tools.geetools.CMIPDownloader"><code class="docutils literal notranslate"><span class="pre">CMIPDownloader</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tools.geetools.CMIPDownloader.download"><code class="docutils literal notranslate"><span class="pre">CMIPDownloader.download()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.geetools.CMIPProcessor"><code class="docutils literal notranslate"><span class="pre">CMIPProcessor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tools.geetools.CMIPProcessor.append_df"><code class="docutils literal notranslate"><span class="pre">CMIPProcessor.append_df()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tools.geetools.CMIPProcessor.get_results"><code class="docutils literal notranslate"><span class="pre">CMIPProcessor.get_results()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tools.geetools.CMIPProcessor.process_dataframes"><code class="docutils literal notranslate"><span class="pre">CMIPProcessor.process_dataframes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tools.geetools.CMIPProcessor.read_cmip"><code class="docutils literal notranslate"><span class="pre">CMIPProcessor.read_cmip()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="plots.html">tools.plots</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Matilda ONLINE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">Tools Modules</a></li>
+      <li class="breadcrumb-item active">tools.geetools</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/geetools.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-tools.geetools">
+<span id="tools-geetools"></span><h1>tools.geetools<a class="headerlink" href="#module-tools.geetools" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="tools.geetools.CMIPDownloader">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tools.geetools.</span></span><span class="sig-name descname"><span class="pre">CMIPDownloader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">starty</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'./'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/geetools.html#CMIPDownloader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.geetools.CMIPDownloader" title="Link to this definition"></a></dt>
+<dd><p>Class to download spatially averaged CMIP6 data for a given period, variable, and spatial subset.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tools.geetools.CMIPDownloader.download">
+<span class="sig-name descname"><span class="pre">download</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/geetools.html#CMIPDownloader.download"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.geetools.CMIPDownloader.download" title="Link to this definition"></a></dt>
+<dd><p>Runs a subset routine for CMIP6 data on GEE servers to create ee.FeatureCollections for all years in
+the requested period. Downloads individual years in parallel processes to increase the download time.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tools.geetools.CMIPProcessor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tools.geetools.</span></span><span class="sig-name descname"><span class="pre">CMIPProcessor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/geetools.html#CMIPProcessor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.geetools.CMIPProcessor" title="Link to this definition"></a></dt>
+<dd><p>Class to read and pre-process CSV files downloaded by the CMIPDownloader class.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tools.geetools.CMIPProcessor.append_df">
+<span class="sig-name descname"><span class="pre">append_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/geetools.html#CMIPProcessor.append_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.geetools.CMIPProcessor.append_df" title="Link to this definition"></a></dt>
+<dd><p>Reads CMIP6 CSV files of individual years and concatenates them into dataframes for the full downloaded
+period. Historical and scenario datasets are treated separately. Converts precipitation unit to mm.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tools.geetools.CMIPProcessor.get_results">
+<span class="sig-name descname"><span class="pre">get_results</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/geetools.html#CMIPProcessor.get_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.geetools.CMIPProcessor.get_results" title="Link to this definition"></a></dt>
+<dd><p>Concatenates historical and scenario data to combined dataframes of the full downloaded period.
+Arranges the models in alphabetical order.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tools.geetools.CMIPProcessor.process_dataframes">
+<span class="sig-name descname"><span class="pre">process_dataframes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/geetools.html#CMIPProcessor.process_dataframes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.geetools.CMIPProcessor.process_dataframes" title="Link to this definition"></a></dt>
+<dd><p>Separates the two scenarios and drops models not available for both scenarios and the historical period.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tools.geetools.CMIPProcessor.read_cmip">
+<span class="sig-name descname"><span class="pre">read_cmip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/geetools.html#CMIPProcessor.read_cmip"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.geetools.CMIPProcessor.read_cmip" title="Link to this definition"></a></dt>
+<dd><p>Reads CMIP6 CSV files and drops redundant columns.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="indicators.html" class="btn btn-neutral float-left" title="tools.indicators" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="plots.html" class="btn btn-neutral float-right" title="tools.plots" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Alexander Georgi, Phillip Schuster, Mia Janzen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

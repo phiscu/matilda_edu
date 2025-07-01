@@ -1,0 +1,717 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tools.indicators &mdash; Matilda ONLINE 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Matilda ONLINE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">MATILDA Tools</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Tools Module</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Matilda ONLINE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">tools.indicators</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for tools.indicators</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">tools.helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">hydrologicalize</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">spotpy.hydrology.signatures</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">climate_indices.indices</span><span class="w"> </span><span class="kn">import</span> <span class="n">spei</span><span class="p">,</span> <span class="n">spi</span><span class="p">,</span> <span class="n">Distribution</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">climate_indices</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute</span><span class="p">,</span> <span class="n">utils</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+
+
+<div class="viewcode-block" id="prec_minmax">
+<a class="viewcode-back" href="../../modules.html#tools.indicators.prec_minmax">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">prec_minmax</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the months of extreme precipitation for each year.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df : pandas.DataFrame</span>
+<span class="sd">        A DataFrame of daily precipitation data with a datetime index and a &#39;total_precipitation&#39; column.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pandas.DataFrame</span>
+<span class="sd">        A DataFrame with the months of extreme precipitation as a number for every calendar year.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Use water years</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">hydrologicalize</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="c1"># group the data by year and month and sum the precipitation values</span>
+    <span class="n">grouped</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="n">df</span><span class="o">.</span><span class="n">water_year</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">month</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="c1"># get the month with extreme precipitation for each year</span>
+    <span class="n">max_month</span> <span class="o">=</span> <span class="n">grouped</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="s1">&#39;total_precipitation&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">idxmax</span><span class="p">()</span>
+    <span class="n">min_month</span> <span class="o">=</span> <span class="n">grouped</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="s1">&#39;total_precipitation&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">idxmin</span><span class="p">()</span>
+    <span class="n">max_month</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">max_month</span><span class="p">]</span>
+    <span class="n">min_month</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">min_month</span><span class="p">]</span>
+    <span class="c1"># create a new dataframe</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;max_prec_month&#39;</span><span class="p">:</span> <span class="n">max_month</span><span class="p">,</span> <span class="s1">&#39;min_prec_month&#39;</span><span class="p">:</span> <span class="n">min_month</span><span class="p">},</span>
+                          <span class="n">index</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">water_year</span><span class="o">.</span><span class="n">unique</span><span class="p">(),</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;%Y&#39;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<span class="c1"># Day of the Year with maximum flow</span>
+<div class="viewcode-block" id="peak_doy">
+<a class="viewcode-back" href="../../modules.html#tools.indicators.peak_doy">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">peak_doy</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">smoothing_window_peakdoy</span><span class="o">=</span><span class="mi">7</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the day of the calendar year with the peak value for each hydrological year.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df : pandas.DataFrame</span>
+<span class="sd">        A DataFrame of daily data with a datetime index.</span>
+<span class="sd">    smoothing_window_peakdoy : int, optional</span>
+<span class="sd">        The window size of the rolling mean used for smoothing the data.</span>
+<span class="sd">        Default is 7.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pandas.DataFrame</span>
+<span class="sd">        A DataFrame with the day of the year with the peak value for each hydrological year.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Use water years</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">hydrologicalize</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+    <span class="c1"># find peak day for each hydrological year</span>
+    <span class="n">peak_dates</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">water_year</span><span class="o">.</span><span class="n">unique</span><span class="p">():</span>
+        <span class="c1"># slice data for hydrological year</span>
+        <span class="n">hy_data</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">water_year</span> <span class="o">==</span> <span class="n">year</span><span class="p">,</span> <span class="s1">&#39;total_runoff&#39;</span><span class="p">]</span>
+
+        <span class="c1"># smooth data using rolling mean with window of 7 days</span>
+        <span class="n">smoothed_data</span> <span class="o">=</span> <span class="n">hy_data</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">smoothing_window_peakdoy</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+        <span class="c1"># find day of peak value</span>
+        <span class="n">peak_day</span> <span class="o">=</span> <span class="n">smoothed_data</span><span class="o">.</span><span class="n">idxmax</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%j&#39;</span><span class="p">)</span>
+
+        <span class="c1"># append peak day to list</span>
+        <span class="n">peak_dates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak_day</span><span class="p">)</span>
+
+    <span class="c1"># create output dataframe with DatetimeIndex</span>
+    <span class="n">output_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;Hydrological Year&#39;</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">water_year</span><span class="o">.</span><span class="n">unique</span><span class="p">(),</span>
+                              <span class="s1">&#39;peak_day&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">peak_dates</span><span class="p">)})</span>
+    <span class="n">output_df</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">output_df</span><span class="p">[</span><span class="s1">&#39;Hydrological Year&#39;</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;%Y&#39;</span><span class="p">)</span>
+    <span class="n">output_df</span> <span class="o">=</span> <span class="n">output_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s1">&#39;Hydrological Year&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">output_df</span></div>
+
+
+
+<span class="c1"># Melting season</span>
+<div class="viewcode-block" id="melting_season">
+<a class="viewcode-back" href="../../modules.html#tools.indicators.melting_season">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">melting_season</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">smoothing_window_meltseas</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">min_weeks</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the start, end, and length of the melting season for each calendar year based on the daily</span>
+<span class="sd">    the rolling mean of the temperature.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df : pandas.DataFrame</span>
+<span class="sd">        A DataFrame of daily mean temperature data with a datetime index.</span>
+
+<span class="sd">    smoothing_window_meltseas : int, optional</span>
+<span class="sd">        The size of the rolling window in days used to smooth the temperature data. Default is 14.</span>
+
+<span class="sd">    min_weeks : int, optional</span>
+<span class="sd">        The minimum number of weeks that the melting season must last for it to be considered valid. Default is 10.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pandas.DataFrame</span>
+<span class="sd">        A DataFrame with the start, end, and length of the melting season for each calendar year, with a DatetimeIndex.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Compute rolling mean of temperature data</span>
+    <span class="n">rolling_mean</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;avg_temp_catchment&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="n">smoothing_window_meltseas</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+    <span class="c1"># Find start of melting season for each year (first day above 0°C)</span>
+    <span class="n">start_mask</span> <span class="o">=</span> <span class="n">rolling_mean</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="n">start_mask</span> <span class="o">=</span> <span class="n">start_mask</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">year</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nanargmax</span><span class="p">(</span><span class="n">x</span><span class="p">)])</span>
+    <span class="n">start_dates</span> <span class="o">=</span> <span class="n">start_mask</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">smoothing_window_meltseas</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>      <span class="c1"># rolling() selects last day, we want the first</span>
+
+    <span class="c1"># Add minimum length of melting season to start dates</span>
+    <span class="n">earliest_end_dates</span> <span class="o">=</span> <span class="n">start_dates</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timedelta</span><span class="p">(</span><span class="n">weeks</span><span class="o">=</span><span class="n">min_weeks</span><span class="p">)</span>
+
+    <span class="c1"># group rolling_mean by year and apply boolean indexing to replace values before start_dates with 999 in every year</span>
+    <span class="n">rolling_mean</span> <span class="o">=</span> <span class="n">rolling_mean</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">rolling_mean</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">year</span><span class="p">)</span><span class="o">.</span>\
+        <span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">index</span> <span class="o">&lt;</span> <span class="n">earliest_end_dates</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">year</span><span class="p">],</span> <span class="mi">999</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+
+    <span class="c1"># Transform the resulting array back to a time series with DatetimeIndex</span>
+    <span class="n">rolling_mean</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">rolling_mean</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+    <span class="n">rolling_mean</span> <span class="o">=</span> <span class="n">rolling_mean</span><span class="o">.</span><span class="n">explode</span><span class="p">()</span>
+    <span class="n">rolling_mean</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;rolling_mean&#39;</span><span class="p">:</span> <span class="n">rolling_mean</span><span class="p">})</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+    <span class="c1"># Filter values below 0 (including 999!)</span>
+    <span class="n">end_mask</span> <span class="o">=</span> <span class="n">rolling_mean</span> <span class="o">&lt;</span> <span class="mi">0</span>
+    <span class="c1"># Find end of melting season</span>
+    <span class="n">end_mask</span> <span class="o">=</span> <span class="n">end_mask</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">year</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nanargmax</span><span class="p">(</span><span class="n">x</span><span class="p">)])</span>
+    <span class="n">end_dates</span> <span class="o">=</span> <span class="n">end_mask</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">smoothing_window_meltseas</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Compute length of melting season for each year</span>
+    <span class="n">lengths</span> <span class="o">=</span> <span class="p">(</span><span class="n">end_dates</span> <span class="o">-</span> <span class="n">start_dates</span><span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">days</span>
+
+    <span class="c1"># Assemble output dataframe</span>
+    <span class="n">output_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;melt_season_start&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()</span><span class="o">.</span><span class="n">tm_yday</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">start_dates</span><span class="p">],</span>
+                              <span class="s1">&#39;melt_season_end&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()</span><span class="o">.</span><span class="n">tm_yday</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">end_dates</span><span class="p">]},</span>
+                             <span class="n">index</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">unique</span><span class="p">(),</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;%Y&#39;</span><span class="p">))</span>
+    <span class="n">output_df</span><span class="p">[</span><span class="s1">&#39;melt_season_length&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_df</span><span class="o">.</span><span class="n">melt_season_end</span> <span class="o">-</span> <span class="n">output_df</span><span class="o">.</span><span class="n">melt_season_start</span>
+
+    <span class="k">return</span> <span class="n">output_df</span></div>
+
+
+
+<span class="c1"># Aridity</span>
+<div class="viewcode-block" id="aridity">
+<a class="viewcode-back" href="../../modules.html#tools.indicators.aridity">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">aridity</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">hist_starty</span><span class="o">=</span><span class="mi">1986</span><span class="p">,</span> <span class="n">hist_endy</span><span class="o">=</span><span class="mi">2015</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates aridity indexes from precipitation, and potential and actual evaporation respectively. Aridity is defined</span>
+<span class="sd">    as mean annual ratio of potential/actual evapotranspiration and precipitation. The indexes are defined as the</span>
+<span class="sd">    relative change of a 30 years period compared to a given historical period. Uses hydrological years (Oct - Sep).</span>
+<span class="sd">    Inspired by climateinformation.org (https://doi.org/10.5194/egusphere-egu23-16216).</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df : pandas.DataFrame</span>
+<span class="sd">        Input DataFrame containing columns &#39;evap_off_glaciers&#39;, &#39;actual_evaporation&#39;, and &#39;prec_off_glaciers&#39;.</span>
+<span class="sd">    hist_starty : int, optional</span>
+<span class="sd">        Start year of the historical period in YYYY format. Default is 1986.</span>
+<span class="sd">    hist_endy : int, optional</span>
+<span class="sd">        End year of the historical period in YYYY format. Default is 2015.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pandas.DataFrame</span>
+<span class="sd">        DataFrame containing the relative change in aridity over time.</span>
+<span class="sd">        Columns:</span>
+<span class="sd">            - &#39;actual_aridity&#39;: Relative change in actual aridity.</span>
+<span class="sd">            - &#39;potential_aridity&#39;: Relative change in potential aridity.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Use water years</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">hydrologicalize</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="c1"># Potential evapotranspiration (PET)</span>
+    <span class="n">pet</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;evap_off_glaciers&#39;</span><span class="p">]</span>
+    <span class="c1"># Actual evapotranspiration (AET)</span>
+    <span class="n">aet</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;actual_evaporation&#39;</span><span class="p">]</span>
+    <span class="c1"># Precipitation</span>
+    <span class="n">prec</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;prec_off_glaciers&#39;</span><span class="p">]</span>
+    <span class="c1"># Calculate the potential aridity as ratio of AET/PET to precipitation</span>
+    <span class="n">aridity_pot</span> <span class="o">=</span> <span class="n">pet</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;water_year&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">prec</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;water_year&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">aridity_act</span> <span class="o">=</span> <span class="n">aet</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;water_year&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">prec</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;water_year&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="c1"># Filter historical period</span>
+    <span class="n">hist_pot</span> <span class="o">=</span> <span class="n">aridity_pot</span><span class="p">[(</span><span class="n">aridity_pot</span><span class="o">.</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="n">hist_starty</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">aridity_pot</span><span class="o">.</span><span class="n">index</span> <span class="o">&lt;=</span> <span class="n">hist_endy</span><span class="p">)]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">hist_act</span> <span class="o">=</span> <span class="n">aridity_act</span><span class="p">[(</span><span class="n">aridity_act</span><span class="o">.</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="n">hist_starty</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">aridity_act</span><span class="o">.</span><span class="n">index</span> <span class="o">&lt;=</span> <span class="n">hist_endy</span><span class="p">)]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="c1"># Calculate rolling mean with a 30y period</span>
+    <span class="n">aridity_pot_rolling</span> <span class="o">=</span> <span class="n">aridity_pot</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">aridity_act_rolling</span> <span class="o">=</span> <span class="n">aridity_act</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="c1"># Calculate the relative change in the aridity indexes</span>
+    <span class="n">pot_rel</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="n">aridity_pot_rolling</span> <span class="o">-</span> <span class="n">hist_pot</span><span class="p">)</span> <span class="o">/</span> <span class="n">hist_pot</span>
+    <span class="n">act_rel</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="n">aridity_act_rolling</span> <span class="o">-</span> <span class="n">hist_act</span><span class="p">)</span> <span class="o">/</span> <span class="n">hist_act</span>
+    <span class="c1"># Concat in one dataframe</span>
+    <span class="n">aridity</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;actual_aridity&#39;</span><span class="p">:</span> <span class="n">act_rel</span><span class="p">,</span> <span class="s1">&#39;potential_aridity&#39;</span><span class="p">:</span> <span class="n">pot_rel</span><span class="p">})</span>
+    <span class="n">aridity</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">water_year</span><span class="o">.</span><span class="n">unique</span><span class="p">(),</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;%Y&#39;</span><span class="p">),</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">aridity</span> <span class="o">=</span> <span class="n">aridity</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+
+
+    <span class="k">return</span> <span class="n">aridity</span></div>
+
+
+
+<span class="c1"># Dry spells</span>
+<div class="viewcode-block" id="dry_spells">
+<a class="viewcode-back" href="../../modules.html#tools.indicators.dry_spells">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dry_spells</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">dry_spell_length</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the total length of dry spells in days per year. A dry spell is defined as a period for which the rolling</span>
+<span class="sd">    mean of evaporation in a given window exceeds precipitation. Uses hydrological years (Oct - Sep).</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df : pandas.DataFrame</span>
+<span class="sd">        Input DataFrame containing columns &#39;evap_off_glaciers&#39; and &#39;prec_off_glaciers&#39; with daily evaporation and</span>
+<span class="sd">        precipitation data, respectively.</span>
+<span class="sd">    dry_spell_length : int, optional</span>
+<span class="sd">        Length of the rolling window in days. Default is 30.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pandas.DataFrame</span>
+<span class="sd">        DataFrame containing the number of days for which the rolling mean of evaporation exceeds precipitation for each</span>
+<span class="sd">        year in the input DataFrame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Use hydrological years</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">hydrologicalize</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="c1"># Find number of days when the rolling mean of evaporation exceeds precipitation</span>
+    <span class="n">periods</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">water_year</span><span class="o">.</span><span class="n">unique</span><span class="p">():</span>
+        <span class="n">year_data</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">water_year</span> <span class="o">==</span> <span class="n">year</span><span class="p">]</span>
+        <span class="n">evap_roll</span> <span class="o">=</span> <span class="n">year_data</span><span class="p">[</span><span class="s1">&#39;evap_off_glaciers&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="n">dry_spell_length</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="n">prec_roll</span> <span class="o">=</span> <span class="n">year_data</span><span class="p">[</span><span class="s1">&#39;prec_off_glaciers&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span><span class="n">window</span><span class="o">=</span><span class="n">dry_spell_length</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+        <span class="n">dry</span> <span class="o">=</span> <span class="n">evap_roll</span><span class="p">[</span><span class="n">evap_roll</span> <span class="o">-</span> <span class="n">prec_roll</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">periods</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dry</span><span class="p">))</span>
+
+    <span class="c1"># Assemble the output dataframe</span>
+    <span class="n">output_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span><span class="s1">&#39;dry_spell_days&#39;</span><span class="p">:</span> <span class="n">periods</span><span class="p">},</span>
+        <span class="n">index</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">water_year</span><span class="o">.</span><span class="n">unique</span><span class="p">(),</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;%Y&#39;</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">output_df</span></div>
+
+
+
+<span class="c1"># Hydrological signatures</span>
+<div class="viewcode-block" id="get_qhf">
+<a class="viewcode-back" href="../../modules.html#tools.indicators.get_qhf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_qhf</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">global_median</span><span class="p">,</span> <span class="n">measurements_per_day</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Variation of spotpy.hydrology.signatures.get_qhf() that allows definition of a global</span>
+<span class="sd">    median to investigate long-term trends.</span>
+<span class="sd">    Calculates the frequency of high flow events defined as :math:`Q &gt; 9 \\cdot Q_{50}`</span>
+<span class="sd">    cf. [CLBGS2000]_, [WESMCM2015]_. The frequency is given as :math: :math:`yr^{-1}`</span>
+<span class="sd">    :param data: the timeseries</span>
+<span class="sd">    :param measurements_per_day: the measurements_per_day of the timeseries</span>
+<span class="sd">    :return: Q_{HF}, Q_{HD}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">highflow</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">median</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span> <span class="o">&gt;</span> <span class="mi">9</span> <span class="o">*</span> <span class="n">median</span>
+
+    <span class="n">fq</span><span class="p">,</span> <span class="n">md</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">flow_event</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">highflow</span><span class="p">,</span> <span class="n">global_median</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">fq</span> <span class="o">*</span> <span class="n">measurements_per_day</span> <span class="o">*</span> <span class="mi">365</span><span class="p">,</span> <span class="n">md</span> <span class="o">/</span> <span class="n">measurements_per_day</span></div>
+
+
+
+<div class="viewcode-block" id="get_qlf">
+<a class="viewcode-back" href="../../modules.html#tools.indicators.get_qlf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_qlf</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">global_mean</span><span class="p">,</span> <span class="n">measurements_per_day</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Variation of spotpy.hydrology.signatures.get_qlf() that allows comparison of</span>
+<span class="sd">    individual years with a global mean to investigate long-term trends.</span>
+<span class="sd">    Calculates the frequency of low flow events defined as</span>
+<span class="sd">    :math:`Q &lt; 0.2 \\cdot \\overline{Q_{mean}}`</span>
+<span class="sd">    cf. [CLBGS2000]_, [WESMCM2015]_. The frequency is given</span>
+<span class="sd">    in :math:`yr^{-1}` and for the whole timeseries</span>
+<span class="sd">    :param data: the timeseries</span>
+<span class="sd">    :param measurements_per_day: the measurements_per_day of the timeseries</span>
+<span class="sd">    :return: Q_{LF}, Q_{LD}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">lowflow</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">mean</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mf">0.2</span> <span class="o">*</span> <span class="n">mean</span>
+
+    <span class="n">fq</span><span class="p">,</span> <span class="n">md</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">flow_event</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">lowflow</span><span class="p">,</span> <span class="n">global_mean</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fq</span> <span class="o">*</span> <span class="n">measurements_per_day</span> <span class="o">*</span> <span class="mi">365</span><span class="p">,</span> <span class="n">md</span> <span class="o">/</span> <span class="n">measurements_per_day</span></div>
+
+
+
+<div class="viewcode-block" id="hydrological_signatures">
+<a class="viewcode-back" href="../../modules.html#tools.indicators.hydrological_signatures">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hydrological_signatures</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate hydrological signatures for a given input dataframe.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df : pandas.DataFrame</span>
+<span class="sd">        Input DataFrame containing a column &#39;total_runoff&#39; and a DatetimeIndex.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pandas.DataFrame</span>
+<span class="sd">        A DataFrame containing the calculated hydrological signatures for each year in the input dataframe.</span>
+<span class="sd">        The columns of the output dataframe are as follows:</span>
+<span class="sd">         - &#39;q5&#39;: the 5th percentile of total runoff for each year</span>
+<span class="sd">        - &#39;q50&#39;: the 50th percentile of total runoff for each year</span>
+<span class="sd">        - &#39;q95&#39;: the 95th percentile of total runoff for each year</span>
+<span class="sd">        - &#39;qlf_freq&#39;: the frequency of low flow events (defined as Q &lt; 2*Qmean_global) for each year, in yr^⁻1</span>
+<span class="sd">        - &#39;qlf_dur&#39;: the mean duration of low flow events (defined as Q &lt; 2*Qmean_global) for each year, in days</span>
+<span class="sd">        - &#39;qhf_freq&#39;: the frequency of high flow events (defined as Q &gt; 9*Q50_global) for each year, in yr^⁻1</span>
+<span class="sd">        - &#39;qhf_dur&#39;: the mean duration of high flow events (defined as Q &gt; 9*Q50_global) for each year, in days</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Create lists of quantile functions to apply and column names</span>
+    <span class="n">functions</span> <span class="o">=</span> <span class="p">[</span><span class="n">sig</span><span class="o">.</span><span class="n">get_q5</span><span class="p">,</span> <span class="n">sig</span><span class="o">.</span><span class="n">get_q50</span><span class="p">,</span> <span class="n">sig</span><span class="o">.</span><span class="n">get_q95</span><span class="p">]</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;q5&#39;</span><span class="p">,</span> <span class="s1">&#39;q50&#39;</span><span class="p">,</span> <span class="s1">&#39;q95&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Create an empty dataframe to store the results</span>
+    <span class="n">results_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+    <span class="c1"># Use water_year</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">hydrologicalize</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+    <span class="c1"># Loop through each year in the input dataframe</span>
+    <span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">water_year</span><span class="o">.</span><span class="n">unique</span><span class="p">():</span>
+        <span class="c1"># Select the data for the current year</span>
+        <span class="n">year_data</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">water_year</span> <span class="o">==</span> <span class="n">year</span><span class="p">]</span><span class="o">.</span><span class="n">total_runoff</span>
+        <span class="c1"># Apply each quantile function to the year data and store the results in a dictionary</span>
+        <span class="n">year_results</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">func</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">functions</span><span class="p">):</span>
+            <span class="n">year_results</span><span class="p">[</span><span class="n">cols</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">year_data</span><span class="p">)</span>
+        <span class="c1"># Calculate frequency and duration of global low flows</span>
+        <span class="n">qlf_freq</span><span class="p">,</span> <span class="n">qlf_dur</span> <span class="o">=</span> <span class="n">get_qlf</span><span class="p">(</span><span class="n">year_data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">total_runoff</span><span class="p">))</span>
+        <span class="n">year_results</span><span class="p">[</span><span class="s1">&#39;qlf_freq&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">qlf_freq</span>
+        <span class="n">year_results</span><span class="p">[</span><span class="s1">&#39;qlf_dur&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">qlf_dur</span>
+        <span class="c1"># Calculate frequency and duration of global high flows</span>
+        <span class="n">qhf_freq</span><span class="p">,</span> <span class="n">qhf_dur</span> <span class="o">=</span> <span class="n">get_qhf</span><span class="p">(</span><span class="n">year_data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">total_runoff</span><span class="p">))</span>
+        <span class="n">year_results</span><span class="p">[</span><span class="s1">&#39;qhf_freq&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">qhf_freq</span>
+        <span class="n">year_results</span><span class="p">[</span><span class="s1">&#39;qhf_dur&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">qhf_dur</span>
+        <span class="c1"># Convert the dictionary to a dataframe and append it to the results dataframe</span>
+        <span class="n">year_results_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">year_results</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="n">year</span><span class="p">])</span>
+        <span class="n">results_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">results_df</span><span class="p">,</span> <span class="n">year_results_df</span><span class="p">])</span>
+
+    <span class="n">results_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">water_year</span><span class="o">.</span><span class="n">unique</span><span class="p">(),</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;%Y&#39;</span><span class="p">),</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">results_df</span></div>
+
+
+
+<span class="c1"># Drought indicators</span>
+<div class="viewcode-block" id="drought_indicators">
+<a class="viewcode-back" href="../../modules.html#tools.indicators.drought_indicators">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">drought_indicators</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;ME&#39;</span><span class="p">,</span> <span class="n">dist</span><span class="o">=</span><span class="s1">&#39;gamma&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the climatic water balance, SPI (Standardized Precipitation Index), and</span>
+<span class="sd">    SPEI (Standardized Precipitation Evapotranspiration Index) for 1, 3, 6, 12, and 24 months.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df : pandas.DataFrame</span>
+<span class="sd">         Input DataFrame containing columns &#39;prec_off_glaciers&#39; and &#39;evap_off_glaciers&#39;.</span>
+<span class="sd">    freq : str, optional</span>
+<span class="sd">         Resampling frequency for precipitation and evaporation data. Default is &#39;M&#39; for monthly.</span>
+<span class="sd">    dist : str, optional</span>
+<span class="sd">         Distribution for SPI and SPEI calculation. Either Pearson-Type III (&#39;pearson&#39;) or</span>
+<span class="sd">         Gamma distribution (&#39;gamma&#39;). Default is &#39;gamma&#39;.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pandas.DataFrame</span>
+<span class="sd">         DataFrame containing the calculated indicators: &#39;clim_water_balance&#39;, &#39;spi&#39;, and &#39;spei&#39;.</span>
+<span class="sd">         Index is based on the resampled frequency of the input DataFrame.</span>
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">         If &#39;freq&#39; is not &#39;D&#39; or &#39;ME&#39;.</span>
+<span class="sd">         If &#39;dist&#39; is not &#39;pearson&#39; or &#39;gamma&#39;.</span>
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    SPI (Standardized Precipitation Index) and SPEI (Standardized Precipitation Evapotranspiration Index)</span>
+<span class="sd">    are drought indicators that are used to quantify drought severity and duration.</span>
+<span class="sd">    &#39;clim_water_balance&#39; is the difference between total precipitation and total evapotranspiration.</span>
+<span class="sd">    If &#39;freq&#39; is &#39;D&#39;, the input data is transformed from Gregorian to a 366-day format for SPI and SPEI calculation,</span>
+<span class="sd">    and then transformed back to Gregorian format for output.</span>
+<span class="sd">    The default distribution for SPI and SPEI calculation is Gamma.</span>
+<span class="sd">    The calibration period for SPI and SPEI calculation is from 1981 to 2020.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check if frequency is valid</span>
+    <span class="k">if</span> <span class="n">freq</span> <span class="o">!=</span> <span class="s1">&#39;D&#39;</span> <span class="ow">and</span> <span class="n">freq</span> <span class="o">!=</span> <span class="s1">&#39;ME&#39;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid value for &#39;freq&#39;. Choose either &#39;D&#39; or &#39;ME&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Resample precipitation and evaporation data based on frequency</span>
+    <span class="n">prec</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">prec_off_glaciers</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">evap</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">evap_off_glaciers</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">values</span>
+
+    <span class="c1"># Calculate water balance</span>
+    <span class="n">water_balance</span> <span class="o">=</span> <span class="n">prec</span> <span class="o">-</span> <span class="n">evap</span>
+
+    <span class="c1"># If frequency is daily, transform data to 366-day format</span>
+    <span class="k">if</span> <span class="n">freq</span> <span class="o">==</span> <span class="s1">&#39;D&#39;</span><span class="p">:</span>
+        <span class="n">prec</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">transform_to_366day</span><span class="p">(</span><span class="n">prec</span><span class="p">,</span> <span class="n">year_start</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">year</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                         <span class="n">total_years</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">unique</span><span class="p">()))</span>
+        <span class="n">evap</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">transform_to_366day</span><span class="p">(</span><span class="n">evap</span><span class="p">,</span> <span class="n">year_start</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">year</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                         <span class="n">total_years</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">year</span><span class="o">.</span><span class="n">unique</span><span class="p">()))</span>
+
+    <span class="c1"># Set distribution based on input</span>
+    <span class="k">if</span> <span class="n">dist</span> <span class="o">==</span> <span class="s1">&#39;pearson&#39;</span><span class="p">:</span>
+        <span class="n">distribution</span> <span class="o">=</span> <span class="n">Distribution</span><span class="o">.</span><span class="n">pearson</span>
+    <span class="k">elif</span> <span class="n">dist</span> <span class="o">==</span> <span class="s1">&#39;gamma&#39;</span><span class="p">:</span>
+        <span class="n">distribution</span> <span class="o">=</span> <span class="n">Distribution</span><span class="o">.</span><span class="n">gamma</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid value for &#39;dist&#39;. Choose either &#39;pearson&#39; or &#39;gamma&#39;.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Set periodicity based on frequency</span>
+    <span class="k">if</span> <span class="n">freq</span> <span class="o">==</span> <span class="s1">&#39;D&#39;</span><span class="p">:</span>
+        <span class="n">periodicity</span> <span class="o">=</span> <span class="n">compute</span><span class="o">.</span><span class="n">Periodicity</span><span class="o">.</span><span class="n">daily</span>
+    <span class="k">elif</span> <span class="n">freq</span> <span class="o">==</span> <span class="s1">&#39;ME&#39;</span><span class="p">:</span>
+        <span class="n">periodicity</span> <span class="o">=</span> <span class="n">compute</span><span class="o">.</span><span class="n">Periodicity</span><span class="o">.</span><span class="n">monthly</span>
+
+    <span class="c1"># Set common parameters</span>
+    <span class="n">common_params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;distribution&#39;</span><span class="p">:</span> <span class="n">distribution</span><span class="p">,</span>
+                     <span class="s1">&#39;periodicity&#39;</span><span class="p">:</span> <span class="n">periodicity</span><span class="p">,</span>
+                     <span class="s1">&#39;data_start_year&#39;</span><span class="p">:</span> <span class="mi">1981</span><span class="p">,</span>
+                     <span class="s1">&#39;calibration_year_initial&#39;</span><span class="p">:</span> <span class="mi">1981</span><span class="p">,</span>
+                     <span class="s1">&#39;calibration_year_final&#39;</span><span class="p">:</span> <span class="mi">2020</span><span class="p">}</span>
+
+    <span class="c1"># Set parameters for SPEI calculation</span>
+    <span class="n">spei_params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;precips_mm&#39;</span><span class="p">:</span> <span class="n">prec</span><span class="p">,</span>
+                   <span class="s1">&#39;pet_mm&#39;</span><span class="p">:</span> <span class="n">evap</span><span class="p">,</span>
+                   <span class="o">**</span><span class="n">common_params</span><span class="p">}</span>
+
+    <span class="c1"># Set parameters for SPI calculation</span>
+    <span class="n">spi_params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;values&#39;</span><span class="p">:</span> <span class="n">prec</span><span class="p">,</span>
+                  <span class="o">**</span><span class="n">common_params</span><span class="p">}</span>
+
+    <span class="c1"># Calculate SPI and SPEI for various periods</span>
+    <span class="n">drought_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">24</span><span class="p">]:</span>
+        <span class="n">spi_arr</span> <span class="o">=</span> <span class="n">spi</span><span class="p">(</span><span class="o">**</span><span class="n">spi_params</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">spei_arr</span> <span class="o">=</span> <span class="n">spei</span><span class="p">(</span><span class="o">**</span><span class="n">spei_params</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">s</span><span class="p">)</span>
+        <span class="c1"># If frequency is daily, transform data back to Gregorian format</span>
+        <span class="k">if</span> <span class="n">freq</span> <span class="o">==</span> <span class="s1">&#39;D&#39;</span><span class="p">:</span>
+            <span class="n">spi_arr</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">transform_to_gregorian</span><span class="p">(</span><span class="n">spi_arr</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">year</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">spei_arr</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">transform_to_gregorian</span><span class="p">(</span><span class="n">spei_arr</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">year</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">drought_df</span><span class="p">[</span><span class="s1">&#39;spi&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="p">)]</span> <span class="o">=</span> <span class="n">spi_arr</span>
+        <span class="n">drought_df</span><span class="p">[</span><span class="s1">&#39;spei&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="p">)]</span> <span class="o">=</span> <span class="n">spei_arr</span>
+    <span class="n">drought_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># DataFrame resample Dataframe</span>
+    <span class="n">out_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;clim_water_balance&#39;</span><span class="p">:</span> <span class="n">water_balance</span><span class="p">},</span> <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="n">out_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">out_df</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="s1">&#39;YS&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="n">drought_df</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="s1">&#39;YS&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">day</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">out_df</span></div>
+
+
+
+<span class="c1"># Wrapper function</span>
+
+<div class="viewcode-block" id="cc_indicators">
+<a class="viewcode-back" href="../../modules.html#tools.indicators.cc_indicators">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">cc_indicators</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply a list of climate change indicator functions to output DataFrame of MATILDA and concatenate</span>
+<span class="sd">    the output columns into a single DataFrame.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df : pandas.DataFrame</span>
+<span class="sd">        Input DataFrame.</span>
+<span class="sd">    **kwargs : optional</span>
+<span class="sd">        Optional arguments to be passed to the functions in the list. Possible arguments are &#39;smoothing_window_peakdoy&#39;,</span>
+<span class="sd">        &#39;smoothing_window_meltseas&#39;, &#39;min_weeks&#39;, and &#39;dry_spell_length&#39;.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pandas.DataFrame</span>
+<span class="sd">        DataFrame containing the output columns of all functions applied to the input DataFrame.</span>
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The list of functions to apply is hard-coded into the function and cannot be modified from outside.</span>
+<span class="sd">     The optional arguments are passed to the respective functions only if they are relevant for the respective</span>
+<span class="sd">     function.</span>
+<span class="sd">     If no optional arguments are passed, the function is applied to the input DataFrame with default arguments.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># List of all functions to apply</span>
+    <span class="n">functions</span> <span class="o">=</span> <span class="p">[</span><span class="n">prec_minmax</span><span class="p">,</span> <span class="n">peak_doy</span><span class="p">,</span> <span class="n">melting_season</span><span class="p">,</span> <span class="n">aridity</span><span class="p">,</span> <span class="n">dry_spells</span><span class="p">,</span> <span class="n">hydrological_signatures</span><span class="p">,</span> <span class="n">drought_indicators</span><span class="p">]</span>
+    <span class="c1"># Empty result dataframe</span>
+    <span class="n">indicator_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+    <span class="c1"># Loop through all functions</span>
+    <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">functions</span><span class="p">:</span>
+        <span class="n">func_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Apply only those optional kwargs relevant for the respective function</span>
+        <span class="k">for</span> <span class="n">kwarg</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">kwarg</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getfullargspec</span><span class="p">(</span><span class="n">func</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="n">func_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">kwarg</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">kwarg</span><span class="p">)})</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="o">**</span><span class="n">func_kwargs</span><span class="p">)</span>
+        <span class="c1"># Concat all output columns in one dataframe</span>
+        <span class="n">indicator_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">indicator_df</span><span class="p">,</span> <span class="n">result</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">indicator_df</span></div>
+
+
+
+<span class="n">indicator_vars</span> <span class="o">=</span> <span class="p">{</span>
+ <span class="s1">&#39;max_prec_month&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Month with Maximum Precipitation&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;min_prec_month&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Month with Minimum Precipitation&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;peak_day&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Timing of Peak Runoff&#39;</span><span class="p">,</span> <span class="s1">&#39;DoY&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;melt_season_start&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Beginning of Melting Season&#39;</span><span class="p">,</span> <span class="s1">&#39;DoY&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;melt_season_end&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;End of Melting Season&#39;</span><span class="p">,</span> <span class="s1">&#39;DoY&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;melt_season_length&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Length of Melting Season&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;actual_aridity&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Relative Change of Actual Aridity&#39;</span><span class="p">,</span> <span class="s1">&#39;%&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;potential_aridity&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Relative Change of Potential Aridity&#39;</span><span class="p">,</span> <span class="s1">&#39;%&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;dry_spell_days&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Total Length of Dry Spells&#39;</span><span class="p">,</span> <span class="s1">&#39;d/a&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;qlf_freq&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Frequency of Low-flow events&#39;</span><span class="p">,</span> <span class="s1">&#39;yr^-1&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;qlf_dur&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Mean Duration of Low-flow events&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;qhf_freq&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Frequency of High-flow events&#39;</span><span class="p">,</span> <span class="s1">&#39;yr^-1&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;qhf_dur&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Mean Duration of High-flow events&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;clim_water_balance&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Climatic Water Balance&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;spi1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Standardized Precipitation Index (1 month)&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;spei1&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Standardized Precipitation Evaporation Index (1 month)&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;spi3&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Standardized Precipitation Index (3 months)&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;spei3&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Standardized Precipitation Evaporation Index (3 months)&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;spi6&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Standardized Precipitation Index (6 months)&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;spei6&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Standardized Precipitation Evaporation Index (6 months)&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;spi12&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Standardized Precipitation Index (12 months)&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;spei12&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Standardized Precipitation Evaporation Index (12 months)&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;spi24&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Standardized Precipitation Index (24 months)&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">),</span>
+ <span class="s1">&#39;spei24&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Standardized Precipitation Evaporation Index (24 months)&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">)</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="calculate_indicators">
+<a class="viewcode-back" href="../../modules.html#tools.indicators.calculate_indicators">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_indicators</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate climate change indicators for all scenarios and models.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dic : dict</span>
+<span class="sd">        Dictionary containing MATILDA outputs for all scenarios and models.</span>
+<span class="sd">    **kwargs : optional</span>
+<span class="sd">        Optional keyword arguments to be passed to the cc_indicators() function.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Dictionary with the same structure as the input but containing climate change indicators in annual resolution.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Create an empty dictionary to store the outputs</span>
+    <span class="n">out_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># Loop over the scenarios with progress bar</span>
+    <span class="k">for</span> <span class="n">scenario</span> <span class="ow">in</span> <span class="n">dic</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">model_dict</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># Create an empty dictionary to store the model outputs</span>
+        <span class="c1"># Loop over the models with progress bar</span>
+        <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">dic</span><span class="p">[</span><span class="n">scenario</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">desc</span><span class="o">=</span><span class="n">scenario</span><span class="p">):</span>
+            <span class="c1"># Get the dataframe for the current scenario and model</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">dic</span><span class="p">[</span><span class="n">scenario</span><span class="p">][</span><span class="n">model</span><span class="p">][</span><span class="s1">&#39;model_output&#39;</span><span class="p">]</span>
+            <span class="c1"># Run the indicator function</span>
+            <span class="n">indicators</span> <span class="o">=</span> <span class="n">cc_indicators</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="c1"># Store indicator time series in the model dictionary</span>
+            <span class="n">model_dict</span><span class="p">[</span><span class="n">model</span><span class="p">]</span> <span class="o">=</span> <span class="n">indicators</span>
+        <span class="c1"># Store the model dictionary in the scenario dictionary</span>
+        <span class="n">out_dict</span><span class="p">[</span><span class="n">scenario</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_dict</span>
+
+    <span class="k">return</span> <span class="n">out_dict</span></div>
+
+
+
+<div class="viewcode-block" id="custom_df_indicators">
+<a class="viewcode-back" href="../../modules.html#tools.indicators.custom_df_indicators">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">custom_df_indicators</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span> <span class="n">scenario</span><span class="p">,</span> <span class="n">var</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a dictionary of climate change indicators and returns a combined dataframe of a specific variable for</span>
+<span class="sd">    a given scenario.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dic : dict</span>
+<span class="sd">        Dictionary containing the outputs of calculate_indicators() for different scenarios and models.</span>
+<span class="sd">    scenario : str</span>
+<span class="sd">        Name of the selected scenario.</span>
+<span class="sd">    var : str</span>
+<span class="sd">        Name of the variable to extract from the DataFrame.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pandas.DataFrame</span>
+<span class="sd">        A DataFrame containing the selected variable from different models within the specified scenario.</span>
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If the provided variable is not one of the function outputs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">out_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;max_prec_month&#39;</span><span class="p">,</span> <span class="s1">&#39;min_prec_month&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;peak_day&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;melt_season_start&#39;</span><span class="p">,</span> <span class="s1">&#39;melt_season_end&#39;</span><span class="p">,</span> <span class="s1">&#39;melt_season_length&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;actual_aridity&#39;</span><span class="p">,</span> <span class="s1">&#39;potential_aridity&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;dry_spell_days&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;qlf_freq&#39;</span><span class="p">,</span> <span class="s1">&#39;qlf_dur&#39;</span><span class="p">,</span> <span class="s1">&#39;qhf_freq&#39;</span><span class="p">,</span> <span class="s1">&#39;qhf_dur&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;clim_water_balance&#39;</span><span class="p">,</span> <span class="s1">&#39;spi1&#39;</span><span class="p">,</span> <span class="s1">&#39;spei1&#39;</span><span class="p">,</span> <span class="s1">&#39;spi3&#39;</span><span class="p">,</span> <span class="s1">&#39;spei3&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;spi6&#39;</span><span class="p">,</span> <span class="s1">&#39;spei6&#39;</span><span class="p">,</span> <span class="s1">&#39;spi12&#39;</span><span class="p">,</span> <span class="s1">&#39;spei12&#39;</span><span class="p">,</span> <span class="s1">&#39;spi24&#39;</span><span class="p">,</span> <span class="s1">&#39;spei24&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">out_cols</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;var needs to be one of the following strings: &quot;</span> <span class="o">+</span>
+                         <span class="nb">str</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">out_cols</span><span class="p">]))</span>
+
+    <span class="c1"># Create an empty list to store the dataframes</span>
+    <span class="n">dfs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Loop over the models in the selected scenario</span>
+    <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">dic</span><span class="p">[</span><span class="n">scenario</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="c1"># Get the dataframe for the current model</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">dic</span><span class="p">[</span><span class="n">scenario</span><span class="p">][</span><span class="n">model</span><span class="p">]</span>
+        <span class="c1"># Append the dataframe to the list of dataframes</span>
+        <span class="n">dfs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
+    <span class="c1"># Concatenate the dataframes into a single dataframe</span>
+    <span class="n">combined_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># Set the column names of the combined dataframe to the model names</span>
+    <span class="n">combined_df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">dic</span><span class="p">[</span><span class="n">scenario</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">combined_df</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Alexander Georgi, Phillip Schuster, Mia Janzen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

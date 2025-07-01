@@ -1,0 +1,912 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tools.helpers &mdash; Matilda ONLINE 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Matilda ONLINE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">MATILDA Tools</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Tools Module</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Matilda ONLINE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">tools.helpers</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for tools.helpers</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">spotpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fastparquet</span><span class="w"> </span><span class="kn">import</span> <span class="n">write</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bias_correction</span><span class="w"> </span><span class="kn">import</span> <span class="n">BiasCorrection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matilda.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">matilda_simulation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">multiprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pool</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
+
+
+<div class="viewcode-block" id="read_yaml">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.read_yaml">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_yaml</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Read a YAML file and return the contents as a dictionary.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file_path : str</span>
+<span class="sd">        The path of the YAML file to read.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        The contents of the YAML file as a dictionary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+
+<div class="viewcode-block" id="write_yaml">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.write_yaml">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">write_yaml</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">file_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Write a dictionary to a YAML file.</span>
+<span class="sd">    Ensures all values are in standard Python types before writing.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : dict</span>
+<span class="sd">        The dictionary to write to a YAML file.</span>
+<span class="sd">    file_path : str</span>
+<span class="sd">        The path of the file where the YAML data shall be stored.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Convert non-standard types (like numpy.float64) to standard Python types</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">):</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>  <span class="c1"># Convert to native Python float</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">):</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>  <span class="c1"># Convert to native Python int</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">yaml</span><span class="o">.</span><span class="n">safe_dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Data successfully written to YAML at </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="update_yaml">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.update_yaml">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">update_yaml</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">new_items</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Update a YAML file with the contents of a dictionary.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file_path : str</span>
+<span class="sd">        The path of the YAML file to update.</span>
+<span class="sd">    new_items : dict</span>
+<span class="sd">        The dictionary of new key-value pairs to add to the existing YAML file.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">read_yaml</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+    <span class="n">data</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">new_items</span><span class="p">)</span>
+    <span class="n">write_yaml</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="pickle_to_dict">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.pickle_to_dict">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pickle_to_dict</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Loads a dictionary from a pickle file at a specified file path.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file_path : str</span>
+<span class="sd">        The path of the pickle file to load.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        The dictionary loaded from the pickle file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">dic</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dic</span></div>
+
+
+
+<div class="viewcode-block" id="dict_to_pickle">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.dict_to_pickle">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dict_to_pickle</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span> <span class="n">target_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Saves a dictionary to a pickle file at the specified target path.</span>
+<span class="sd">    Creates target directory if not existing.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dic : dict</span>
+<span class="sd">        The dictionary to save to a pickle file.</span>
+<span class="sd">    target_path : str</span>
+<span class="sd">        The path of the file where the dictionary shall be stored.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">target_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">target_path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">target_dir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">target_dir</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">target_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="drop_keys">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.drop_keys">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">drop_keys</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span> <span class="n">keys_to_drop</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Removes specified keys from a dictionary.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dict : dict</span>
+<span class="sd">        The dictionary to remove keys from.</span>
+<span class="sd">    keys_to_drop : list</span>
+<span class="sd">        A list of keys to remove from the dictionary.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        A modified dictionary with the specified keys removed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Create a set of keys to be dropped</span>
+    <span class="n">keys_to_drop_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">keys_to_drop</span><span class="p">)</span>
+    <span class="c1"># Create a new dictionary with all elements from dict except for the ones in keys_to_drop</span>
+    <span class="n">new_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">dic</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">dic</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">keys_to_drop_set</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">new_dict</span></div>
+
+
+
+<div class="viewcode-block" id="parquet_to_dict">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.parquet_to_dict">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parquet_to_dict</span><span class="p">(</span><span class="n">directory_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">pbar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Recursively loads dataframes from the parquet files in the specified directory and returns a dictionary.</span>
+<span class="sd">    Nested directories are supported.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    directory_path : str</span>
+<span class="sd">        The directory path containing the parquet files.</span>
+<span class="sd">    pbar : bool, optional</span>
+<span class="sd">        A flag indicating whether to display a progress bar. Default is True.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        A dictionary containing the loaded pandas dataframes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dictionary</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">pbar</span><span class="p">:</span>
+        <span class="n">bar_iter</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">directory_path</span><span class="p">)),</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Reading parquet files: &#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">bar_iter</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">directory_path</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">file_name</span> <span class="ow">in</span> <span class="n">bar_iter</span><span class="p">:</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory_path</span><span class="p">,</span> <span class="n">file_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+            <span class="n">dictionary</span><span class="p">[</span><span class="n">file_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">parquet_to_dict</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">pbar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">file_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.parquet&quot;</span><span class="p">):</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">file_name</span><span class="p">[:</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="s2">&quot;.parquet&quot;</span><span class="p">)]</span>
+            <span class="n">dictionary</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dictionary</span></div>
+
+
+
+<div class="viewcode-block" id="dict_to_parquet">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.dict_to_parquet">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dict_to_parquet</span><span class="p">(</span><span class="n">dictionary</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">directory_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">pbar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Recursively stores the dataframes in the input dictionary as parquet files in the specified directory.</span>
+<span class="sd">    Nested dictionaries are supported. If the specified directory does not exist, it will be created.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dictionary : dict</span>
+<span class="sd">        A nested dictionary containing pandas dataframes.</span>
+<span class="sd">    directory_path : str</span>
+<span class="sd">        The directory path to store the parquet files.</span>
+<span class="sd">    pbar : bool, optional</span>
+<span class="sd">        A flag indicating whether to display a progress bar. Default is True.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">directory_path</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">directory_path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pbar</span><span class="p">:</span>
+        <span class="n">bar_iter</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">dictionary</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Writing parquet files: &#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">bar_iter</span> <span class="o">=</span> <span class="n">dictionary</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">bar_iter</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">dict_to_parquet</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory_path</span><span class="p">,</span> <span class="n">k</span><span class="p">),</span> <span class="n">pbar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory_path</span><span class="p">,</span> <span class="n">k</span> <span class="o">+</span> <span class="s2">&quot;.parquet&quot;</span><span class="p">)</span>
+            <span class="n">write</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;GZIP&#39;</span><span class="p">)</span></div>
+
+
+
+<span class="n">matilda_vars</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;avg_temp_catchment&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Mean Catchment Temperature&#39;</span><span class="p">,</span> <span class="s1">&#39;°C&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;avg_temp_glaciers&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Mean Temperature of Glacierized Area&#39;</span><span class="p">,</span> <span class="s1">&#39;°C&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;evap_off_glaciers&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Off-glacier Evaporation&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;prec_off_glaciers&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Off-glacier Precipitation&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;prec_on_glaciers&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;On-glacier Precipitation&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;rain_off_glaciers&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Off-glacier Rain&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;snow_off_glaciers&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Off-glacier Snow&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;rain_on_glaciers&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;On-glacier Rain&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;snow_on_glaciers&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;On-glacier Snow&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;snowpack_off_glaciers&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Off-glacier Snowpack&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;soil_moisture&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Soil Moisture&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;upper_groundwater&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Upper Groundwater&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;lower_groundwater&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Lower Groundwater&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;melt_off_glaciers&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Off-glacier Melt&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;melt_on_glaciers&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;On-glacier Melt&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;ice_melt_on_glaciers&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;On-glacier Ice Melt&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;snow_melt_on_glaciers&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;On-glacier Snow Melt&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;refreezing_ice&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Refreezing Ice&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;refreezing_snow&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Refreezing Snow&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;total_refreezing&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Total Refreezing&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;SMB&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Glacier Surface Mass Balance&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;actual_evaporation&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Mean Actual Evaporation&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;total_precipitation&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Mean Total Precipitation&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;total_melt&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Total Melt&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;runoff_without_glaciers&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Runoff without Glaciers&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;runoff_from_glaciers&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Runoff from Glaciers&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;total_runoff&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Total Runoff&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;glacier_area&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Glacier Area&#39;</span><span class="p">,</span> <span class="s1">&#39;km²&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;glacier_elev&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Mean Glacier Elevation&#39;</span><span class="p">,</span> <span class="s1">&#39;m.a.s.l.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;smb_water_year&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Surface Mass Balance of the Hydrological Year&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;smb_scaled&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Area-scaled Surface Mass Balance&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;smb_scaled_capped&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Surface Mass Balance Capped at 0&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;smb_scaled_capped_cum&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Cumulative Surface Mass Balance Capped at 0&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;glacier_melt_perc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Melted Glacier Fraction&#39;</span><span class="p">,</span> <span class="s1">&#39;%&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;glacier_mass_mmwe&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Glacier Mass&#39;</span><span class="p">,</span> <span class="s1">&#39;mm w.e.&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;glacier_vol_m3&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Glacier Volume&#39;</span><span class="p">,</span> <span class="s1">&#39;m³&#39;</span><span class="p">),</span>
+    <span class="s1">&#39;glacier_vol_perc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;Fraction of Initial Glacier Volume (2000)&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">)</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="water_year">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.water_year">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">water_year</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">begin</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates the water year for each date in the index of the input DataFrame.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df : pandas.DataFrame</span>
+<span class="sd">        Input DataFrame with a DatetimeIndex.</span>
+<span class="sd">    begin : int, optional</span>
+<span class="sd">        The month (1-12) that marks the beginning of the water year. Default is 10.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    numpy.ndarray</span>
+<span class="sd">        An array of integers representing the water year for each date in the input DataFrame index.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">month</span> <span class="o">&lt;</span> <span class="n">begin</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">year</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="crop2wy">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.crop2wy">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">crop2wy</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">begin</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Crops a DataFrame to include only the rows that fall within a complete water year.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df : pandas.DataFrame</span>
+<span class="sd">        Input DataFrame with a DatetimeIndex and a &#39;water_year&#39; column.</span>
+<span class="sd">    begin : int, optional</span>
+<span class="sd">        The month (1-12) that marks the beginning of the water year. Default is 10.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pandas.DataFrame or None</span>
+<span class="sd">        A new DataFrame containing only the rows that fall within a complete water year.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cut_begin</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">begin</span><span class="si">}</span><span class="s1">-</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">water_year</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;%m-%Y&#39;</span><span class="p">)</span>
+    <span class="n">cut_end</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">begin</span><span class="si">}</span><span class="s1">-</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">water_year</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;%m-%Y&#39;</span><span class="p">)</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">df</span><span class="p">[</span><span class="n">cut_begin</span><span class="p">:</span><span class="n">cut_end</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="hydrologicalize">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.hydrologicalize">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hydrologicalize</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">begin_of_water_year</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adds a &#39;water_year&#39; column to a DataFrame and crops it to include only complete water years.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df : pandas.DataFrame</span>
+<span class="sd">        Input DataFrame with a DatetimeIndex.</span>
+<span class="sd">    begin_of_water_year : int, optional</span>
+<span class="sd">        The month (1-12) that marks the beginning of the water year. Default is 10.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pandas.DataFrame or None</span>
+<span class="sd">        A new DataFrame with a &#39;water_year&#39; column and only rows that fall within complete water years.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">df_new</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">df_new</span><span class="p">[</span><span class="s1">&#39;water_year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">water_year</span><span class="p">(</span><span class="n">df_new</span><span class="p">,</span> <span class="n">begin_of_water_year</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">crop2wy</span><span class="p">(</span><span class="n">df_new</span><span class="p">,</span> <span class="n">begin_of_water_year</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">adjust_jupyter_config</span><span class="p">():</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">jupyter_server</span><span class="w"> </span><span class="kn">import</span> <span class="n">serverapp</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">dash._jupyter</span><span class="w"> </span><span class="kn">import</span> <span class="n">_jupyter_config</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+    <span class="n">js</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">serverapp</span><span class="o">.</span><span class="n">list_running_servers</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">js</span><span class="p">[</span><span class="s1">&#39;hostname&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;localhost&#39;</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;JupyterLab seems to run on local machine.&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="n">js</span><span class="p">[</span><span class="s1">&#39;base_url&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">base</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;binder&#39;</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;JupyterLab seems to run on binder server.&#39;</span><span class="p">)</span>
+
+            <span class="c1"># start updating jupyter server config</span>
+            <span class="c1"># official docu: https://dash.plotly.com/dash-in-jupyter</span>
+            <span class="c1"># however, due to problems of jupyterlab v4 a work-around must be implemented</span>
+            <span class="c1"># see: https://github.com/plotly/dash/issues/2804</span>
+            <span class="c1"># and: https://github.com/plotly/dash/issues/2998</span>
+            <span class="c1"># solution inspired by: https://github.com/mthiboust/jupyterlab-retrieve-base-url/tree/main</span>
+            <span class="n">conf</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;base_url_response&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;server_url&#39;</span><span class="p">:</span> <span class="s1">&#39;https://notebooks.gesis.org&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;base_subpath&#39;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;JUPYTERHUB_SERVICE_PREFIX&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;frontend&#39;</span><span class="p">:</span> <span class="s1">&#39;jupyterlab&#39;</span><span class="p">}</span>
+
+            <span class="n">_jupyter_config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">conf</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Jupyter config has been updated to run Dash!&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;JupyterLab seems to run on unsupported environment.&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">DataFilter</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">zscore_threshold</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">resampling_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">prec</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">jump_threshold</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">df</span> <span class="o">=</span> <span class="n">df</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zscore_threshold</span> <span class="o">=</span> <span class="n">zscore_threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resampling_rate</span> <span class="o">=</span> <span class="n">resampling_rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prec</span> <span class="o">=</span> <span class="n">prec</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">jump_threshold</span> <span class="o">=</span> <span class="n">jump_threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filter_all</span><span class="p">()</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_outliers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A function for filtering a pandas dataframe for columns with obvious outliers</span>
+<span class="sd">        and dropping them based on a z-score threshold.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        models : list</span>
+<span class="sd">            A list of columns identified as having outliers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Resample if rate specified</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">resampling_rate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prec</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resampling_rate</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resampling_rate</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+        <span class="c1"># Calculate z-scores for each column</span>
+        <span class="n">z_scores</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">std</span><span class="p">())</span>
+
+        <span class="c1"># Identify columns with at least one outlier (|z-score| &gt; threshold)</span>
+        <span class="n">cols_with_outliers</span> <span class="o">=</span> <span class="n">z_scores</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">any</span><span class="p">(</span><span class="n">x</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">zscore_threshold</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outliers</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">cols_with_outliers</span><span class="p">])</span>
+
+        <span class="c1"># Return the list of columns with outliers</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">outliers</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_jumps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A function for checking a pandas dataframe for columns with sudden jumps or drops</span>
+<span class="sd">        and returning a list of the columns that have them.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        jumps : list</span>
+<span class="sd">            A list of columns identified as having sudden jumps or drops.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span>
+        <span class="n">jumps</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">cols</span><span class="p">:</span>
+            <span class="n">diff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">diff</span><span class="p">()</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">jump_threshold</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                <span class="n">jumps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">jumps</span> <span class="o">=</span> <span class="n">jumps</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">jumps</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">filter_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A function for filtering a dataframe for columns with obvious outliers</span>
+<span class="sd">        or sudden jumps or drops in temperature, and returning a list of the</span>
+<span class="sd">        columns that have been filtered using either or both methods.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        filtered_models : list</span>
+<span class="sd">            A list of columns identified as having outliers or sudden jumps/drops in temperature.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_outliers</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_jumps</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filtered_models</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">outliers</span><span class="p">)</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">jumps</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">filtered_models</span>
+
+
+<div class="viewcode-block" id="drop_model">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.drop_model">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">drop_model</span><span class="p">(</span><span class="n">col_names</span><span class="p">,</span> <span class="n">dict_or_df</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Drop columns with given names from either a dictionary of dataframes</span>
+<span class="sd">    or a single dataframe.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    col_names : list of str</span>
+<span class="sd">        The list of model names to drop.</span>
+<span class="sd">    dict_or_df : dict of pandas.DataFrame or pandas.DataFrame</span>
+<span class="sd">        If a dict of dataframes, all dataframes in the dict will be edited.</span>
+<span class="sd">        If a single dataframe, only that dataframe will be edited.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict_of_dfs : dict of pandas.DataFrame or pandas.DataFrame</span>
+<span class="sd">        The updated dictionary of dataframes or dataframe with dropped columns.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dict_or_df</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="c1"># loop through the dictionary and edit each dataframe</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">dict_or_df</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">col_name</span> <span class="ow">in</span> <span class="n">dict_or_df</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span> <span class="k">for</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="n">col_names</span><span class="p">):</span>
+                <span class="n">dict_or_df</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">dict_or_df</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">col_names</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dict_or_df</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dict_or_df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="c1"># edit the single dataframe</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">col_name</span> <span class="ow">in</span> <span class="n">dict_or_df</span><span class="o">.</span><span class="n">columns</span> <span class="k">for</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="n">col_names</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">dict_or_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">col_names</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Input must be a dictionary or a dataframe&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="read_era5l">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.read_era5l">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_era5l</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reads ERA5-Land data, drops redundant columns, and adds DatetimeIndex.</span>
+<span class="sd">    Resamples the dataframe to reduce the DatetimeIndex to daily resolution.&quot;&quot;&quot;</span>
+    
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span>
+        <span class="s1">&#39;usecols&#39;</span><span class="p">:</span>      <span class="p">[</span><span class="s1">&#39;temp&#39;</span><span class="p">,</span> <span class="s1">&#39;prec&#39;</span><span class="p">,</span> <span class="s1">&#39;dt&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;index_col&#39;</span><span class="p">:</span>    <span class="s1">&#39;dt&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;parse_dates&#39;</span><span class="p">:</span>  <span class="p">[</span><span class="s1">&#39;dt&#39;</span><span class="p">]})</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="s1">&#39;D&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">({</span><span class="s1">&#39;temp&#39;</span><span class="p">:</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;prec&#39;</span><span class="p">:</span> <span class="s1">&#39;sum&#39;</span><span class="p">})</span></div>
+
+    
+
+<div class="viewcode-block" id="adjust_bias">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.adjust_bias">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">adjust_bias</span><span class="p">(</span><span class="n">predictand</span><span class="p">,</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;normal_mapping&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Applies bias correction to discrete periods individually.&quot;&quot;&quot;</span>
+    <span class="c1"># Read predictor data</span>
+    <span class="n">predictor</span> <span class="o">=</span> <span class="n">read_era5l</span><span class="p">(</span><span class="n">predictor</span><span class="p">)</span>
+
+    <span class="c1"># Determine variable type based on the mean value</span>
+    <span class="n">var</span> <span class="o">=</span> <span class="s1">&#39;temp&#39;</span> <span class="k">if</span> <span class="n">predictand</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">100</span> <span class="k">else</span> <span class="s1">&#39;prec&#39;</span>
+
+    <span class="c1"># Adjust bias in discrete blocks as suggested by Switanek et al. (2017)</span>
+    <span class="n">correction_periods</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s1">&#39;correction_range&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;1979-01-01&#39;</span><span class="p">,</span> <span class="s1">&#39;2010-12-31&#39;</span><span class="p">),</span> <span class="s1">&#39;extraction_range&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;1979-01-01&#39;</span><span class="p">,</span> <span class="s1">&#39;1990-12-31&#39;</span><span class="p">)},</span>
+    <span class="p">]</span>
+    <span class="k">for</span> <span class="n">decade_start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1991</span><span class="p">,</span> <span class="mi">2090</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>
+        <span class="n">correction_start</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">decade_start</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">10</span><span class="si">}</span><span class="s2">-01-01&quot;</span>
+        <span class="n">correction_end</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">decade_start</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">19</span><span class="si">}</span><span class="s2">-12-31&quot;</span>
+        <span class="n">extraction_start</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">decade_start</span><span class="si">}</span><span class="s2">-01-01&quot;</span>
+        <span class="n">extraction_end</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">decade_start</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">9</span><span class="si">}</span><span class="s2">-12-31&quot;</span>
+
+        <span class="n">correction_periods</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s1">&#39;correction_range&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">correction_start</span><span class="p">,</span> <span class="n">correction_end</span><span class="p">),</span>
+            <span class="s1">&#39;extraction_range&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">extraction_start</span><span class="p">,</span> <span class="n">extraction_end</span><span class="p">)</span>
+        <span class="p">})</span>
+
+    <span class="n">correction_periods</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+        <span class="s1">&#39;correction_range&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;2081-01-01&#39;</span><span class="p">,</span> <span class="s1">&#39;2100-12-31&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;extraction_range&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;2091-01-01&#39;</span><span class="p">,</span> <span class="s1">&#39;2100-12-31&#39;</span><span class="p">)</span>
+    <span class="p">})</span>
+
+    <span class="c1"># Store corrected periods</span>
+    <span class="n">corrected_data_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">training_period</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="s1">&#39;1979-01-01&#39;</span><span class="p">,</span> <span class="s1">&#39;2022-12-31&#39;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">period</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">correction_periods</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Bias Correction&quot;</span><span class="p">):</span>
+        <span class="n">correction_start</span><span class="p">,</span> <span class="n">correction_end</span> <span class="o">=</span> <span class="n">period</span><span class="p">[</span><span class="s1">&#39;correction_range&#39;</span><span class="p">]</span>
+        <span class="n">extraction_start</span><span class="p">,</span> <span class="n">extraction_end</span> <span class="o">=</span> <span class="n">period</span><span class="p">[</span><span class="s1">&#39;extraction_range&#39;</span><span class="p">]</span>
+
+        <span class="n">correction_slice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">correction_start</span><span class="p">,</span> <span class="n">correction_end</span><span class="p">)</span>
+        <span class="n">extraction_slice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">extraction_start</span><span class="p">,</span> <span class="n">extraction_end</span><span class="p">)</span>
+
+        <span class="n">data_corr</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">predictand</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">x_train</span> <span class="o">=</span> <span class="n">predictand</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">training_period</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+            <span class="n">y_train</span> <span class="o">=</span> <span class="n">predictor</span><span class="p">[</span><span class="n">training_period</span><span class="p">][</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+            <span class="n">x_predict</span> <span class="o">=</span> <span class="n">predictand</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">correction_slice</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+            <span class="n">bc_corr</span> <span class="o">=</span> <span class="n">BiasCorrection</span><span class="p">(</span><span class="n">y_train</span><span class="p">,</span> <span class="n">x_train</span><span class="p">,</span> <span class="n">x_predict</span><span class="p">)</span>
+            <span class="n">corrected_col</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">bc_corr</span><span class="o">.</span><span class="n">correct</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">))</span>
+            <span class="n">data_corr</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">corrected_col</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">extraction_slice</span><span class="p">]</span>
+
+        <span class="n">corrected_data_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data_corr</span><span class="p">)</span>
+
+    <span class="n">corrected_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">corrected_data_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">corrected_data</span></div>
+
+
+
+<div class="viewcode-block" id="confidence_interval">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.confidence_interval">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">confidence_interval</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the mean and 95% confidence interval for each row in a dataframe.</span>
+<span class="sd">    Parameters:</span>
+<span class="sd">    -----------</span>
+<span class="sd">        df (pandas.DataFrame): The input dataframe.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">    --------</span>
+<span class="sd">        pandas.DataFrame: A dataframe with the mean and confidence intervals for each row.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">std</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ci</span> <span class="o">=</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">std</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
+    <span class="n">ci_lower</span> <span class="o">=</span> <span class="n">mean</span> <span class="o">-</span> <span class="n">ci</span>
+    <span class="n">ci_upper</span> <span class="o">=</span> <span class="n">mean</span> <span class="o">+</span> <span class="n">ci</span>
+    <span class="n">df_ci</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;mean&#39;</span><span class="p">:</span> <span class="n">mean</span><span class="p">,</span> <span class="s1">&#39;ci_lower&#39;</span><span class="p">:</span> <span class="n">ci_lower</span><span class="p">,</span> <span class="s1">&#39;ci_upper&#39;</span><span class="p">:</span> <span class="n">ci_upper</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">df_ci</span></div>
+
+
+
+<div class="viewcode-block" id="dict_filter">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.dict_filter">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dict_filter</span><span class="p">(</span><span class="n">dictionary</span><span class="p">,</span> <span class="n">filter_string</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a dict with all elements of the input dict that contain a filter string in their keys.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">dictionary</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">filter_string</span> <span class="ow">in</span> <span class="n">key</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="replace_values">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.replace_values">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">replace_values</span><span class="p">(</span><span class="n">target_df</span><span class="p">,</span> <span class="n">source_df</span><span class="p">,</span> <span class="n">source_column</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Replaces values in the overlapping period in the target dataframe with values</span>
+<span class="sd">    from the source dataframe using the specified source column.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        target_df (pd.DataFrame): Target dataframe where values will be replaced.</span>
+<span class="sd">        source_df (pd.DataFrame): Source dataframe from which values will be taken.</span>
+<span class="sd">        source_column (str): Column name in the source dataframe to use for replacement.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame: The target dataframe with updated values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Identify overlapping period based on index (datetime)</span>
+    <span class="n">overlapping_period</span> <span class="o">=</span> <span class="n">target_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">source_df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">overlapping_period</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No overlapping period between the source and target dataframes.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Ensure the source dataframe has the required column</span>
+    <span class="k">if</span> <span class="n">source_column</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">source_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The source dataframe does not have a column named &#39;</span><span class="si">{</span><span class="n">source_column</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Get the replacement values from the source columnAdd commentMore actions</span>
+    <span class="n">replacement_values</span> <span class="o">=</span> <span class="n">source_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">overlapping_period</span><span class="p">,</span> <span class="n">source_column</span><span class="p">]</span>
+
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">overlapping_period</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span>
+        <span class="n">replacement_values</span><span class="p">),</span> <span class="s2">&quot;Mismatch in lengths of overlapping period and replacement values.&quot;</span>
+
+    <span class="c1"># Apply these values to all columns in the target DataFrame in the overlapping period</span>
+    <span class="n">target_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">overlapping_period</span><span class="p">]</span> <span class="o">=</span> <span class="n">replacement_values</span><span class="o">.</span><span class="n">values</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">target_df</span></div>
+
+
+
+<div class="viewcode-block" id="get_si">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.get_si">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_si</span><span class="p">(</span><span class="n">fast_results</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">to_csv</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes the sensitivity indices of a given FAST simulation results file.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fast_results : str</span>
+<span class="sd">        The path of the FAST simulation results file.</span>
+<span class="sd">    to_csv : bool, optional</span>
+<span class="sd">        If True, the sensitivity indices are saved to a CSV file with the same</span>
+<span class="sd">        name as fast_results, but with &#39;_sensitivity_indices.csv&#39; appended to</span>
+<span class="sd">        the end (default is False).</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        A pandas DataFrame containing the sensitivity indices and parameter</span>
+<span class="sd">        names.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">fast_results</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.csv&quot;</span><span class="p">):</span>
+        <span class="n">fast_results</span> <span class="o">=</span> <span class="n">fast_results</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span>  <span class="c1"># strip .csv</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="n">spotpy</span><span class="o">.</span><span class="n">analyser</span><span class="o">.</span><span class="n">load_csv_results</span><span class="p">(</span><span class="n">fast_results</span><span class="p">)</span>
+    <span class="c1"># Suppress prints</span>
+    <span class="k">with</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">redirect_stdout</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">devnull</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)):</span>
+        <span class="n">SI</span> <span class="o">=</span> <span class="n">spotpy</span><span class="o">.</span><span class="n">analyser</span><span class="o">.</span><span class="n">get_sensitivity_of_fast</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">print_to_console</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">parnames</span> <span class="o">=</span> <span class="n">spotpy</span><span class="o">.</span><span class="n">analyser</span><span class="o">.</span><span class="n">get_parameternames</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+    <span class="n">sens</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">SI</span><span class="p">)</span>
+    <span class="n">sens</span><span class="p">[</span><span class="s1">&#39;param&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">parnames</span>
+    <span class="n">sens</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;param&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">to_csv</span><span class="p">:</span>
+        <span class="n">sens</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">fast_results</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;_sensitivity_indices.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sens</span></div>
+
+
+
+<div class="viewcode-block" id="create_scenario_dict">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.create_scenario_dict">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_scenario_dict</span><span class="p">(</span><span class="n">tas</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">pr</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">scenario_nums</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a nested dictionary of scenarios and models from two dictionaries of pandas DataFrames.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tas : dict</span>
+<span class="sd">        A dictionary of pandas DataFrames where the keys are scenario names and each DataFrame has columns</span>
+<span class="sd">        representing different climate model mean daily temperature (K) time series.</span>
+<span class="sd">    pr : dict</span>
+<span class="sd">        A dictionary of pandas DataFrames where the keys are scenario names and each DataFrame has columns</span>
+<span class="sd">        representing different climate models mean daily precipitation (mm/day) time series.</span>
+<span class="sd">    scenario_nums : list</span>
+<span class="sd">        A list of integers representing the scenario numbers to include in the resulting dictionary.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        A nested dictionary where the top-level keys are scenario names (e.g. &#39;SSP2&#39;, &#39;SSP5&#39;) and the values are</span>
+<span class="sd">        dictionaries containing climate models as keys and the corresponding pandas DataFrames as values.</span>
+<span class="sd">        The DataFrames have three columns: &#39;TIMESTAMP&#39;, &#39;T2&#39;, and &#39;RRR&#39;, where &#39;TIMESTAMP&#39;</span>
+<span class="sd">        represents the time step, &#39;T2&#39; represents the mean daily temperature (K), and &#39;RRR&#39; represents the mean</span>
+<span class="sd">        daily precipitation (mm/day).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">scenarios</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">scenario_nums</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="s1">&#39;SSP&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">scenarios</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">tas</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;T2&#39;</span><span class="p">:</span> <span class="n">tas</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">m</span><span class="p">],</span>
+                                  <span class="s1">&#39;RRR&#39;</span><span class="p">:</span> <span class="n">pr</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">m</span><span class="p">]})</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+            <span class="n">mod_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">m</span><span class="p">:</span> <span class="n">model</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;time&#39;</span><span class="p">:</span> <span class="s1">&#39;TIMESTAMP&#39;</span><span class="p">})}</span>
+            <span class="n">scenarios</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">mod_dict</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">scenarios</span></div>
+
+
+
+<div class="viewcode-block" id="MatildaBulkProcessor">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.MatildaBulkProcessor">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MatildaBulkProcessor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class to run multiple MATILDA simulations for different input scenarios and models in single or multi-processing</span>
+<span class="sd">    mode and store the results in a dictionary.</span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    scenarios : dict</span>
+<span class="sd">        A dictionary with scenario names as keys and a dictionary of climate models as values.</span>
+<span class="sd">    matilda_settings : dict</span>
+<span class="sd">        A dictionary of MATILDA settings.</span>
+<span class="sd">    matilda_parameters : dict</span>
+<span class="sd">        A dictionary of MATILDA parameter values.</span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    run_single_process():</span>
+<span class="sd">        Runs the MATILDA simulations for the scenarios and models in single-processing mode and returns a dictionary</span>
+<span class="sd">        of results.</span>
+<span class="sd">    run_multi_process():</span>
+<span class="sd">        Runs the MATILDA simulations for the scenarios and models in multi-processing mode and returns a dictionary</span>
+<span class="sd">        of results.</span>
+<span class="sd">    matilda_headless(df, matilda_settings, matilda_parameters):</span>
+<span class="sd">        A helper function to run a single MATILDA simulation given a dataframe, MATILDA settings and parameter</span>
+<span class="sd">        values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scenarios</span><span class="p">,</span> <span class="n">matilda_settings</span><span class="p">,</span> <span class="n">matilda_parameters</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scenarios : dict</span>
+<span class="sd">            A dictionary with scenario names as keys and a dictionary of models as values.</span>
+<span class="sd">        matilda_settings : dict</span>
+<span class="sd">            A dictionary of MATILDA settings.</span>
+<span class="sd">        matilda_parameters : dict</span>
+<span class="sd">            A dictionary of MATILDA parameter values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">scenarios</span> <span class="o">=</span> <span class="n">scenarios</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">matilda_settings</span> <span class="o">=</span> <span class="n">matilda_settings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">matilda_parameters</span> <span class="o">=</span> <span class="n">matilda_parameters</span>
+
+<div class="viewcode-block" id="MatildaBulkProcessor.matilda_headless">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.MatildaBulkProcessor.matilda_headless">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">matilda_headless</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">matilda_settings</span><span class="p">,</span> <span class="n">matilda_parameters</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A helper function to run a single MATILDA simulation given a dataframe, MATILDA settings and parameter</span>
+<span class="sd">        values.</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        df : pandas.DataFrame</span>
+<span class="sd">            The input dataframe for the MATILDA simulation.</span>
+<span class="sd">        matilda_settings : dict</span>
+<span class="sd">            A dictionary of MATILDA settings.</span>
+<span class="sd">        matilda_parameters : dict</span>
+<span class="sd">            A dictionary of MATILDA parameter values.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            A dictionary containing the MATILDA model output and glacier rescaling factor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">devnull</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">devnull</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">redirect_stdout</span><span class="p">(</span><span class="n">devnull</span><span class="p">):</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">matilda_simulation</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="o">**</span><span class="n">matilda_settings</span><span class="p">,</span> <span class="o">**</span><span class="n">matilda_parameters</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;model_output&#39;</span><span class="p">:</span> <span class="n">output</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;glacier_rescaling&#39;</span><span class="p">:</span> <span class="n">output</span><span class="p">[</span><span class="mi">5</span><span class="p">]}</span></div>
+
+
+<div class="viewcode-block" id="MatildaBulkProcessor.run_single_process">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.MatildaBulkProcessor.run_single_process">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_single_process</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Runs the MATILDA simulations for the scenarios and models in single-processing mode and returns a dictionary</span>
+<span class="sd">        of results.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            A dictionary of MATILDA simulation results.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">out_dict</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># Create an empty dictionary to store the outputs</span>
+        <span class="c1"># Loop over the scenarios with progress bar</span>
+        <span class="k">for</span> <span class="n">scenario</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenarios</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">model_dict</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># Create an empty dictionary to store the model outputs</span>
+            <span class="c1"># Loop over the models with progress bar</span>
+            <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scenarios</span><span class="p">[</span><span class="n">scenario</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">desc</span><span class="o">=</span><span class="n">scenario</span><span class="p">):</span>
+                <span class="c1"># Get the dataframe for the current scenario and model</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenarios</span><span class="p">[</span><span class="n">scenario</span><span class="p">][</span><span class="n">model</span><span class="p">]</span>
+                <span class="c1"># Run the model simulation and get the output while suppressing prints</span>
+                <span class="n">model_output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">matilda_headless</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">matilda_settings</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">matilda_parameters</span><span class="p">)</span>
+                <span class="c1"># Store the list of output in the model dictionary</span>
+                <span class="n">model_dict</span><span class="p">[</span><span class="n">model</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_output</span>
+            <span class="c1"># Store the model dictionary in the scenario dictionary</span>
+            <span class="n">out_dict</span><span class="p">[</span><span class="n">scenario</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_dict</span>
+        <span class="k">return</span> <span class="n">out_dict</span></div>
+
+
+<div class="viewcode-block" id="MatildaBulkProcessor.run_multi_process">
+<a class="viewcode-back" href="../../modules.html#tools.helpers.MatildaBulkProcessor.run_multi_process">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_multi_process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_cores</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Runs the MATILDA simulations for the scenarios and models in multi-processing mode and returns a dictionary</span>
+<span class="sd">        of results.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            A dictionary of MATILDA simulation results.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">out_dict</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># Create an empty dictionary to store the outputs</span>
+        <span class="k">with</span> <span class="n">Pool</span><span class="p">(</span><span class="n">num_cores</span><span class="p">)</span> <span class="k">as</span> <span class="n">pool</span><span class="p">:</span>
+            <span class="c1"># Loop over the scenarios with progress bar</span>
+            <span class="k">for</span> <span class="n">scenario</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scenarios</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Scenarios SSP2 and SSP5&quot;</span><span class="p">):</span>
+                <span class="n">model_dict</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># Create an empty dictionary to store the model outputs</span>
+                <span class="c1"># Loop over the models with progress bar</span>
+                <span class="n">model_list</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scenarios</span><span class="p">[</span><span class="n">scenario</span><span class="p">][</span><span class="n">m</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenarios</span><span class="p">[</span><span class="n">scenario</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span>
+                <span class="k">for</span> <span class="n">model</span><span class="p">,</span> <span class="n">model_output</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scenarios</span><span class="p">[</span><span class="n">scenario</span><span class="p">],</span> <span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span>
+                        <span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matilda_headless</span><span class="p">,</span> <span class="n">matilda_settings</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">matilda_settings</span><span class="p">,</span>
+                                <span class="n">matilda_parameters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">matilda_parameters</span><span class="p">),</span> <span class="n">model_list</span><span class="p">)):</span>
+                    <span class="n">model_dict</span><span class="p">[</span><span class="n">model</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_output</span>
+                <span class="c1"># Store the model dictionary in the scenario dictionary</span>
+                <span class="n">out_dict</span><span class="p">[</span><span class="n">scenario</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_dict</span>
+            <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">out_dict</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Alexander Georgi, Phillip Schuster, Mia Janzen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

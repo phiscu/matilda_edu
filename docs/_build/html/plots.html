@@ -1,0 +1,384 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tools.plots &mdash; Matilda ONLINE 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="tools.geetools" href="geetools.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Matilda ONLINE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">MATILDA Tools</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Tools Modules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="helpers.html">tools.helpers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="indicators.html">tools.indicators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geetools.html">tools.geetools</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">tools.plots</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#tools.plots.cmip_plot"><code class="docutils literal notranslate"><span class="pre">cmip_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.plots.cmip_plot_combined"><code class="docutils literal notranslate"><span class="pre">cmip_plot_combined()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.plots.cmip_plot_ensemble"><code class="docutils literal notranslate"><span class="pre">cmip_plot_ensemble()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.plots.custom_df_matilda"><code class="docutils literal notranslate"><span class="pre">custom_df_matilda()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.plots.df2long"><code class="docutils literal notranslate"><span class="pre">df2long()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.plots.ensemble_mean"><code class="docutils literal notranslate"><span class="pre">ensemble_mean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.plots.plot_annual_cycles"><code class="docutils literal notranslate"><span class="pre">plot_annual_cycles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.plots.plot_ci_indicators"><code class="docutils literal notranslate"><span class="pre">plot_ci_indicators()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.plots.plot_ci_matilda"><code class="docutils literal notranslate"><span class="pre">plot_ci_matilda()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.plots.plot_sensitivity_bars"><code class="docutils literal notranslate"><span class="pre">plot_sensitivity_bars()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.plots.pp_matrix"><code class="docutils literal notranslate"><span class="pre">pp_matrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.plots.prob_plot"><code class="docutils literal notranslate"><span class="pre">prob_plot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.plots.vplots"><code class="docutils literal notranslate"><span class="pre">vplots()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Matilda ONLINE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">Tools Modules</a></li>
+      <li class="breadcrumb-item active">tools.plots</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/plots.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-tools.plots">
+<span id="tools-plots"></span><h1>tools.plots<a class="headerlink" href="#module-tools.plots" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.plots.cmip_plot">
+<span class="sig-prename descclassname"><span class="pre">tools.plots.</span></span><span class="sig-name descname"><span class="pre">cmip_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">agg_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'monthly'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Target'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_target_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/plots.html#cmip_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.plots.cmip_plot" title="Link to this definition"></a></dt>
+<dd><p>Plots climate model and target data using moving window smoothing.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.plots.cmip_plot_combined">
+<span class="sig-prename descclassname"><span class="pre">tools.plots.</span></span><span class="sig-name descname"><span class="pre">cmip_plot_combined</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">agg_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'monthly'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth_window</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Target'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/plots.html#cmip_plot_combined"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.plots.cmip_plot_combined" title="Link to this definition"></a></dt>
+<dd><p>Combines multiple subplots of climate data in different scenarios before and after bias adjustment.
+Uses moving window smoothing in years instead of days.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.plots.cmip_plot_ensemble">
+<span class="sig-prename descclassname"><span class="pre">tools.plots.</span></span><span class="sig-name descname"><span class="pre">cmip_plot_ensemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmip</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intv_sum</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ME'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intv_mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'YE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(8,</span> <span class="pre">6)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/plots.html#cmip_plot_ensemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.plots.cmip_plot_ensemble" title="Link to this definition"></a></dt>
+<dd><p>Plots the multi-model mean of climate scenarios including the 90% confidence interval.
+:param cmip: A dictionary with keys representing the different CMIP6 models and scenarios as pandas dataframes</p>
+<blockquote>
+<div><p>containing data of temperature and/or precipitation.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target</strong> (<em>pandas.DataFrame</em>) – Dataframe containing the historical reanalysis data.</p></li>
+<li><p><strong>precip</strong> (<em>bool</em>) – If True, plot the mean precipitation. If False, plot the mean temperature. Default is False.</p></li>
+<li><p><strong>intv_sum</strong> (<em>str</em>) – Interval for precipitation sums. Default is monthly (‘ME’).</p></li>
+<li><p><strong>intv_mean</strong> (<em>str</em>) – Interval for the mean of temperature data or precipitation sums. Default is annual (‘YE’).</p></li>
+<li><p><strong>figsize</strong> (<em>tuple</em>) – Figure size for the plot. Default is (8,6).</p></li>
+<li><p><strong>show</strong> (<em>bool</em>) – If True, show the resulting plot. If False, do not show it. Default is True.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.plots.custom_df_matilda">
+<span class="sig-prename descclassname"><span class="pre">tools.plots.</span></span><span class="sig-name descname"><span class="pre">custom_df_matilda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scenario</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resample_freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/plots.html#custom_df_matilda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.plots.custom_df_matilda" title="Link to this definition"></a></dt>
+<dd><p>Takes a dictionary of model outputs and returns a combined dataframe of a specific variable for a given scenario.
+:param dic: A nested dictionary of model outputs.</p>
+<blockquote>
+<div><p>The outer keys are scenario names and the inner keys are model names.
+The corresponding values are dictionaries containing two keys:
+‘model_output’ (DataFrame): containing model outputs for a given scenario and model
+‘glacier_rescaling’ (DataFrame): containing glacier properties for a given scenario and model</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scenario</strong> (<em>str</em>) – The name of the scenario to select from the dictionary.</p></li>
+<li><p><strong>var</strong> (<em>str</em>) – The name of the variable to extract from the model output DataFrame.</p></li>
+<li><p><strong>resample_freq</strong> (<em>str</em><em>, </em><em>optional</em>) – The frequency of the resulting time series data.
+Defaults to None (i.e. no resampling).
+If provided, should be in pandas resample frequency string format.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A DataFrame containing the combined data of the specified variable for the selected scenario
+and models. The DataFrame is indexed by the time steps of the original models.
+The columns are the names of the models in the selected scenario.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the provided  var  string is not one of the following: [‘avg_temp_catchment’, ‘avg_temp_glaciers’,
+    ‘evap_off_glaciers’, ‘prec_off_glaciers’, ‘prec_on_glaciers’, ‘rain_off_glaciers’, ‘snow_off_glaciers’,
+    ‘rain_on_glaciers’, ‘snow_on_glaciers’, ‘snowpack_off_glaciers’, ‘soil_moisture’, ‘upper_groundwater’,
+    ‘lower_groundwater’, ‘melt_off_glaciers’, ‘melt_on_glaciers’, ‘ice_melt_on_glaciers’, ‘snow_melt_on_glaciers’,
+    ‘refreezing_ice’, ‘refreezing_snow’, ‘total_refreezing’, ‘SMB’, ‘actual_evaporation’, ‘total_precipitation’,
+    ‘total_melt’, ‘runoff_without_glaciers’, ‘runoff_from_glaciers’, ‘runoff_ratio’, ‘total_runoff’, ‘glacier_area’,
+    ‘glacier_elev’, ‘smb_water_year’, ‘smb_scaled’, ‘smb_scaled_capped’, ‘smb_scaled_capped_cum’, ‘surplus’,
+    ‘glacier_melt_perc’, ‘glacier_mass_mmwe’, ‘glacier_vol_m3’, ‘glacier_vol_perc’]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.plots.df2long">
+<span class="sig-prename descclassname"><span class="pre">tools.plots.</span></span><span class="sig-name descname"><span class="pre">df2long</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intv_sum</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ME'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intv_mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'YE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/plots.html#df2long"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.plots.df2long" title="Link to this definition"></a></dt>
+<dd><p>Resamples dataframes and converts them into long format to be passed to seaborn.lineplot().</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.plots.ensemble_mean">
+<span class="sig-prename descclassname"><span class="pre">tools.plots.</span></span><span class="sig-name descname"><span class="pre">ensemble_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matilda_scenarios</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dict_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'model_output'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/plots.html#ensemble_mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.plots.ensemble_mean" title="Link to this definition"></a></dt>
+<dd><p>Compute the ensemble mean for a specific variable across all models in the scenarios.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>matilda_scenarios</strong> (<em>dict</em>) – Original scenario dictionary with nested model outputs.</p></li>
+<li><p><strong>result_name</strong> (<em>str</em>) – Name of the target variable to extract (e.g., ‘total_runoff’).</p></li>
+<li><p><strong>dict_name</strong> (<em>str</em>) – Name of the dictionary in the model output to look for results (default: ‘model_output’).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary with emission scenarios as keys and the ensemble mean time series (as pandas Series) as values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.plots.plot_annual_cycles">
+<span class="sig-prename descclassname"><span class="pre">tools.plots.</span></span><span class="sig-name descname"><span class="pre">plot_annual_cycles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matilda_scenarios</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scenarios</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('SSP2',</span> <span class="pre">'SSP5')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/plots.html#plot_annual_cycles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.plots.plot_annual_cycles" title="Link to this definition"></a></dt>
+<dd><p>Creates a 2-column by 4-row plot of annual cycles for the given variables,
+comparing two scenarios side by side.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>runoff</strong> (<em>dict</em>) – Ensemble mean dictionary for runoff.</p></li>
+<li><p><strong>snow_melt</strong> (<em>dict</em>) – Ensemble mean dictionary for snowmelt.</p></li>
+<li><p><strong>ice_melt</strong> (<em>dict</em>) – Ensemble mean dictionary for ice melt.</p></li>
+<li><p><strong>aet</strong> (<em>dict</em>) – Ensemble mean dictionary for actual evaporation.</p></li>
+<li><p><strong>scenarios</strong> (<em>tuple</em>) – Tuple of two scenarios to compare (default: (“SSP2”, “SSP5”))</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Displays the subplot figure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.plots.plot_ci_indicators">
+<span class="sig-prename descclassname"><span class="pre">tools.plots.</span></span><span class="sig-name descname"><span class="pre">plot_ci_indicators</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'line'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/plots.html#plot_ci_indicators"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.plots.plot_ci_indicators" title="Link to this definition"></a></dt>
+<dd><p>A function to plot multi-model mean and confidence intervals of a given variable for two different scenarios.
+Parameters:
+———–
+var: str</p>
+<blockquote>
+<div><p>The variable to plot.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>dic: dict, optional (default=matilda_scenarios)</dt><dd><p>A dictionary containing the scenarios as keys and the dataframes as values.</p>
+</dd>
+<dt>plot_type: str, optional (default=’line’)</dt><dd><p>Whether the plot should be a line or a bar plot.</p>
+</dd>
+<dt>show: bool, optional (default=False)</dt><dd><p>Whether to show the resulting plot or not.</p>
+</dd>
+</dl>
+<section id="returns">
+<h2>Returns:<a class="headerlink" href="#returns" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>go.Figure</dt><dd><p>A plotly figure object containing the mean and confidence intervals for the given variable in the two selected scenarios.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.plots.plot_ci_matilda">
+<span class="sig-prename descclassname"><span class="pre">tools.plots.</span></span><span class="sig-name descname"><span class="pre">plot_ci_matilda</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resample_freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'YE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/plots.html#plot_ci_matilda"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.plots.plot_ci_matilda" title="Link to this definition"></a></dt>
+<dd><p>A function to plot multi-model mean and confidence intervals of a given variable for two different scenarios.
+Parameters:
+———–
+var: str</p>
+<blockquote>
+<div><p>The variable to plot.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>dic: dict, optional (default=matilda_scenarios)</dt><dd><p>A dictionary containing the scenarios as keys and the dataframes as values.</p>
+</dd>
+<dt>resample_freq: str, optional (default=’YE’)</dt><dd><p>The resampling frequency to apply to the data.</p>
+</dd>
+<dt>show: bool, optional (default=False)</dt><dd><p>Whether to show the resulting plot or not.</p>
+</dd>
+</dl>
+<section id="id1">
+<h2>Returns:<a class="headerlink" href="#id1" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>go.Figure</dt><dd><p>A plotly figure object containing the mean and confidence intervals for the given variable in the two selected scenarios.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.plots.plot_sensitivity_bars">
+<span class="sig-prename descclassname"><span class="pre">tools.plots.</span></span><span class="sig-name descname"><span class="pre">plot_sensitivity_bars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">dfs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bar_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bar_gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.6</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/plots.html#plot_sensitivity_bars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.plots.plot_sensitivity_bars" title="Link to this definition"></a></dt>
+<dd><p>Plots a horizontal bar chart showing the total sensitivity index for each parameter in a MATILDA model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*dfs</strong> (<em>pandas.DataFrame</em>) – Multiple dataframes containing the sensitivity indices for each parameter.</p></li>
+<li><p><strong>labels</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Labels to use for the different steps in the sensitivity analysis. If not provided, the default
+labels will be ‘No Limits’, ‘Step 1’, ‘Step 2’, etc.</p></li>
+<li><p><strong>bar_width</strong> (<em>float</em><em>, </em><em>optional</em>) – Width of each bar in the chart.</p></li>
+<li><p><strong>bar_gap</strong> (<em>float</em><em>, </em><em>optional</em>) – Space between bars.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.plots.pp_matrix">
+<span class="sig-prename descclassname"><span class="pre">tools.plots.</span></span><span class="sig-name descname"><span class="pre">pp_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">original</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corrected</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scenario</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nrow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ncol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/plots.html#pp_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.plots.pp_matrix" title="Link to this definition"></a></dt>
+<dd><p>Arranges the prob_plots of all CMIP6 models in a matrix and adds the R² score.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>original</strong> (<em>pandas.DataFrame</em>) – The original climate model data.</p></li>
+<li><p><strong>target</strong> (<em>pandas.DataFrame</em>) – The target data.</p></li>
+<li><p><strong>corrected</strong> (<em>pandas.DataFrame</em>) – The climate model data after bias adjustment.</p></li>
+<li><p><strong>scenario</strong> (<em>str</em><em>, </em><em>optional</em>) – The climate scenario to be added to the plot title.</p></li>
+<li><p><strong>nrow</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of rows in the plot matrix. Default is 7.</p></li>
+<li><p><strong>ncol</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of columns in the plot matrix. Default is 5.</p></li>
+<li><p><strong>precip</strong> (<em>bool</em><em>, </em><em>optional</em>) – Indicates whether the data is precipitation data. Default is False.</p></li>
+<li><p><strong>show</strong> (<em>bool</em><em>, </em><em>optional</em>) – Indicates whether to display the plot. Default is False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.plots.prob_plot">
+<span class="sig-prename descclassname"><span class="pre">tools.plots.</span></span><span class="sig-name descname"><span class="pre">prob_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">original</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corrected</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Temperature</span> <span class="pre">[K]'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/plots.html#prob_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.plots.prob_plot" title="Link to this definition"></a></dt>
+<dd><p>Combines probability plots of climate model data before and after bias adjustment
+and the target data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>original</strong> (<em>pandas.DataFrame</em>) – The original climate model data.</p></li>
+<li><p><strong>target</strong> (<em>pandas.DataFrame</em>) – The target data.</p></li>
+<li><p><strong>corrected</strong> (<em>pandas.DataFrame</em>) – The climate model data after bias adjustment.</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib.axes.Axes</em>) – The axes on which to plot the probability plot.</p></li>
+<li><p><strong>title</strong> (<em>str</em><em>, </em><em>optional</em>) – The title of the plot. Default is None.</p></li>
+<li><p><strong>ylabel</strong> (<em>str</em><em>, </em><em>optional</em>) – The label for the y-axis. Default is “Temperature [K]”.</p></li>
+<li><p><strong>**kwargs</strong> (<em>dict</em><em>, </em><em>optional</em>) – Additional keyword arguments passed to the probscale.probplot() function.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>fig</strong> – The generated figure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib Figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.plots.vplots">
+<span class="sig-prename descclassname"><span class="pre">tools.plots.</span></span><span class="sig-name descname"><span class="pre">vplots</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">before</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">after</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Target'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/plots.html#vplots"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.plots.vplots" title="Link to this definition"></a></dt>
+<dd><p>Creates violin plots of the kernel density estimation for all models before and after bias adjustment.</p>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="geetools.html" class="btn btn-neutral float-left" title="tools.geetools" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Alexander Georgi, Phillip Schuster, Mia Janzen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

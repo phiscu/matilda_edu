@@ -1,0 +1,407 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tools.indicators &mdash; Matilda ONLINE 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="tools.geetools" href="geetools.html" />
+    <link rel="prev" title="tools.helpers" href="helpers.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Matilda ONLINE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">MATILDA Tools</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Tools Modules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="helpers.html">tools.helpers</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">tools.indicators</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#tools.indicators.aridity"><code class="docutils literal notranslate"><span class="pre">aridity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.indicators.calculate_indicators"><code class="docutils literal notranslate"><span class="pre">calculate_indicators()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.indicators.cc_indicators"><code class="docutils literal notranslate"><span class="pre">cc_indicators()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.indicators.custom_df_indicators"><code class="docutils literal notranslate"><span class="pre">custom_df_indicators()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.indicators.drought_indicators"><code class="docutils literal notranslate"><span class="pre">drought_indicators()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.indicators.dry_spells"><code class="docutils literal notranslate"><span class="pre">dry_spells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.indicators.get_qhf"><code class="docutils literal notranslate"><span class="pre">get_qhf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.indicators.get_qlf"><code class="docutils literal notranslate"><span class="pre">get_qlf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.indicators.hydrological_signatures"><code class="docutils literal notranslate"><span class="pre">hydrological_signatures()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.indicators.melting_season"><code class="docutils literal notranslate"><span class="pre">melting_season()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.indicators.peak_doy"><code class="docutils literal notranslate"><span class="pre">peak_doy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.indicators.prec_minmax"><code class="docutils literal notranslate"><span class="pre">prec_minmax()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="geetools.html">tools.geetools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plots.html">tools.plots</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Matilda ONLINE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">Tools Modules</a></li>
+      <li class="breadcrumb-item active">tools.indicators</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/indicators.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tools-indicators">
+<h1>tools.indicators<a class="headerlink" href="#tools-indicators" title="Link to this heading"></a></h1>
+<dl class="py function" id="module-tools.indicators">
+<dt class="sig sig-object py" id="tools.indicators.aridity">
+<span class="sig-prename descclassname"><span class="pre">tools.indicators.</span></span><span class="sig-name descname"><span class="pre">aridity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hist_starty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1986</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hist_endy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2015</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/indicators.html#aridity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.indicators.aridity" title="Link to this definition"></a></dt>
+<dd><p>Calculates aridity indexes from precipitation, and potential and actual evaporation respectively. Aridity is defined
+as mean annual ratio of potential/actual evapotranspiration and precipitation. The indexes are defined as the
+relative change of a 30 years period compared to a given historical period. Uses hydrological years (Oct - Sep).
+Inspired by climateinformation.org (<a class="reference external" href="https://doi.org/10.5194/egusphere-egu23-16216">https://doi.org/10.5194/egusphere-egu23-16216</a>).
+:param df: Input DataFrame containing columns ‘evap_off_glaciers’, ‘actual_evaporation’, and ‘prec_off_glaciers’.
+:type df: pandas.DataFrame
+:param hist_starty: Start year of the historical period in YYYY format. Default is 1986.
+:type hist_starty: int, optional
+:param hist_endy: End year of the historical period in YYYY format. Default is 2015.
+:type hist_endy: int, optional</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><p>DataFrame containing the relative change in aridity over time.
+Columns:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>’actual_aridity’: Relative change in actual aridity.</p></li>
+<li><p>’potential_aridity’: Relative change in potential aridity.</p></li>
+</ul>
+</div></blockquote>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pandas.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.indicators.calculate_indicators">
+<span class="sig-prename descclassname"><span class="pre">tools.indicators.</span></span><span class="sig-name descname"><span class="pre">calculate_indicators</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dic</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/indicators.html#calculate_indicators"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.indicators.calculate_indicators" title="Link to this definition"></a></dt>
+<dd><p>Calculate climate change indicators for all scenarios and models.
+:param dic: Dictionary containing MATILDA outputs for all scenarios and models.
+:type dic: dict
+:param **kwargs: Optional keyword arguments to be passed to the cc_indicators() function.
+:type **kwargs: optional</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary with the same structure as the input but containing climate change indicators in annual resolution.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.indicators.cc_indicators">
+<span class="sig-prename descclassname"><span class="pre">tools.indicators.</span></span><span class="sig-name descname"><span class="pre">cc_indicators</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/indicators.html#cc_indicators"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.indicators.cc_indicators" title="Link to this definition"></a></dt>
+<dd><p>Apply a list of climate change indicator functions to output DataFrame of MATILDA and concatenate
+the output columns into a single DataFrame.
+:param df: Input DataFrame.
+:type df: pandas.DataFrame
+:param **kwargs: Optional arguments to be passed to the functions in the list. Possible arguments are ‘smoothing_window_peakdoy’,</p>
+<blockquote>
+<div><p>‘smoothing_window_meltseas’, ‘min_weeks’, and ‘dry_spell_length’.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataFrame containing the output columns of all functions applied to the input DataFrame.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pandas.DataFrame</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<dl class="simple">
+<dt>The list of functions to apply is hard-coded into the function and cannot be modified from outside.</dt><dd><p>The optional arguments are passed to the respective functions only if they are relevant for the respective
+function.
+If no optional arguments are passed, the function is applied to the input DataFrame with default arguments.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.indicators.custom_df_indicators">
+<span class="sig-prename descclassname"><span class="pre">tools.indicators.</span></span><span class="sig-name descname"><span class="pre">custom_df_indicators</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scenario</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/indicators.html#custom_df_indicators"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.indicators.custom_df_indicators" title="Link to this definition"></a></dt>
+<dd><p>Takes a dictionary of climate change indicators and returns a combined dataframe of a specific variable for
+a given scenario.
+:param dic: Dictionary containing the outputs of calculate_indicators() for different scenarios and models.
+:type dic: dict
+:param scenario: Name of the selected scenario.
+:type scenario: str
+:param var: Name of the variable to extract from the DataFrame.
+:type var: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A DataFrame containing the selected variable from different models within the specified scenario.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pandas.DataFrame</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the provided variable is not one of the function outputs.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.indicators.drought_indicators">
+<span class="sig-prename descclassname"><span class="pre">tools.indicators.</span></span><span class="sig-name descname"><span class="pre">drought_indicators</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ME'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gamma'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/indicators.html#drought_indicators"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.indicators.drought_indicators" title="Link to this definition"></a></dt>
+<dd><p>Calculate the climatic water balance, SPI (Standardized Precipitation Index), and
+SPEI (Standardized Precipitation Evapotranspiration Index) for 1, 3, 6, 12, and 24 months.
+:param df: Input DataFrame containing columns ‘prec_off_glaciers’ and ‘evap_off_glaciers’.
+:type df: pandas.DataFrame
+:param freq: Resampling frequency for precipitation and evaporation data. Default is ‘M’ for monthly.
+:type freq: str, optional
+:param dist: Distribution for SPI and SPEI calculation. Either Pearson-Type III (‘pearson’) or</p>
+<blockquote>
+<div><p>Gamma distribution (‘gamma’). Default is ‘gamma’.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataFrame containing the calculated indicators: ‘clim_water_balance’, ‘spi’, and ‘spei’.
+Index is based on the resampled frequency of the input DataFrame.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pandas.DataFrame</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If ‘freq’ is not ‘D’ or ‘ME’.
+    If ‘dist’ is not ‘pearson’ or ‘gamma’.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>SPI (Standardized Precipitation Index) and SPEI (Standardized Precipitation Evapotranspiration Index)
+are drought indicators that are used to quantify drought severity and duration.
+‘clim_water_balance’ is the difference between total precipitation and total evapotranspiration.
+If ‘freq’ is ‘D’, the input data is transformed from Gregorian to a 366-day format for SPI and SPEI calculation,
+and then transformed back to Gregorian format for output.
+The default distribution for SPI and SPEI calculation is Gamma.
+The calibration period for SPI and SPEI calculation is from 1981 to 2020.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.indicators.dry_spells">
+<span class="sig-prename descclassname"><span class="pre">tools.indicators.</span></span><span class="sig-name descname"><span class="pre">dry_spells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_spell_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/indicators.html#dry_spells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.indicators.dry_spells" title="Link to this definition"></a></dt>
+<dd><p>Compute the total length of dry spells in days per year. A dry spell is defined as a period for which the rolling
+mean of evaporation in a given window exceeds precipitation. Uses hydrological years (Oct - Sep).
+:param df: Input DataFrame containing columns ‘evap_off_glaciers’ and ‘prec_off_glaciers’ with daily evaporation and</p>
+<blockquote>
+<div><p>precipitation data, respectively.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dry_spell_length</strong> (<em>int</em><em>, </em><em>optional</em>) – Length of the rolling window in days. Default is 30.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>DataFrame containing the number of days for which the rolling mean of evaporation exceeds precipitation for each
+year in the input DataFrame.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.indicators.get_qhf">
+<span class="sig-prename descclassname"><span class="pre">tools.indicators.</span></span><span class="sig-name descname"><span class="pre">get_qhf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_median</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">measurements_per_day</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/indicators.html#get_qhf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.indicators.get_qhf" title="Link to this definition"></a></dt>
+<dd><p>Variation of spotpy.hydrology.signatures.get_qhf() that allows definition of a global
+median to investigate long-term trends.
+Calculates the frequency of high flow events defined as <span class="math notranslate nohighlight">\(Q &gt; 9 \cdot Q_{50}\)</span>
+cf. <span id="id1">[CLBGS2000]</span>, <span id="id2">[WESMCM2015]</span>. The frequency is given as :math: <span class="math notranslate nohighlight">\(yr^{-1}\)</span>
+:param data: the timeseries
+:param measurements_per_day: the measurements_per_day of the timeseries
+:return: Q_{HF}, Q_{HD}</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.indicators.get_qlf">
+<span class="sig-prename descclassname"><span class="pre">tools.indicators.</span></span><span class="sig-name descname"><span class="pre">get_qlf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">measurements_per_day</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/indicators.html#get_qlf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.indicators.get_qlf" title="Link to this definition"></a></dt>
+<dd><p>Variation of spotpy.hydrology.signatures.get_qlf() that allows comparison of
+individual years with a global mean to investigate long-term trends.
+Calculates the frequency of low flow events defined as
+<span class="math notranslate nohighlight">\(Q &lt; 0.2 \cdot \overline{Q_{mean}}\)</span>
+cf. <span id="id3">[CLBGS2000]</span>, <span id="id4">[WESMCM2015]</span>. The frequency is given
+in <span class="math notranslate nohighlight">\(yr^{-1}\)</span> and for the whole timeseries
+:param data: the timeseries
+:param measurements_per_day: the measurements_per_day of the timeseries
+:return: Q_{LF}, Q_{LD}</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.indicators.hydrological_signatures">
+<span class="sig-prename descclassname"><span class="pre">tools.indicators.</span></span><span class="sig-name descname"><span class="pre">hydrological_signatures</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/indicators.html#hydrological_signatures"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.indicators.hydrological_signatures" title="Link to this definition"></a></dt>
+<dd><p>Calculate hydrological signatures for a given input dataframe.
+:param df: Input DataFrame containing a column ‘total_runoff’ and a DatetimeIndex.
+:type df: pandas.DataFrame</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><p>A DataFrame containing the calculated hydrological signatures for each year in the input dataframe.
+The columns of the output dataframe are as follows:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>’q5’: the 5th percentile of total runoff for each year</p></li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li><p>’q50’: the 50th percentile of total runoff for each year</p></li>
+<li><p>’q95’: the 95th percentile of total runoff for each year</p></li>
+<li><p>’qlf_freq’: the frequency of low flow events (defined as Q &lt; 2*Qmean_global) for each year, in yr^⁻1</p></li>
+<li><p>’qlf_dur’: the mean duration of low flow events (defined as Q &lt; 2*Qmean_global) for each year, in days</p></li>
+<li><p>’qhf_freq’: the frequency of high flow events (defined as Q &gt; 9*Q50_global) for each year, in yr^⁻1</p></li>
+<li><p>’qhf_dur’: the mean duration of high flow events (defined as Q &gt; 9*Q50_global) for each year, in days</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pandas.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.indicators.melting_season">
+<span class="sig-prename descclassname"><span class="pre">tools.indicators.</span></span><span class="sig-name descname"><span class="pre">melting_season</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smoothing_window_meltseas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">14</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_weeks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/indicators.html#melting_season"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.indicators.melting_season" title="Link to this definition"></a></dt>
+<dd><p>Compute the start, end, and length of the melting season for each calendar year based on the daily
+the rolling mean of the temperature.
+:param df: A DataFrame of daily mean temperature data with a datetime index.
+:type df: pandas.DataFrame
+:param smoothing_window_meltseas: The size of the rolling window in days used to smooth the temperature data. Default is 14.
+:type smoothing_window_meltseas: int, optional
+:param min_weeks: The minimum number of weeks that the melting season must last for it to be considered valid. Default is 10.
+:type min_weeks: int, optional</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A DataFrame with the start, end, and length of the melting season for each calendar year, with a DatetimeIndex.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pandas.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.indicators.peak_doy">
+<span class="sig-prename descclassname"><span class="pre">tools.indicators.</span></span><span class="sig-name descname"><span class="pre">peak_doy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smoothing_window_peakdoy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/indicators.html#peak_doy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.indicators.peak_doy" title="Link to this definition"></a></dt>
+<dd><p>Compute the day of the calendar year with the peak value for each hydrological year.
+:param df: A DataFrame of daily data with a datetime index.
+:type df: pandas.DataFrame
+:param smoothing_window_peakdoy: The window size of the rolling mean used for smoothing the data.</p>
+<blockquote>
+<div><p>Default is 7.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A DataFrame with the day of the year with the peak value for each hydrological year.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pandas.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.indicators.prec_minmax">
+<span class="sig-prename descclassname"><span class="pre">tools.indicators.</span></span><span class="sig-name descname"><span class="pre">prec_minmax</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/indicators.html#prec_minmax"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.indicators.prec_minmax" title="Link to this definition"></a></dt>
+<dd><p>Compute the months of extreme precipitation for each year.
+:param df: A DataFrame of daily precipitation data with a datetime index and a ‘total_precipitation’ column.
+:type df: pandas.DataFrame</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A DataFrame with the months of extreme precipitation as a number for every calendar year.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pandas.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="helpers.html" class="btn btn-neutral float-left" title="tools.helpers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="geetools.html" class="btn btn-neutral float-right" title="tools.geetools" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Alexander Georgi, Phillip Schuster, Mia Janzen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

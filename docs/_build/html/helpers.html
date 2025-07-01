@@ -1,0 +1,559 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tools.helpers &mdash; Matilda ONLINE 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="tools.indicators" href="indicators.html" />
+    <link rel="prev" title="Tools Modules" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Matilda ONLINE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">MATILDA Tools</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Tools Modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">tools.helpers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#tools.helpers.MatildaBulkProcessor"><code class="docutils literal notranslate"><span class="pre">MatildaBulkProcessor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#tools.helpers.MatildaBulkProcessor.matilda_settings"><code class="docutils literal notranslate"><span class="pre">MatildaBulkProcessor.matilda_settings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tools.helpers.MatildaBulkProcessor.matilda_parameters"><code class="docutils literal notranslate"><span class="pre">MatildaBulkProcessor.matilda_parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tools.helpers.MatildaBulkProcessor.matilda_headless"><code class="docutils literal notranslate"><span class="pre">MatildaBulkProcessor.matilda_headless()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tools.helpers.MatildaBulkProcessor.run_multi_process"><code class="docutils literal notranslate"><span class="pre">MatildaBulkProcessor.run_multi_process()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tools.helpers.MatildaBulkProcessor.run_single_process"><code class="docutils literal notranslate"><span class="pre">MatildaBulkProcessor.run_single_process()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.helpers.adjust_bias"><code class="docutils literal notranslate"><span class="pre">adjust_bias()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.helpers.confidence_interval"><code class="docutils literal notranslate"><span class="pre">confidence_interval()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.helpers.create_scenario_dict"><code class="docutils literal notranslate"><span class="pre">create_scenario_dict()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.helpers.crop2wy"><code class="docutils literal notranslate"><span class="pre">crop2wy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.helpers.dict_filter"><code class="docutils literal notranslate"><span class="pre">dict_filter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.helpers.dict_to_parquet"><code class="docutils literal notranslate"><span class="pre">dict_to_parquet()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.helpers.dict_to_pickle"><code class="docutils literal notranslate"><span class="pre">dict_to_pickle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.helpers.drop_keys"><code class="docutils literal notranslate"><span class="pre">drop_keys()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.helpers.drop_model"><code class="docutils literal notranslate"><span class="pre">drop_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.helpers.get_si"><code class="docutils literal notranslate"><span class="pre">get_si()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.helpers.hydrologicalize"><code class="docutils literal notranslate"><span class="pre">hydrologicalize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.helpers.parquet_to_dict"><code class="docutils literal notranslate"><span class="pre">parquet_to_dict()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.helpers.pickle_to_dict"><code class="docutils literal notranslate"><span class="pre">pickle_to_dict()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.helpers.read_era5l"><code class="docutils literal notranslate"><span class="pre">read_era5l()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.helpers.read_yaml"><code class="docutils literal notranslate"><span class="pre">read_yaml()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.helpers.replace_values"><code class="docutils literal notranslate"><span class="pre">replace_values()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.helpers.update_yaml"><code class="docutils literal notranslate"><span class="pre">update_yaml()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.helpers.water_year"><code class="docutils literal notranslate"><span class="pre">water_year()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tools.helpers.write_yaml"><code class="docutils literal notranslate"><span class="pre">write_yaml()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="indicators.html">tools.indicators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geetools.html">tools.geetools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plots.html">tools.plots</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Matilda ONLINE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">Tools Modules</a></li>
+      <li class="breadcrumb-item active">tools.helpers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/helpers.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-tools.helpers">
+<span id="tools-helpers"></span><h1>tools.helpers<a class="headerlink" href="#module-tools.helpers" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="tools.helpers.MatildaBulkProcessor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tools.helpers.</span></span><span class="sig-name descname"><span class="pre">MatildaBulkProcessor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenarios</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matilda_settings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matilda_parameters</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/helpers.html#MatildaBulkProcessor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.MatildaBulkProcessor" title="Link to this definition"></a></dt>
+<dd><p>A class to run multiple MATILDA simulations for different input scenarios and models in single or multi-processing
+mode and store the results in a dictionary.
+.. attribute:: scenarios</p>
+<blockquote>
+<div><p>A dictionary with scenario names as keys and a dictionary of climate models as values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tools.helpers.MatildaBulkProcessor.matilda_settings">
+<span class="sig-name descname"><span class="pre">matilda_settings</span></span><a class="headerlink" href="#tools.helpers.MatildaBulkProcessor.matilda_settings" title="Link to this definition"></a></dt>
+<dd><p>A dictionary of MATILDA settings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tools.helpers.MatildaBulkProcessor.matilda_parameters">
+<span class="sig-name descname"><span class="pre">matilda_parameters</span></span><a class="headerlink" href="#tools.helpers.MatildaBulkProcessor.matilda_parameters" title="Link to this definition"></a></dt>
+<dd><p>A dictionary of MATILDA parameter values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">run_single_process():</span></span></dt>
+<dd><p>Runs the MATILDA simulations for the scenarios and models in single-processing mode and returns a dictionary
+of results.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">run_multi_process():</span></span></dt>
+<dd><p>Runs the MATILDA simulations for the scenarios and models in multi-processing mode and returns a dictionary
+of results.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">matilda_headless(df,</span> <span class="pre">matilda_settings,</span> <span class="pre">matilda_parameters):</span></span></dt>
+<dd><p>A helper function to run a single MATILDA simulation given a dataframe, MATILDA settings and parameter
+values.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tools.helpers.MatildaBulkProcessor.matilda_headless">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">matilda_headless</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matilda_settings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matilda_parameters</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/helpers.html#MatildaBulkProcessor.matilda_headless"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.MatildaBulkProcessor.matilda_headless" title="Link to this definition"></a></dt>
+<dd><p>A helper function to run a single MATILDA simulation given a dataframe, MATILDA settings and parameter
+values.
+:param df: The input dataframe for the MATILDA simulation.
+:type df: pandas.DataFrame
+:param matilda_settings: A dictionary of MATILDA settings.
+:type matilda_settings: dict
+:param matilda_parameters: A dictionary of MATILDA parameter values.
+:type matilda_parameters: dict</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dictionary containing the MATILDA model output and glacier rescaling factor.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tools.helpers.MatildaBulkProcessor.run_multi_process">
+<span class="sig-name descname"><span class="pre">run_multi_process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_cores</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/helpers.html#MatildaBulkProcessor.run_multi_process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.MatildaBulkProcessor.run_multi_process" title="Link to this definition"></a></dt>
+<dd><p>Runs the MATILDA simulations for the scenarios and models in multi-processing mode and returns a dictionary
+of results.
+:returns: A dictionary of MATILDA simulation results.
+:rtype: dict</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tools.helpers.MatildaBulkProcessor.run_single_process">
+<span class="sig-name descname"><span class="pre">run_single_process</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/helpers.html#MatildaBulkProcessor.run_single_process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.MatildaBulkProcessor.run_single_process" title="Link to this definition"></a></dt>
+<dd><p>Runs the MATILDA simulations for the scenarios and models in single-processing mode and returns a dictionary
+of results.
+:returns: A dictionary of MATILDA simulation results.
+:rtype: dict</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.helpers.adjust_bias">
+<span class="sig-prename descclassname"><span class="pre">tools.helpers.</span></span><span class="sig-name descname"><span class="pre">adjust_bias</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">predictand</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predictor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'normal_mapping'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/helpers.html#adjust_bias"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.adjust_bias" title="Link to this definition"></a></dt>
+<dd><p>Applies bias correction to discrete periods individually.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.helpers.confidence_interval">
+<span class="sig-prename descclassname"><span class="pre">tools.helpers.</span></span><span class="sig-name descname"><span class="pre">confidence_interval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/helpers.html#confidence_interval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.confidence_interval" title="Link to this definition"></a></dt>
+<dd><p>Calculate the mean and 95% confidence interval for each row in a dataframe.
+Parameters:
+———–</p>
+<blockquote>
+<div><p>df (pandas.DataFrame): The input dataframe.</p>
+</div></blockquote>
+<section id="returns">
+<h2>Returns:<a class="headerlink" href="#returns" title="Link to this heading"></a></h2>
+<blockquote>
+<div><p>pandas.DataFrame: A dataframe with the mean and confidence intervals for each row.</p>
+</div></blockquote>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.helpers.create_scenario_dict">
+<span class="sig-prename descclassname"><span class="pre">tools.helpers.</span></span><span class="sig-name descname"><span class="pre">create_scenario_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tas</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scenario_nums</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/tools/helpers.html#create_scenario_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.create_scenario_dict" title="Link to this definition"></a></dt>
+<dd><p>Create a nested dictionary of scenarios and models from two dictionaries of pandas DataFrames.
+:param tas: A dictionary of pandas DataFrames where the keys are scenario names and each DataFrame has columns</p>
+<blockquote>
+<div><p>representing different climate model mean daily temperature (K) time series.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pr</strong> (<em>dict</em>) – A dictionary of pandas DataFrames where the keys are scenario names and each DataFrame has columns
+representing different climate models mean daily precipitation (mm/day) time series.</p></li>
+<li><p><strong>scenario_nums</strong> (<em>list</em>) – A list of integers representing the scenario numbers to include in the resulting dictionary.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A nested dictionary where the top-level keys are scenario names (e.g. ‘SSP2’, ‘SSP5’) and the values are
+dictionaries containing climate models as keys and the corresponding pandas DataFrames as values.
+The DataFrames have three columns: ‘TIMESTAMP’, ‘T2’, and ‘RRR’, where ‘TIMESTAMP’
+represents the time step, ‘T2’ represents the mean daily temperature (K), and ‘RRR’ represents the mean
+daily precipitation (mm/day).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.helpers.crop2wy">
+<span class="sig-prename descclassname"><span class="pre">tools.helpers.</span></span><span class="sig-name descname"><span class="pre">crop2wy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">begin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/helpers.html#crop2wy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.crop2wy" title="Link to this definition"></a></dt>
+<dd><p>Crops a DataFrame to include only the rows that fall within a complete water year.
+:param df: Input DataFrame with a DatetimeIndex and a ‘water_year’ column.
+:type df: pandas.DataFrame
+:param begin: The month (1-12) that marks the beginning of the water year. Default is 10.
+:type begin: int, optional</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A new DataFrame containing only the rows that fall within a complete water year.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pandas.DataFrame or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.helpers.dict_filter">
+<span class="sig-prename descclassname"><span class="pre">tools.helpers.</span></span><span class="sig-name descname"><span class="pre">dict_filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_string</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/helpers.html#dict_filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.dict_filter" title="Link to this definition"></a></dt>
+<dd><p>Returns a dict with all elements of the input dict that contain a filter string in their keys.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.helpers.dict_to_parquet">
+<span class="sig-prename descclassname"><span class="pre">tools.helpers.</span></span><span class="sig-name descname"><span class="pre">dict_to_parquet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pbar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/tools/helpers.html#dict_to_parquet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.dict_to_parquet" title="Link to this definition"></a></dt>
+<dd><p>Recursively stores the dataframes in the input dictionary as parquet files in the specified directory.
+Nested dictionaries are supported. If the specified directory does not exist, it will be created.
+:param dictionary: A nested dictionary containing pandas dataframes.
+:type dictionary: dict
+:param directory_path: The directory path to store the parquet files.
+:type directory_path: str
+:param pbar: A flag indicating whether to display a progress bar. Default is True.
+:type pbar: bool, optional</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.helpers.dict_to_pickle">
+<span class="sig-prename descclassname"><span class="pre">tools.helpers.</span></span><span class="sig-name descname"><span class="pre">dict_to_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/helpers.html#dict_to_pickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.dict_to_pickle" title="Link to this definition"></a></dt>
+<dd><p>Saves a dictionary to a pickle file at the specified target path.
+Creates target directory if not existing.
+:param dic: The dictionary to save to a pickle file.
+:type dic: dict
+:param target_path: The path of the file where the dictionary shall be stored.
+:type target_path: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.helpers.drop_keys">
+<span class="sig-prename descclassname"><span class="pre">tools.helpers.</span></span><span class="sig-name descname"><span class="pre">drop_keys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys_to_drop</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/helpers.html#drop_keys"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.drop_keys" title="Link to this definition"></a></dt>
+<dd><p>Removes specified keys from a dictionary.
+:param dict: The dictionary to remove keys from.
+:type dict: dict
+:param keys_to_drop: A list of keys to remove from the dictionary.
+:type keys_to_drop: list</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A modified dictionary with the specified keys removed.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.helpers.drop_model">
+<span class="sig-prename descclassname"><span class="pre">tools.helpers.</span></span><span class="sig-name descname"><span class="pre">drop_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dict_or_df</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/helpers.html#drop_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.drop_model" title="Link to this definition"></a></dt>
+<dd><p>Drop columns with given names from either a dictionary of dataframes
+or a single dataframe.
+:param col_names: The list of model names to drop.
+:type col_names: list of str
+:param dict_or_df: If a dict of dataframes, all dataframes in the dict will be edited.</p>
+<blockquote>
+<div><p>If a single dataframe, only that dataframe will be edited.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dict_of_dfs</strong> – The updated dictionary of dataframes or dataframe with dropped columns.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict of pandas.DataFrame or pandas.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.helpers.get_si">
+<span class="sig-prename descclassname"><span class="pre">tools.helpers.</span></span><span class="sig-name descname"><span class="pre">get_si</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fast_results</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_csv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/tools/helpers.html#get_si"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.get_si" title="Link to this definition"></a></dt>
+<dd><p>Computes the sensitivity indices of a given FAST simulation results file.
+:param fast_results: The path of the FAST simulation results file.
+:type fast_results: str
+:param to_csv: If True, the sensitivity indices are saved to a CSV file with the same</p>
+<blockquote>
+<div><p>name as fast_results, but with ‘_sensitivity_indices.csv’ appended to
+the end (default is False).</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A pandas DataFrame containing the sensitivity indices and parameter
+names.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.helpers.hydrologicalize">
+<span class="sig-prename descclassname"><span class="pre">tools.helpers.</span></span><span class="sig-name descname"><span class="pre">hydrologicalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">begin_of_water_year</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/helpers.html#hydrologicalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.hydrologicalize" title="Link to this definition"></a></dt>
+<dd><p>Adds a ‘water_year’ column to a DataFrame and crops it to include only complete water years.
+:param df: Input DataFrame with a DatetimeIndex.
+:type df: pandas.DataFrame
+:param begin_of_water_year: The month (1-12) that marks the beginning of the water year. Default is 10.
+:type begin_of_water_year: int, optional</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A new DataFrame with a ‘water_year’ column and only rows that fall within complete water years.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pandas.DataFrame or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.helpers.parquet_to_dict">
+<span class="sig-prename descclassname"><span class="pre">tools.helpers.</span></span><span class="sig-name descname"><span class="pre">parquet_to_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pbar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/tools/helpers.html#parquet_to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.parquet_to_dict" title="Link to this definition"></a></dt>
+<dd><p>Recursively loads dataframes from the parquet files in the specified directory and returns a dictionary.
+Nested directories are supported.
+:param directory_path: The directory path containing the parquet files.
+:type directory_path: str
+:param pbar: A flag indicating whether to display a progress bar. Default is True.
+:type pbar: bool, optional</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dictionary containing the loaded pandas dataframes.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.helpers.pickle_to_dict">
+<span class="sig-prename descclassname"><span class="pre">tools.helpers.</span></span><span class="sig-name descname"><span class="pre">pickle_to_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/helpers.html#pickle_to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.pickle_to_dict" title="Link to this definition"></a></dt>
+<dd><p>Loads a dictionary from a pickle file at a specified file path.
+:param file_path: The path of the pickle file to load.
+:type file_path: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The dictionary loaded from the pickle file.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.helpers.read_era5l">
+<span class="sig-prename descclassname"><span class="pre">tools.helpers.</span></span><span class="sig-name descname"><span class="pre">read_era5l</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/helpers.html#read_era5l"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.read_era5l" title="Link to this definition"></a></dt>
+<dd><p>Reads ERA5-Land data, drops redundant columns, and adds DatetimeIndex.
+Resamples the dataframe to reduce the DatetimeIndex to daily resolution.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.helpers.read_yaml">
+<span class="sig-prename descclassname"><span class="pre">tools.helpers.</span></span><span class="sig-name descname"><span class="pre">read_yaml</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/helpers.html#read_yaml"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.read_yaml" title="Link to this definition"></a></dt>
+<dd><p>Read a YAML file and return the contents as a dictionary.
+:param file_path: The path of the YAML file to read.
+:type file_path: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The contents of the YAML file as a dictionary.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.helpers.replace_values">
+<span class="sig-prename descclassname"><span class="pre">tools.helpers.</span></span><span class="sig-name descname"><span class="pre">replace_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_column</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/helpers.html#replace_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.replace_values" title="Link to this definition"></a></dt>
+<dd><p>Replaces values in the overlapping period in the target dataframe with values
+from the source dataframe using the specified source column.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target_df</strong> (<em>pd.DataFrame</em>) – Target dataframe where values will be replaced.</p></li>
+<li><p><strong>source_df</strong> (<em>pd.DataFrame</em>) – Source dataframe from which values will be taken.</p></li>
+<li><p><strong>source_column</strong> (<em>str</em>) – Column name in the source dataframe to use for replacement.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The target dataframe with updated values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.helpers.update_yaml">
+<span class="sig-prename descclassname"><span class="pre">tools.helpers.</span></span><span class="sig-name descname"><span class="pre">update_yaml</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_items</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/helpers.html#update_yaml"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.update_yaml" title="Link to this definition"></a></dt>
+<dd><p>Update a YAML file with the contents of a dictionary.
+:param file_path: The path of the YAML file to update.
+:type file_path: str
+:param new_items: The dictionary of new key-value pairs to add to the existing YAML file.
+:type new_items: dict</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.helpers.water_year">
+<span class="sig-prename descclassname"><span class="pre">tools.helpers.</span></span><span class="sig-name descname"><span class="pre">water_year</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">begin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/helpers.html#water_year"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.water_year" title="Link to this definition"></a></dt>
+<dd><p>Calculates the water year for each date in the index of the input DataFrame.
+:param df: Input DataFrame with a DatetimeIndex.
+:type df: pandas.DataFrame
+:param begin: The month (1-12) that marks the beginning of the water year. Default is 10.
+:type begin: int, optional</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>An array of integers representing the water year for each date in the input DataFrame index.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tools.helpers.write_yaml">
+<span class="sig-prename descclassname"><span class="pre">tools.helpers.</span></span><span class="sig-name descname"><span class="pre">write_yaml</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tools/helpers.html#write_yaml"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tools.helpers.write_yaml" title="Link to this definition"></a></dt>
+<dd><p>Write a dictionary to a YAML file.
+Ensures all values are in standard Python types before writing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>dict</em>) – The dictionary to write to a YAML file.</p></li>
+<li><p><strong>file_path</strong> (<em>str</em>) – The path of the file where the YAML data shall be stored.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules.html" class="btn btn-neutral float-left" title="Tools Modules" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="indicators.html" class="btn btn-neutral float-right" title="tools.indicators" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Alexander Georgi, Phillip Schuster, Mia Janzen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

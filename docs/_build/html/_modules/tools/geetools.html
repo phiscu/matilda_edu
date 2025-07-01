@@ -1,0 +1,331 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tools.geetools &mdash; Matilda ONLINE 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Matilda ONLINE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">MATILDA Tools</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Tools Module</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Matilda ONLINE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">tools.geetools</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for tools.geetools</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">concurrent.futures</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">retry</span><span class="w"> </span><span class="kn">import</span> <span class="n">retry</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">ee</span>
+
+<div class="viewcode-block" id="CMIPDownloader">
+<a class="viewcode-back" href="../../modules.html#tools.geetools.CMIPDownloader">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CMIPDownloader</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class to download spatially averaged CMIP6 data for a given period, variable, and spatial subset.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="n">starty</span><span class="p">,</span> <span class="n">endy</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">processes</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="s1">&#39;./&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">var</span> <span class="o">=</span> <span class="n">var</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">starty</span> <span class="o">=</span> <span class="n">starty</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">endy</span> <span class="o">=</span> <span class="n">endy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">processes</span> <span class="o">=</span> <span class="n">processes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">directory</span> <span class="o">=</span> <span class="nb">dir</span>
+
+        <span class="c1"># create the download directory if it doesn&#39;t exist</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CMIPDownloader.download">
+<a class="viewcode-back" href="../../modules.html#tools.geetools.CMIPDownloader.download">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Runs a subset routine for CMIP6 data on GEE servers to create ee.FeatureCollections for all years in</span>
+<span class="sd">        the requested period. Downloads individual years in parallel processes to increase the download time.&quot;&quot;&quot;</span>
+        
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initiating download request for NEX-GDDP-CMIP6 data from &#39;</span> <span class="o">+</span>
+              <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starty</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; to &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">endy</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">getRequests</span><span class="p">(</span><span class="n">starty</span><span class="p">,</span> <span class="n">endy</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Generates a list of years to be downloaded. [Client side]&quot;&quot;&quot;</span>
+
+            <span class="k">return</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">starty</span><span class="p">,</span> <span class="n">endy</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span>
+
+        <span class="nd">@retry</span><span class="p">(</span><span class="n">tries</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">backoff</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">getResult</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">year</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Handle the HTTP requests to download one year of CMIP6 data. [Server side]&quot;&quot;&quot;</span>
+
+            <span class="n">start</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">year</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-01-01&#39;</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">year</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-01-01&#39;</span>
+            <span class="n">startDate</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+            <span class="n">endDate</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">(</span><span class="n">end</span><span class="p">)</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="n">endDate</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">startDate</span><span class="p">,</span> <span class="s1">&#39;day&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">getImageCollection</span><span class="p">(</span><span class="n">var</span><span class="p">):</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot;Create and image collection of CMIP6 data for the requested variable, period, and region.</span>
+<span class="sd">                [Server side]&quot;&quot;&quot;</span>
+                <span class="n">collection</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s1">&#39;NASA/GDDP-CMIP6&#39;</span><span class="p">)</span> \
+                    <span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> \
+                    <span class="o">.</span><span class="n">filterDate</span><span class="p">(</span><span class="n">startDate</span><span class="p">,</span> <span class="n">endDate</span><span class="p">)</span> \
+                    <span class="o">.</span><span class="n">filterBounds</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> \
+                    <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">neq</span><span class="p">(</span><span class="s1">&#39;model&#39;</span><span class="p">,</span> <span class="s1">&#39;NorESM2-LM&#39;</span><span class="p">))</span>  <span class="c1"># Exclude model (missing year 2096)</span>
+
+                <span class="k">return</span> <span class="n">collection</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">renameBandName</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot;Edit variable names for better readability. [Server side]&quot;&quot;&quot;</span>
+
+                <span class="n">split</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">ee</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="n">split</span><span class="o">.</span><span class="n">splice</span><span class="p">(</span><span class="n">split</span><span class="o">.</span><span class="n">length</span><span class="p">()</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">))</span>
+
+            <span class="k">def</span><span class="w"> </span><span class="nf">buildFeature</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot;Create an area weighted average of the defined region for every day in the given year.</span>
+<span class="sd">                [Server side]&quot;&quot;&quot;</span>
+
+                <span class="n">t1</span> <span class="o">=</span> <span class="n">startDate</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="s1">&#39;day&#39;</span><span class="p">)</span>
+                <span class="n">t2</span> <span class="o">=</span> <span class="n">t1</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;day&#39;</span><span class="p">)</span>
+                <span class="c1"># feature = ee.Feature(point)</span>
+                <span class="n">dailyColl</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">filterDate</span><span class="p">(</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">)</span>
+                <span class="n">dailyImg</span> <span class="o">=</span> <span class="n">dailyColl</span><span class="o">.</span><span class="n">toBands</span><span class="p">()</span>
+                <span class="c1"># renaming and handling names</span>
+                <span class="n">bands</span> <span class="o">=</span> <span class="n">dailyImg</span><span class="o">.</span><span class="n">bandNames</span><span class="p">()</span>
+                <span class="n">renamed</span> <span class="o">=</span> <span class="n">bands</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">renameBandName</span><span class="p">)</span>
+                <span class="c1"># Daily extraction and adding time information</span>
+                <span class="nb">dict</span> <span class="o">=</span> <span class="n">dailyImg</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">renamed</span><span class="p">)</span><span class="o">.</span><span class="n">reduceRegion</span><span class="p">(</span>
+                    <span class="n">reducer</span><span class="o">=</span><span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span>
+                    <span class="n">geometry</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span>
+                    <span class="n">ee</span><span class="o">.</span><span class="n">Dictionary</span><span class="p">({</span><span class="s1">&#39;system:time_start&#39;</span><span class="p">:</span> <span class="n">t1</span><span class="o">.</span><span class="n">millis</span><span class="p">(),</span> <span class="s1">&#39;isodate&#39;</span><span class="p">:</span> <span class="n">t1</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;YYYY-MM-dd&#39;</span><span class="p">)})</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="n">ee</span><span class="o">.</span><span class="n">Feature</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+
+            <span class="c1"># Create features for all days in the respective year. [Server side]</span>
+            <span class="n">collection</span> <span class="o">=</span> <span class="n">getImageCollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">var</span><span class="p">)</span>
+            <span class="n">year_feature</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">List</span><span class="o">.</span><span class="n">sequence</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">buildFeature</span><span class="p">))</span>
+
+            <span class="c1"># Create a download URL for a CSV containing the feature collection. [Server side]</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="n">year_feature</span><span class="o">.</span><span class="n">getDownloadURL</span><span class="p">()</span>
+
+            <span class="c1"># Handle downloading the actual csv for one year. [Client side]</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">status_code</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+                <span class="n">r</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;cmip6_&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">var</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">year</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.csv&#39;</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">index</span>
+
+        <span class="c1"># Create a list of years to be downloaded. [Client side]</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="n">getRequests</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">starty</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">endy</span><span class="p">)</span>
+
+        <span class="c1"># Launch download requests in parallel processes and display a status bar. [Client side]</span>
+        <span class="k">with</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Downloading CMIP6 data for variable &#39;&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">var</span> <span class="o">+</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">pbar</span><span class="p">:</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">with</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">processes</span><span class="p">)</span> <span class="k">as</span> <span class="n">executor</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">year</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
+                    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">getResult</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">year</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">future</span> <span class="ow">in</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">as_completed</span><span class="p">(</span><span class="n">results</span><span class="p">):</span>
+                    <span class="n">index</span> <span class="o">=</span> <span class="n">future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+                    <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;All downloads complete.&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CMIPProcessor">
+<a class="viewcode-back" href="../../modules.html#tools.geetools.CMIPProcessor">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CMIPProcessor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class to read and pre-process CSV files downloaded by the CMIPDownloader class.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="n">file_dir</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_dir</span> <span class="o">=</span> <span class="n">file_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">var</span> <span class="o">=</span> <span class="n">var</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">df_hist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">append_df</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">var</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_dir</span><span class="p">,</span> <span class="n">hist</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">df_ssp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">append_df</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">var</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_dir</span><span class="p">,</span> <span class="n">hist</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ssp2_common</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ssp5_common</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hist_common</span><span class="p">,</span>\
+            <span class="bp">self</span><span class="o">.</span><span class="n">common_models</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropped_models</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_dataframes</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ssp2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ssp5</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_results</span><span class="p">()</span>
+
+<div class="viewcode-block" id="CMIPProcessor.read_cmip">
+<a class="viewcode-back" href="../../modules.html#tools.geetools.CMIPProcessor.read_cmip">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read_cmip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reads CMIP6 CSV files and drops redundant columns.&quot;&quot;&quot;</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="s1">&#39;isodate&#39;</span><span class="p">,</span> <span class="n">parse_dates</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;isodate&#39;</span><span class="p">])</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">([</span><span class="s1">&#39;system:index&#39;</span><span class="p">,</span> <span class="s1">&#39;.geo&#39;</span><span class="p">,</span> <span class="s1">&#39;system:time_start&#39;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">df</span></div>
+
+
+<div class="viewcode-block" id="CMIPProcessor.append_df">
+<a class="viewcode-back" href="../../modules.html#tools.geetools.CMIPProcessor.append_df">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">append_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="n">file_dir</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">hist</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reads CMIP6 CSV files of individual years and concatenates them into dataframes for the full downloaded</span>
+<span class="sd">        period. Historical and scenario datasets are treated separately. Converts precipitation unit to mm.&quot;&quot;&quot;</span>
+
+        <span class="n">df_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">hist</span><span class="p">:</span>
+            <span class="n">starty</span> <span class="o">=</span> <span class="mi">1979</span>
+            <span class="n">endy</span> <span class="o">=</span> <span class="mi">2014</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">starty</span> <span class="o">=</span> <span class="mi">2015</span>
+            <span class="n">endy</span> <span class="o">=</span> <span class="mi">2100</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">starty</span><span class="p">,</span> <span class="n">endy</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">file_dir</span> <span class="o">+</span> <span class="s1">&#39;cmip6_&#39;</span> <span class="o">+</span> <span class="n">var</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.csv&#39;</span>
+            <span class="n">df_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">read_cmip</span><span class="p">(</span><span class="n">filename</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">hist</span><span class="p">:</span>
+            <span class="n">hist_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">df_list</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">var</span> <span class="o">==</span> <span class="s1">&#39;pr&#39;</span><span class="p">:</span>
+                <span class="n">hist_df</span> <span class="o">=</span> <span class="n">hist_df</span> <span class="o">*</span> <span class="mi">86400</span>       <span class="c1"># from kg/(m^2*s) to mm/day</span>
+            <span class="k">return</span> <span class="n">hist_df</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ssp_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">df_list</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">var</span> <span class="o">==</span> <span class="s1">&#39;pr&#39;</span><span class="p">:</span>
+                <span class="n">ssp_df</span> <span class="o">=</span> <span class="n">ssp_df</span> <span class="o">*</span> <span class="mi">86400</span>       <span class="c1"># from kg/(m^2*s) to mm/day</span>
+            <span class="k">return</span> <span class="n">ssp_df</span></div>
+
+
+<div class="viewcode-block" id="CMIPProcessor.process_dataframes">
+<a class="viewcode-back" href="../../modules.html#tools.geetools.CMIPProcessor.process_dataframes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_dataframes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Separates the two scenarios and drops models not available for both scenarios and the historical period.&quot;&quot;&quot;</span>
+
+        <span class="n">ssp2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df_ssp</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">df_ssp</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;ssp245&#39;</span><span class="p">)]</span>
+        <span class="n">ssp5</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df_ssp</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">df_ssp</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;ssp585&#39;</span><span class="p">)]</span>
+        <span class="n">hist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df_hist</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">df_hist</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;historical&#39;</span><span class="p">)]</span>
+
+        <span class="n">ssp2</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">ssp2</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s1">&#39;ssp245_&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">var</span><span class="p">)</span>
+        <span class="n">ssp5</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">ssp5</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s1">&#39;ssp585_&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">var</span><span class="p">)</span>
+        <span class="n">hist</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">hist</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s1">&#39;historical_&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">var</span><span class="p">)</span>
+
+        <span class="c1"># Get all the models the three datasets have in common</span>
+        <span class="n">common_models</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">ssp2</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">ssp5</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">hist</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+
+        <span class="c1"># Get the model names that contain NaN values</span>
+        <span class="n">nan_models_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">()]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="k">for</span> <span class="n">df</span> <span class="ow">in</span> <span class="p">[</span><span class="n">ssp2</span><span class="p">,</span> <span class="n">ssp5</span><span class="p">,</span> <span class="n">hist</span><span class="p">]]</span>
+        <span class="c1"># flatten the list</span>
+        <span class="n">nan_models</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">sublist</span> <span class="ow">in</span> <span class="n">nan_models_list</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">sublist</span><span class="p">]</span>
+        <span class="c1"># remove duplicates</span>
+        <span class="n">nan_models</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">nan_models</span><span class="p">))</span>
+
+        <span class="c1"># Remove models with NaN values from the list of common models</span>
+        <span class="n">common_models</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">common_models</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nan_models</span><span class="p">]</span>
+
+        <span class="n">ssp2_common</span> <span class="o">=</span> <span class="n">ssp2</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">common_models</span><span class="p">]</span>
+        <span class="n">ssp5_common</span> <span class="o">=</span> <span class="n">ssp5</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">common_models</span><span class="p">]</span>
+        <span class="n">hist_common</span> <span class="o">=</span> <span class="n">hist</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">common_models</span><span class="p">]</span>
+
+        <span class="n">dropped_models</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">mod</span> <span class="k">for</span> <span class="n">mod</span> <span class="ow">in</span> <span class="n">ssp2</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">mod</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">common_models</span><span class="p">]</span> <span class="o">+</span>
+                                  <span class="p">[</span><span class="n">mod</span> <span class="k">for</span> <span class="n">mod</span> <span class="ow">in</span> <span class="n">ssp5</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">mod</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">common_models</span><span class="p">]</span> <span class="o">+</span>
+                                  <span class="p">[</span><span class="n">mod</span> <span class="k">for</span> <span class="n">mod</span> <span class="ow">in</span> <span class="n">hist</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">mod</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">common_models</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">ssp2_common</span><span class="p">,</span> <span class="n">ssp5_common</span><span class="p">,</span> <span class="n">hist_common</span><span class="p">,</span> <span class="n">common_models</span><span class="p">,</span> <span class="n">dropped_models</span></div>
+
+
+<div class="viewcode-block" id="CMIPProcessor.get_results">
+<a class="viewcode-back" href="../../modules.html#tools.geetools.CMIPProcessor.get_results">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_results</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Concatenates historical and scenario data to combined dataframes of the full downloaded period.</span>
+<span class="sd">        Arranges the models in alphabetical order.&quot;&quot;&quot;</span>
+
+        <span class="n">ssp2_full</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">hist_common</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ssp2_common</span><span class="p">])</span>
+        <span class="n">ssp2_full</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;TIMESTAMP&#39;</span><span class="p">]</span>
+        <span class="n">ssp5_full</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">hist_common</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ssp5_common</span><span class="p">])</span>
+        <span class="n">ssp5_full</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;TIMESTAMP&#39;</span><span class="p">]</span>
+
+        <span class="n">ssp2_full</span> <span class="o">=</span> <span class="n">ssp2_full</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">ssp2_full</span><span class="o">.</span><span class="n">columns</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ssp5_full</span> <span class="o">=</span> <span class="n">ssp5_full</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">ssp5_full</span><span class="o">.</span><span class="n">columns</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+
+        <span class="k">return</span> <span class="n">ssp2_full</span><span class="p">,</span> <span class="n">ssp5_full</span></div>
+</div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Alexander Georgi, Phillip Schuster, Mia Janzen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
