@@ -10,7 +10,7 @@ Matilda ONLINE Documentation
    :maxdepth: 1
    :caption: Documentation
 
-   Notebook0_Introduction
+   Getting started <README>
 
 
 .. toctree::

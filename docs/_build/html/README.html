@@ -1,0 +1,194 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MATILDA-Online: Workflow for Modeling Water Resources in Glacierized Catchments &mdash; Matilda ONLINE 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tools Modules" href="modules.html" />
+    <link rel="prev" title="Matilda ONLINE Documentation" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Matilda ONLINE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">getting started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#workflow-overview">Workflow Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#core-routines">Core Routines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#authors">Authors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#license">License</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">MATILDA Tools</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Tools Modules</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Matilda ONLINE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">MATILDA-Online: Workflow for Modeling Water Resources in Glacierized Catchments</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/README.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="matilda-online-workflow-for-modeling-water-resources-in-glacierized-catchments">
+<h1>MATILDA-Online: Workflow for Modeling Water Resources in Glacierized Catchments<a class="headerlink" href="#matilda-online-workflow-for-modeling-water-resources-in-glacierized-catchments" title="Link to this heading"></a></h1>
+<p><a class="reference external" href="https://mybinder.org/v2/gh/phiscu/matilda_edu/main?labpath=Notebook0_Introduction.ipynb"><img alt="Binder" src="https://mybinder.org/badge_logo.svg" /></a> <a class="reference external" href="https://doi.org/10.5281/zenodo.15712744"><img alt="DOI" src="https://zenodo.org/badge/DOI/10.5281/zenodo.15712744.svg" /></a></p>
+<p>Welcome to <strong>MATILDA-Online</strong>, the online companion to the <strong>MATILDA</strong> glacio-hydrological modeling framework. This repository hosts the extended MATILDA workflow in form of a Jupyter Book. Designed for researchers, practitioners, and students, this workflow guides users from data acquisition to the analysis of climate change impacts on glacierized catchments.</p>
+<p>📚 <strong>Explore the Jupyter Book</strong> on the <a class="reference external" href="https://matilda-online.github.io/jbook">MATILDA-Online Website</a>.</p>
+<hr class="docutils" />
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p>You can run most of the workflow in an online environment hosted in mybinder.org. However, calibrating the model is computationally intensive and will be slow to run on a single CPU. For a comprehensive calibration, we recommend downloading the notebooks and running them on a local machine with multi-core processing capabilities.</p>
+<p>To run the MATILDA-Online workflow locally, follow these steps:</p>
+<ol class="arabic simple">
+<li><p>Clone this repository to your local machine and navigate to its root folder:</p></li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">phiscu</span><span class="o">/</span><span class="n">matilda_online</span><span class="o">.</span><span class="n">git</span>
+<span class="n">cd</span> <span class="n">matilda_online</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p>Create and activate a Python environment using the provided environment.yml file. We recommend the use of conda:</p></li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">env</span> <span class="n">create</span> <span class="o">-</span><span class="n">f</span> <span class="n">environment</span><span class="o">.</span><span class="n">yml</span> <span class="o">-</span><span class="n">n</span> <span class="n">matilda_online</span>
+<span class="n">conda</span> <span class="n">activate</span> <span class="n">matilda_online</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>Install Jupyter Notebook or Jupyter Lab if not already installed:</p></li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="n">install</span> <span class="n">jupyterlab</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="4">
+<li><p>Launch the Jupyter Notebook interface:</p></li>
+</ol>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">jupyter</span> <span class="n">lab</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="workflow-overview">
+<h2>Workflow Overview<a class="headerlink" href="#workflow-overview" title="Link to this heading"></a></h2>
+<p>The MATILDA-Online workflow is organized into a series of interactive Jupyter notebooks. These cover all key steps of modeling water resources in glacierized catchments, including catchment delineation, data acquisition, model calibration, and scenario analysis.</p>
+<p>The workflow is divided into a series of interactive notebooks, each focused on a specific component of the modeling process. These notebooks streamline complex tasks such as catchment delineation, data processing, model calibration, and climate scenario analysis, ensuring clarity and reproducibility at each step:</p>
+<ul class="simple">
+<li><p><strong><a class="reference external" href="https://matilda-online.github.io/jbook/Notebook0_Introduction.html">Notebook 0 - Introduction</a>:</strong></p></li>
+<li><p><strong><a class="reference external" href="https://matilda-online.github.io/jbook/Notebook1_Catchment_delineation.html">Notebook 1 - Catchment Delineation</a>:</strong> Delineate your catchment and retrieve static geospatial data, including digital elevation models, glacier outlines, and ice thickness distributions.</p></li>
+<li><p><strong><a class="reference external" href="https://matilda-online.github.io/jbook/Notebook2_Forcing_data.html">Notebook 2 - Forcing Data</a>:</strong> Acquire and process ERA5-Land reanalysis data, preparing inputs for glacio-hydrological model calibration.</p></li>
+<li><p><strong><a class="reference external" href="https://matilda-online.github.io/jbook/Notebook3_CMIP6.html">Notebook 3 - CMIP6 Climate Data</a>:</strong> Download and process historical and future climate data from the Coupled Model Intercomparison Project Phase 6 (CMIP6) for two emission scenarios.</p></li>
+<li><p><strong><a class="reference external" href="https://matilda-online.github.io/jbook/Notebook4_MATILDA.html">Notebook 4 - MATILDA Model</a>:</strong> Run the MATILDA model with default parameters and calibrate it based on mutiple objectives.</p></li>
+<li><p><strong><a class="reference external" href="https://matilda-online.github.io/jbook/Notebook5_MATILDA_scenarios.html">Notebook 5 - Scenario Simulations</a>:</strong> Apply your calibrated parameter set to run the model over all CMIP6 ensemble members for robust scenario-based analysis.</p></li>
+<li><p><strong><a class="reference external" href="https://matilda-online.github.io/jbook/Notebook6_Analysis.html">Notebook 6 - Result Analysis &amp; Impact Assessment</a>:</strong> Visualize model output in interactive plots across ensemble simulations, extract key meteorological and hydrological indicators of of climate change impacts, and create a visual summary.</p></li>
+</ul>
+<p>The workflow below is demonstrated using a sample site in the Tian Shan Mountains of Kyrgyzstan. To try the toolkit for yourself, simply click on the rocket icon in the toolbar above to launch an online environment hosted by <a class="reference external" href="https://mybinder.org/">mybinder.org</a>. There you can run any notebook with the sample data or upload your own and edit the config file accordingly. Note that while most of the workflow will work fine in the binder, calibrating the model is computationally intensive and will be slow to run on a single CPU. For a comprehensive calibration that takes full advantage of the <a class="reference external" href="https://spotpy.readthedocs.io/en/latest/">spotpy</a> library, we recommend downloading the notebooks and running them on a local machine with multi-core processing capabilities. Additional options to reduce calibration time are described in Notebook 4.</p>
+<p>Have fun exploring and happy modeling!</p>
+<p>Below is a detailed flowchart of the workflow:</p>
+<p><img alt="Workflow Flowchart" src="_images/workflow_detailed_2024_-Full_legend.png" /></p>
+</section>
+<hr class="docutils" />
+<section id="core-routines">
+<h2>Core Routines<a class="headerlink" href="#core-routines" title="Link to this heading"></a></h2>
+<p>The core routines of MATILDA, including the temperature-index melt model and HBV hydrological model, are maintained in the <a class="reference external" href="https://github.com/cryotools/matilda">MATILDA repository</a>. The MATILDA-Online workflow integrates these routines into a streamlined educational framework.</p>
+</section>
+<hr class="docutils" />
+<section id="authors">
+<h2>Authors<a class="headerlink" href="#authors" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Alexander Georgi</strong> (<a class="reference external" href="https://github.com/geoalxx">GitHub</a>)</p></li>
+<li><p><strong>Phillip Schuster</strong> (<a class="reference external" href="https://github.com/phiscu">GitHub</a>)</p></li>
+<li><p><strong>Mia Janzen</strong> (<a class="reference external" href="https://github.com/hoepke">Github</a>)</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="license">
+<h2>License<a class="headerlink" href="#license" title="Link to this heading"></a></h2>
+<p>This project is licensed under the <strong>MIT License</strong>. See the <a class="reference download internal" download="" href="_downloads/9879d6db96fd29134fc802214163b95a/LICENSE"><span class="xref download myst">LICENSE</span></a> file for details.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Matilda ONLINE Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="modules.html" class="btn btn-neutral float-right" title="Tools Modules" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Alexander Georgi, Phillip Schuster, Mia Janzen.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
