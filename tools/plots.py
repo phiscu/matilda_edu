@@ -21,42 +21,39 @@ from dash import Dash, dcc, html, Input, Output
 from jupyter_server import serverapp
 import plotly.graph_objs as go
 import plotly.io as pio
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
 
 # Use Seaborn white style
 sns.set_style("white")
 
-# Use LaTeX for rendering text
-plt.rcParams['text.usetex'] = True     # overwrites several font settings
+# Use Seaborn white style
+sns.set_style("white")
 
-# Set consistent font type, size, and weight
-#plt.rcParams['font.size'] = 14
-#plt.rcParams['font.family'] = 'serif'
-#plt.rcParams['font.weight'] = 'bold'
+font_path = "tools/cmu.0/cmunrm.ttf"
+font_prop = fm.FontProperties(fname=font_path)
+fm.fontManager.addfont(font_path)
+font_name = font_prop.get_name() 
 
-# Set figure and subplot title size and weight
-plt.rcParams['figure.titlesize'] = 24
-plt.rcParams['figure.titleweight'] = 'heavy'
-plt.rcParams['axes.titlesize'] = 18
-plt.rcParams['axes.titleweight'] = 'bold'
+mpl.rcParams['text.usetex'] = False
+mpl.rcParams['mathtext.fontset'] = 'cm' 
+mpl.rcParams['font.family'] = font_name 
 
-# Set consistent grid style
-plt.rcParams['axes.grid'] = True
-plt.rcParams['grid.linestyle'] = '--'
-plt.rcParams['grid.color'] = 'gray'
-plt.rcParams['grid.linewidth'] = 0.5
 
-# Set axis style
-plt.rcParams['axes.labelsize']= 15
-#plt.rcParams['axes.linewidth'] = 1.0
+mpl.rcParams['font.size'] = 14
+mpl.rcParams['font.weight'] = 'bold'
+mpl.rcParams['axes.labelsize'] = 15
+plt.rcParams['legend.fontsize'] = 10
+mpl.rcParams['axes.titlesize'] = 18
+mpl.rcParams['axes.titleweight'] = 'bold'
+mpl.rcParams['figure.titlesize'] = 24
+mpl.rcParams['figure.titleweight'] = 'heavy'
 
-# get style for matplotlib plots
-# plt_style = ast.literal_eval(config['CONFIG']['PLOT_STYLE'])
-
-mpl.rcParams.update({
-    "text.usetex": True,
-    "font.family": "serif",            # or 'sans-serif', 'monospace', etc.
-    "font.serif": ["Computer Modern"], # default LaTeX serif font
-})
+# Gitterlinien
+mpl.rcParams['axes.grid'] = True
+mpl.rcParams['grid.linestyle'] = '--'
+mpl.rcParams['grid.color'] = 'gray'
+mpl.rcParams['grid.linewidth'] = 0.5
 
 
 
